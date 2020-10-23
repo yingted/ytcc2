@@ -16,14 +16,12 @@
 
 import {html, render} from 'lit-html';
 import {YouTubeVideo} from './youtube.js';
+import {CaptionsEditor} from './editor.js';
 
 const video = new YouTubeVideo('gKqypLvwd70');
+const editor = new CaptionsEditor(video);
 
 render(html`
-  <style>
-  </style>
   ${video.render()}
-  <div>
-    Transcript
-  </div>
+  ${editor.render()}
 `, document.body);

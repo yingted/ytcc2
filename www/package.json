@@ -19,6 +19,7 @@
   "dependencies": {
     "@babel/core": "^7.12.3",
     "@babel/preset-env": "^7.12.1",
+    "@codemirror/next": "^0.13.1",
     "@popeindustries/lit-html-server": "^3.1.0",
     "@rollup/plugin-babel": "^5.2.1",
     "@rollup/plugin-node-resolve": "^9.0.0",
