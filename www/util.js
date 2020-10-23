@@ -14,16 +14,24 @@
  * limitations under the License.
  */
 
-import {html, render} from 'lit-html';
-import {YouTubeVideo} from './youtube.js';
+import {directive} from 'lit-html';
 
-const video = new YouTubeVideo('gKqypLvwd70');
+/**
+ * @returns {string} uuid a random UUID in compact hex format
+ */
+export function randomUuid() {
+  for (
+    var result = '';
+    result.length * 4 < 128;
+    result += Math.floor(Math.random() * 16).toString(16));
+  return result;
+};
 
-render(html`
-  <style>
-  </style>
-  ${video.render()}
-  <div>
-    Transcript
-  </div>
-`, document.body);
+/**
+ * Usage: html`<div @render=${onRender(f)}></div>`
+ * `f` receives the target element as "this"
+ * @param {function} f the function to run on render
+ */
+export const onRender = directive(f => part => {
+  f.call(part.element);
+});

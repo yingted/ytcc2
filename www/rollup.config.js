@@ -16,6 +16,7 @@
 
 import resolve from '@rollup/plugin-node-resolve';
 import { terser } from 'rollup-plugin-terser';
+import livereload from 'rollup-plugin-livereload';
 
 // `npm run build` -> `production` is true
 // `npm run dev` -> `production` is false
@@ -30,6 +31,7 @@ export default {
   },
   plugins: [
     resolve(), // tells Rollup how to find node_modules
-    production && terser() // minify, but only in production
+    production && terser(), // minify, but only in production
+    !production && livereload({ delay: 200 }),  // livereload, only in dev
   ]
 };

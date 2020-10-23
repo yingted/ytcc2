@@ -21,6 +21,9 @@ const app = express();
 app.use(express.static('static'));
 
 app.get('/', (req, res) => {
+  const params = {
+    video: req.query.video,
+  };
   renderToStream(html`
     <!DOCTYPE html>
     <html lang="en">
@@ -29,6 +32,9 @@ app.get('/', (req, res) => {
         <title>Captions editor</title>
       </head>
       <body>
+        <script>
+          const params = ${JSON.stringify(params)};
+        </script>
         <script src="/main.bundle.js"></script>
         <noscript>You need JavaScript to view this page.</noscript>
       </body>
