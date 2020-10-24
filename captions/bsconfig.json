@@ -1,0 +1,27 @@
+{
+  "$schema": "https://raw.githubusercontent.com/rescript-lang/rescript-compiler/master/docs/docson/build-schema.json",
+  "name": "ytcc2-captions",
+  "namespace": true,
+  "version": "0.0.1",
+  "sources": [{
+    "dir" : "src",
+    "subdirs" : true
+  }, {
+    "dir": "test",
+    "type": "dev",
+    "subdirs": true
+  }],
+  "package-specs": {
+    "module": "commonjs",
+    "in-source": true
+  },
+  "suffix": ".bs.js",
+  "bs-dependencies": [
+  ],
+  "bs-dev-dependencies": [
+    "@glennsl/bs-jest"
+  ],
+  "warnings": {
+    "error" : "+101"
+  }
+}
