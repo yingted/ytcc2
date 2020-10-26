@@ -5,3 +5,5 @@
 .merlin
 **/*.bs.js
 **/*.cm?
+*.swp
+coverage
