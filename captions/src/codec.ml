@@ -10,6 +10,15 @@ type ('co, 'dec) t = {
 
 let try_decode t co = t.try_decode co
 let encode t dec = t.encode dec
+let make ~try_decode ~encode = { try_decode; encode }
+let pure ~decode ~encode = {
+  try_decode = (fun s -> Ok (decode s));
+  encode;
+}
+let assume dec co = {
+  try_decode = (fun _ -> Ok dec);
+  encode = (fun _ -> co);
+}
 
 let parseInt: string -> int option = [%raw {|
     function(str) {
@@ -47,7 +56,7 @@ let text_float = {
 
 let expect x = {
   try_decode = (fun s ->
-    if s == x
+    if s = x
     then Ok ()
     else Error (Bad_parse_unexpected));
   encode = (fun () -> x);
@@ -55,8 +64,16 @@ let expect x = {
 
 let expect_string x = {
   try_decode = (fun s ->
-    if s == x
+    if s = x
     then Ok ()
     else Error (Bad_parse_expected_but_got (x, s)));
   encode = (fun () -> x);
+}
+
+let stack lower higher = {
+  try_decode = (fun s ->
+    match lower.try_decode s with
+    | Ok s2 -> higher.try_decode s2
+    | Error e -> Error e);
+  encode = (fun x -> lower.encode (higher.encode x));
 }
