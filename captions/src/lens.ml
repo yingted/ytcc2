@@ -16,7 +16,7 @@ let id = {
 let compose (inner: ('i, 'i2) t) (outer: ('o, 'i) t): ('o, 'i2) t = make
   ~get:(fun s -> s |> get outer |> get inner)
   ~set:(fun a s -> set outer (set inner a (get outer s)) s)
-(* let readonly t = make ~get:(get t) ~set:(fun _ a -> a) *)
+let readonly t = make ~get:(get t) ~set:(fun _ a -> a)
 
 let pair a b =
   make
@@ -28,15 +28,15 @@ let both a b =
     ~get:(fun x -> (get a x, get b x))
     ~set:(fun (va, vb) x -> x |> set a va |> set b vb)
 
-(* let imap ~get ~set t = *)
-(*   make *)
-(*     ~get:(fun x -> t.get x |> get) *)
-(*     ~set:(fun v x -> t.set (set v) x) *)
+let imap ~get ~set t =
+  make
+    ~get:(fun x -> t.get x |> get)
+    ~set:(fun v x -> t.set (set v) x)
 
-(* let omap ~get ~set t = *)
-(*   make *)
-(*     ~get:(fun x -> t.get (get x)) *)
-(*     ~set:(fun v x -> t.set v (get x) |> set) *)
+let omap ~get ~set t =
+  make
+    ~get:(fun x -> t.get (get x))
+    ~set:(fun v x -> t.set v (get x) |> set)
 
 let eval f a = get (f id) a
 let ieval f a b' =
