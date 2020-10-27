@@ -5,6 +5,16 @@ let is_ok r =
   | Ok _ -> true
   | Error _ -> false
 
+let ok r =
+  match r with
+  | Ok x -> Some x
+  | Error _ -> None
+
+let error r =
+  match r with
+  | Ok _ -> None
+  | Error x -> Some x
+
 let bind r f =
   match r with
   | Ok x -> f x
