@@ -3,6 +3,9 @@ type cue = {
   start: seconds;
   end_: seconds;
   text: string;
+
+  index: int;
+  position: string option;
 }
 type track = {
   cues: cue list;
@@ -39,11 +42,30 @@ let time_parser: seconds Parser.t =
         (((hh, mm), ss), mmm)
       ))
 
-(* let srt_cue_parser: cue Parser.t = *)
-(*   seq_parser *)
+let srt_cue_parser: cue Parser.t =
+  Parser.postprocess
+    Parser.(
+      let ( * ) = pair in
+      let term x t = first (x * t) in
+      (* First line: sequence *)
+      seq_parser *
+      (* Second line: timestamps and position *)
+      (term time_parser (easy_expect_re0 ~re:"\\s*-->\\s*" ~default:" --> ")) * time_parser *
+        (term (optional (easy_re0 " .*")) any_newline) *
+      (* Rest of the lines: text *)
+      term (repeated (term (easy_re0 ".+") any_newline)) any_newline)
+    (Codec.pure
+      ~decode:(fun ((((index, start), end_), position), lines) ->
+        let text = String.concat "\n" lines in
+        { index; start; end_; position; text; })
+      ~encode:(fun { index; start; end_; position; text; } ->
+        let lines =
+          String.split_on_char '\n' text
+          |> List.filter (fun s -> String.length s = 0) in
+        ((((index, start), end_), position), lines)))
   
 
-(* let srt_parser: track Parser.t = *)
-(*   Parser.stack_output *)
-(*     (Parser.repeated (srt_cue_parser)) *)
-(*     (Codec.pure ~decode:(fun cues -> { cues }) ~encode:(fun track -> track.cues)) *)
+let srt_parser: track Parser.t =
+  Parser.postprocess
+    (Parser.repeated (srt_cue_parser))
+    (Codec.pure ~decode:(fun cues -> { cues }) ~encode:(fun track -> track.cues))
