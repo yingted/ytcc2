@@ -74,3 +74,21 @@ let srt_parser: track Parser.t =
 type t = track
 let text_codec = Parser.at_end text_parser
 let codec = Parser.at_end srt_parser
+
+let track_text = Lens.id
+let track_cue =
+  (* Ahh, we can't generate this yet. *)
+  Lens.make
+    ~get:(fun ({ start; end_; text; _ }: cue) ->
+      let text = Lens.get track_text text in
+      ({ start; end_; text; }: Track.cue))
+    ~set:(fun { start; end_; text; } (cue: cue) ->
+      let text = Lens.set track_text cue.text text in
+      { cue with start; end_; text; })
+
+let track =
+  Lens.make
+    ~get:(fun { cues; } ->
+      cues |> List.map (Lens.get track_cue))
+    ~set:(fun cues t ->
+      { (* t with *) cues = List.map2 (Lens.set track_cue) cues t.cues })
