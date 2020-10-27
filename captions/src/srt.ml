@@ -1,8 +1,9 @@
 type seconds = float
+type text = string
 type cue = {
   start: seconds;
   end_: seconds;
-  text: string;
+  text: text;
 
   index: int;
   position: string option;
@@ -12,8 +13,6 @@ type track = {
 }
 
 let seq_parser: int Parser.t = Parser.(first (pair text_int any_newline))
-let test_seq_parser () =
-  Codec.try_decode seq_parser "123\nabc" = Ok (123, "abc")
 
 let rem: float -> float -> float =
   [%raw {| function rem(a, b) { return a % b; } |}]
@@ -42,7 +41,9 @@ let time_parser: seconds Parser.t =
         (((hh, mm), ss), mmm)
       ))
 
-let srt_cue_parser: cue Parser.t =
+let text_parser: text Parser.t = Parser.id
+
+let cue_parser: cue Parser.t =
   Parser.postprocess
     Parser.(
       let ( * ) = pair in
@@ -67,5 +68,9 @@ let srt_cue_parser: cue Parser.t =
 
 let srt_parser: track Parser.t =
   Parser.postprocess
-    (Parser.repeated (srt_cue_parser))
+    (Parser.repeated (cue_parser))
     (Codec.pure ~decode:(fun cues -> { cues }) ~encode:(fun track -> track.cues))
+
+type t = track
+let text_codec = Parser.at_end text_parser
+let codec = Parser.at_end srt_parser

@@ -65,6 +65,16 @@ let re_match0 re: string t =
 let re_expect re s =
   postprocess (re_match0 re) (Codec.assume () s)
 
+let id: string t =
+  Codec.pure
+    ~decode:(fun s -> (s, ""))
+    ~encode:(fun (s, tail) -> s ^ tail)
+
+let empty: unit t =
+  Codec.pure
+    ~decode:(fun s -> ((), s))
+    ~encode:(fun ((), tail) -> tail)
+
 let text_int =
   postprocess
     (re_match0 (Js.Re.fromStringWithFlags "^(?:\\d+)" ~flags:"g"))
@@ -144,6 +154,14 @@ let second a =
     ~decode:(fun ((), a) -> a)
     ~encode:(fun a -> ((), a)))
 
+exception Trailing_garbage of string
+let at_end a =
+  Codec.stack a (Codec.make
+    ~try_decode:(fun (output, tail) ->
+      match tail with
+      | "" -> Ok output
+      | _ -> Error (Trailing_garbage tail))
+    ~encode:(fun a -> (a, "")))
 
 let easy_re0 pat: string t =
   re_match0 (Js.Re.fromStringWithFlags ("^(?:" ^ pat ^ ")") ~flags:"g")

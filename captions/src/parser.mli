@@ -3,6 +3,8 @@
 type 'a t = (string, 'a * string) Codec.t
 
 (* Common parsers *)
+val id: string t
+val empty: unit t
 val text_int: int t
 val text_float: float t
 val expect: string -> unit t
@@ -33,6 +35,9 @@ val second: (unit * 'a) t -> 'a t
 (* Easy version that turns "my_regex" into /^(?:my_regex)/g *)
 val easy_re0: string -> string t
 val easy_expect_re0: re:string -> default:string -> unit t
+
+(* Convert to codec *)
+val at_end: 'a t -> (string, 'a) Codec.t
 
 (* Miscellaneous *)
 val any_newline: unit t
