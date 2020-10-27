@@ -2,7 +2,7 @@ type 'a t = (string, 'a * string) Codec.t
 
 exception Bad_parse_expected_prefix_but_got of string * string
 
-let stack_output p c =
+let postprocess p c =
   Codec.stack p
     (Codec.make
       ~try_decode:(fun (output1, tail) ->
@@ -11,7 +11,7 @@ let stack_output p c =
         | Error e -> Error e)
       ~encode:(fun (output2, tail) ->
         (Codec.encode c output2, tail)))
-let stack_tail p1 p2 =
+let pair p1 p2 =
   Codec.stack p1
     (Codec.make
       ~try_decode:(fun (output1, tail1) ->
@@ -54,7 +54,7 @@ let re_match re: matches t =
 let makeArray: unit -> 'a array = [%raw {|Array|}]
 
 let re_match0 re: string t =
-  stack_output (re_match re)
+  postprocess (re_match re)
     (Codec.pure
       ~decode:string_of_match
       ~encode:(fun s ->
@@ -63,15 +63,15 @@ let re_match0 re: string t =
         a))
 
 let re_expect re s =
-  stack_output (re_match0 re) (Codec.assume () s)
+  postprocess (re_match0 re) (Codec.assume () s)
 
 let text_int =
-  stack_output
+  postprocess
     (re_match0 (Js.Re.fromStringWithFlags "^(?:\\d+)" ~flags:"g"))
     Codec.text_int
 
 let text_float =
-  stack_output
+  postprocess
     (re_match0 (Js.Re.fromStringWithFlags "^(?:\\d+(?:\\.\\d*)?|\\.\\d+)" ~flags:"g"))
     Codec.text_float
 
@@ -99,7 +99,7 @@ let try_catch (a: 'a t) (b: 'b t): ('a, 'b) result t =
       | Error b_ -> Codec.encode b (b_, tail))
 
 let optional (a: 'a t): 'a option t =
-  stack_output (try_catch a (expect ""))
+  postprocess (try_catch a (expect ""))
     (Codec.pure
       ~decode:(fun a_or_unit ->
         match a_or_unit with
@@ -135,11 +135,24 @@ let repeated (a: 'a t): 'a list t =
       loop rev_items;
       !output)
 
-let fst a =
-  stack_output a (Codec.pure
+let first a =
+  postprocess a (Codec.pure
     ~decode:(fun (a, ()) -> a)
     ~encode:(fun a -> (a, ())))
-let snd a =
-  stack_output a (Codec.pure
+let second a =
+  postprocess a (Codec.pure
     ~decode:(fun ((), a) -> a)
     ~encode:(fun a -> ((), a)))
+
+
+let easy_re0 pat: string t =
+  re_match0 (Js.Re.fromStringWithFlags ("^(?:" ^ pat ^ ")") ~flags:"g")
+let easy_expect_re0 ~re ~default =
+  re_expect (Js.Re.fromStringWithFlags ("^(?:" ^ re ^ ")") ~flags:"g") default
+let any_newline: unit t =
+  re_expect (Js.Re.fromStringWithFlags "^(?:\\r\\n?|\\n)" ~flags:"g") "\n"
+
+module Text = struct
+  let i = text_int
+  let f = text_float
+end
