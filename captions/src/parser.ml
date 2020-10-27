@@ -21,10 +21,15 @@ let pair p1 p2 =
       ~encode:(fun ((output1, output2), tail2) ->
         (output1, Codec.encode p2 (output2, tail2))))
 
+let ignore v t =
+  postprocess t
+    (Codec.pure ~decode:(Util.const ()) ~encode:(Util.const v))
+
 type matches = string Js.Nullable.t array
 exception Assertion_error
 let regexMatchPrefix: Js.Re.t -> string -> matches Js.Nullable.t = [%raw {|
   function regexMatchPrefix(re, input) {
+    re.lastIndex = 0;
     var m = re.exec(input);
     return m !== null && m.index === 0 ? m : null;
   }
@@ -168,7 +173,9 @@ let easy_re0 pat: string t =
 let easy_expect_re0 ~re ~default =
   re_expect (Js.Re.fromStringWithFlags ("^(?:" ^ re ^ ")") ~flags:"g") default
 let any_newline: unit t =
-  re_expect (Js.Re.fromStringWithFlags "^(?:\\r\\n?|\\n)" ~flags:"g") "\n"
+  easy_expect_re0 ~re:"\\r\\n?|\\n" ~default:"\n"
+let any_newline_or_eof: unit t =
+  easy_expect_re0 ~re:"\\r\\n?|\\n|$" ~default:"\n"
 
 module Text = struct
   let i = text_int

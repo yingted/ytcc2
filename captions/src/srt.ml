@@ -54,7 +54,7 @@ let cue_parser: cue Parser.t =
       (term time_parser (easy_expect_re0 ~re:"\\s*-->\\s*" ~default:" --> ")) * time_parser *
         (term (optional (easy_re0 " .*")) any_newline) *
       (* Rest of the lines: text *)
-      term (repeated (term (easy_re0 ".+") any_newline)) any_newline)
+      term (repeated (term (easy_re0 ".+") any_newline_or_eof)) any_newline_or_eof)
     (Codec.pure
       ~decode:(fun ((((index, start), end_), position), lines) ->
         let text = String.concat "\n" lines in
@@ -73,7 +73,7 @@ let srt_parser: track Parser.t =
 
 type t = track
 let text_codec = Parser.at_end text_parser
-let codec = Parser.at_end srt_parser
+let codec = Codec.stack Encoding.prefer_utf8 (Parser.at_end srt_parser)
 
 let track_text = Lens.id
 let track_cue =

@@ -8,10 +8,10 @@ let make ~get ~set = { get; set; }
 let get t = t.get
 let set t = t.set
 
-(* let id = make ~get:(fun x -> x) ~set:(fun v _ -> v) *)
+(* let id = make ~get:Util.id ~set:Util.const *)
 let id = {
-  get = (fun x -> x);
-  set = (fun v _ -> v);
+  get = Util.id;
+  set = Util.const;
 }
 let compose (inner: ('i, 'i2) t) (outer: ('o, 'i) t): ('o, 'i2) t = make
   ~get:(fun s -> s |> get outer |> get inner)

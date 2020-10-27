@@ -16,8 +16,8 @@ let pure ~decode ~encode = {
   encode;
 }
 let assume dec co = {
-  try_decode = (fun _ -> Ok dec);
-  encode = (fun _ -> co);
+  try_decode = Util.const (Ok dec);
+  encode = Util.const co;
 }
 
 let parseInt: string -> int option = [%raw {|

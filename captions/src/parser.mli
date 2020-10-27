@@ -31,6 +31,8 @@ val optional: 'a t -> 'a option t
 val repeated: 'a t -> 'a list t
 val first: ('a * unit) t -> 'a t
 val second: (unit * 'a) t -> 'a t
+(* Ignore, with a default value on encode *)
+val ignore: 'a -> 'a t -> unit t
 
 (* Easy version that turns "my_regex" into /^(?:my_regex)/g *)
 val easy_re0: string -> string t
@@ -41,6 +43,7 @@ val at_end: 'a t -> (string, 'a) Codec.t
 
 (* Miscellaneous *)
 val any_newline: unit t
+val any_newline_or_eof: unit t
 
 module Text : sig
   val i: int t
