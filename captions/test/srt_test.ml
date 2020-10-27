@@ -3,7 +3,11 @@ open Expect
 
 let listFiles: string -> string Js.Array.t = [%raw {|
   function (pattern) {
-    return require('glob').sync(pattern);
+    let files = require('glob').sync(pattern);
+    if (files.length === 0) {
+      throw new Error('no files matched: ' + JSON.stringify(pattern));
+    }
+    return files;
   }
 |}]
 let readFile: string -> string = [%raw {|
@@ -19,7 +23,7 @@ let roundtrip codec (data: string): (string, exn) result =
 
 let _ =
 describe "stabilizes" (fun () ->
-  listFiles "{data/pysub-parser/*.srt,data/courseinfo-rev.srt}"
+  listFiles (([%raw "__dirname"]) ^ "/data/{pysub-parser/*.srt,courseinfo-rev.srt}")
   |> Js.Array.forEach (fun path ->
     test path (fun () ->
       let data = readFile path in

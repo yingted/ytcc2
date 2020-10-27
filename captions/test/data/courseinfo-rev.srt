@@ -1,0 +1,626 @@
+﻿1
+00:00:07,530 --> 00:00:09,613
+- I'm gonna be talking about two courses.
+
+2
+00:00:11,117 --> 00:00:11,950
+The first is
+
+3
+00:00:12,950 --> 00:00:14,630
+CS 445
+
+4
+00:00:14,630 --> 00:00:17,133
+Software Requirement and Specification.
+
+5
+00:00:19,140 --> 00:00:21,113
+It's the first course of the sequence,
+
+6
+00:00:22,267 --> 00:00:24,640
+the requirements course,
+
+7
+00:00:24,640 --> 00:00:26,972
+the three course sequence that teaches
+
+8
+00:00:26,972 --> 00:00:29,754
+about requirements specification,
+
+9
+00:00:29,754 --> 00:00:33,123
+implementation testing, enhancement
+
+10
+00:00:33,123 --> 00:00:35,611
+and management of software.
+
+11
+00:00:35,611 --> 00:00:37,860
+The first course is CS,
+
+12
+00:00:37,860 --> 00:00:41,160
+okay, if there's three course sequence,
+
+13
+00:00:41,160 --> 00:00:43,330
+you can take the same courses
+
+14
+00:00:44,480 --> 00:00:47,000
+in three different department.
+
+15
+00:00:47,000 --> 00:00:51,610
+So since its CS, we're
+talking about 445 first one.
+
+16
+00:00:51,610 --> 00:00:54,630
+The next one I'm going
+to talk about is 446,
+
+17
+00:00:54,630 --> 00:00:56,090
+and then someone else I think
+
+18
+00:00:56,090 --> 00:00:57,920
+is gonna talk about 447.
+
+19
+00:00:57,920 --> 00:00:58,853
+Next slide.
+
+20
+00:01:00,370 --> 00:01:03,803
+Okay, this course is about
+Requirements Specification.
+
+21
+00:01:04,850 --> 00:01:08,100
+Requirement are the desired behavior
+
+22
+00:01:08,100 --> 00:01:10,190
+of systems that you want to build.
+
+23
+00:01:10,190 --> 00:01:12,380
+Software permanently.
+
+24
+00:01:12,380 --> 00:01:14,320
+What are we trying to accomplish?
+
+25
+00:01:14,320 --> 00:01:15,950
+And most importantly,
+
+26
+00:01:15,950 --> 00:01:17,690
+what does the customer want?
+
+27
+00:01:17,690 --> 00:01:18,523
+Next.
+
+28
+00:01:19,576 --> 00:01:22,409
+A specification is the description
+
+29
+00:01:23,700 --> 00:01:26,020
+of the proposed behavior of a system.
+
+30
+00:01:26,020 --> 00:01:29,040
+That is the description
+of the requirement.
+
+31
+00:01:29,040 --> 00:01:32,012
+And it has the strength to question that,
+
+32
+00:01:32,012 --> 00:01:36,500
+"Can we build a software
+system that meet our goal?
+
+33
+00:01:36,500 --> 00:01:38,810
+And what would that do?"
+
+34
+00:01:38,810 --> 00:01:42,290
+Now, an example of a specification,
+
+35
+00:01:42,290 --> 00:01:44,350
+we've all had programming assignments
+
+36
+00:01:44,350 --> 00:01:46,023
+that is specification.
+
+37
+00:01:47,490 --> 00:01:48,323
+Next.
+
+38
+00:01:49,460 --> 00:01:53,723
+Now, why an entire
+course on specification?
+
+39
+00:01:54,710 --> 00:01:57,200
+Well, we've learned
+
+40
+00:01:57,200 --> 00:01:59,500
+that 80 to 85%
+
+41
+00:01:59,500 --> 00:02:01,180
+of all software errors
+
+42
+00:02:01,180 --> 00:02:03,900
+that are discovered at any time
+
+43
+00:02:03,900 --> 00:02:05,930
+during the life of a program,
+
+44
+00:02:05,930 --> 00:02:09,363
+can be traced back to bad requirement.
+
+45
+00:02:11,723 --> 00:02:16,026
+And we've also learned that
+the cost to fix an error
+
+46
+00:02:16,026 --> 00:02:17,609
+grows exponentially
+
+47
+00:02:18,668 --> 00:02:21,347
+with the lifecycle stage.
+
+48
+00:02:21,347 --> 00:02:23,000
+So if you can fix it
+
+49
+00:02:23,000 --> 00:02:24,790
+when you're writing the requirement
+
+50
+00:02:24,790 --> 00:02:27,800
+it might cost maybe a couple of minutes.
+
+51
+00:02:27,800 --> 00:02:29,880
+By the time you wait
+
+52
+00:02:29,880 --> 00:02:32,120
+until the software has been delivered,
+
+53
+00:02:32,120 --> 00:02:35,040
+you're talking about hours and hours,
+
+54
+00:02:35,040 --> 00:02:38,000
+maybe weeks to fix the same problem,
+
+55
+00:02:38,000 --> 00:02:40,160
+because of all the other artifacts
+
+56
+00:02:41,040 --> 00:02:43,340
+that are now connected
+to that requirement.
+
+57
+00:02:43,340 --> 00:02:44,173
+Next.
+
+58
+00:02:45,320 --> 00:02:47,600
+The course introduces students
+
+59
+00:02:47,600 --> 00:02:49,560
+to the requirements definition phase
+
+60
+00:02:49,560 --> 00:02:50,590
+of software development.
+
+61
+00:02:50,590 --> 00:02:53,770
+It discusses models, notations, processes
+
+62
+00:02:53,770 --> 00:02:57,070
+for software requirements identification,
+
+63
+00:02:57,070 --> 00:02:59,000
+representation, analysis
+
+64
+00:02:59,000 --> 00:03:01,860
+and validating them with the customer.
+
+65
+00:03:01,860 --> 00:03:05,870
+Now, the course is about how to elicit
+
+66
+00:03:05,870 --> 00:03:08,510
+discover, invent,
+
+67
+00:03:08,510 --> 00:03:09,343
+document,
+
+68
+00:03:09,343 --> 00:03:10,810
+validate, manage
+
+69
+00:03:10,810 --> 00:03:13,920
+and estimate the cost of requirements
+
+70
+00:03:13,920 --> 00:03:15,640
+for a computer based system.
+
+71
+00:03:15,640 --> 00:03:17,020
+Next.
+
+72
+00:03:17,020 --> 00:03:18,050
+The topics are:
+
+73
+00:03:18,050 --> 00:03:19,750
+Lifestyle models,
+
+74
+00:03:19,750 --> 00:03:21,450
+Requirements Modeling,
+
+75
+00:03:21,450 --> 00:03:23,149
+Requirements Elicitation
+
+76
+00:03:23,149 --> 00:03:24,760
+Requirements Analysis
+
+77
+00:03:24,760 --> 00:03:26,410
+Requirements Specifications
+
+78
+00:03:26,410 --> 00:03:27,973
+and Cost Estimation.
+
+79
+00:03:28,900 --> 00:03:30,540
+Now,
+
+80
+00:03:30,540 --> 00:03:31,990
+of course you need to study then
+
+81
+00:03:31,990 --> 00:03:33,700
+how you evaluate to
+
+82
+00:03:33,700 --> 00:03:35,800
+and how much work is involved.
+
+83
+00:03:35,800 --> 00:03:37,300
+40% of the course is
+
+84
+00:03:38,450 --> 00:03:39,283
+with,
+
+85
+00:03:40,380 --> 00:03:42,370
+for the course project.
+
+86
+00:03:42,370 --> 00:03:45,627
+A requirement specification
+that you have to write
+
+87
+00:03:45,627 --> 00:03:49,410
+and to mark the size that leads up to it.
+
+88
+00:03:49,410 --> 00:03:51,650
+10% is the midterm
+
+89
+00:03:51,650 --> 00:03:54,500
+and 50% is the final exams
+
+90
+00:03:54,500 --> 00:03:57,240
+because it's also an engineering course
+
+91
+00:03:57,240 --> 00:04:00,720
+and they require 50% for final exam.
+
+92
+00:04:00,720 --> 00:04:02,490
+There are no graduate students here,
+
+93
+00:04:02,490 --> 00:04:03,633
+so we skip that.
+
+94
+00:04:05,880 --> 00:04:06,790
+In teams,
+
+95
+00:04:06,790 --> 00:04:09,270
+you will require
+requirements specification
+
+96
+00:04:09,270 --> 00:04:11,400
+for some medium-sized system
+
+97
+00:04:11,400 --> 00:04:13,290
+that's the DVD Recorder.
+
+98
+00:04:13,290 --> 00:04:14,607
+Or this term for example
+
+99
+00:04:14,607 --> 00:04:17,730
+for by Direct Note Word Parters.
+
+100
+00:04:17,730 --> 00:04:19,130
+There will be several assignments
+
+101
+00:04:19,130 --> 00:04:20,280
+that relate to that
+
+102
+00:04:20,280 --> 00:04:22,130
+and help you get ready to do it
+
+103
+00:04:22,130 --> 00:04:25,063
+so you don't have to do
+it all in the last week.
+
+104
+00:04:26,770 --> 00:04:27,603
+Okay, next.
+
+105
+00:04:29,180 --> 00:04:31,090
+The project will allow you
+
+106
+00:04:31,090 --> 00:04:34,363
+to apply the principles
+we're teaching in the class.
+
+107
+00:04:35,220 --> 00:04:36,053
+Next.
+
+108
+00:04:37,810 --> 00:04:42,290
+Okay, now, this is
+about the second course.
+
+109
+00:04:42,290 --> 00:04:43,703
+CS 446.
+
+110
+00:04:45,083 --> 00:04:48,110
+Its title is Software
+Design and Architecture
+
+111
+00:04:48,110 --> 00:04:50,215
+and Project Management.
+
+112
+00:04:50,215 --> 00:04:52,065
+So it
+
+113
+00:04:52,065 --> 00:04:56,230
+usually follow Requirement Analysis
+
+114
+00:04:56,230 --> 00:04:58,380
+in a normal lifecycle.
+
+115
+00:04:58,380 --> 00:05:00,970
+So that impact can follow.
+
+116
+00:05:00,970 --> 00:05:04,760
+Okay, so this course has three names
+
+117
+00:05:04,760 --> 00:05:07,697
+depending on which department you're in.
+
+118
+00:05:07,697 --> 00:05:10,190
+We're in CS so we'll talk 446.
+
+119
+00:05:10,190 --> 00:05:11,370
+Next.
+
+120
+00:05:11,370 --> 00:05:14,980
+The course introduces
+students to the design,
+
+121
+00:05:14,980 --> 00:05:17,790
+implementation and evaluation phases
+
+122
+00:05:17,790 --> 00:05:19,360
+of software development.
+
+123
+00:05:19,360 --> 00:05:21,480
+It discusses software development,
+
+124
+00:05:21,480 --> 00:05:22,950
+design processes,
+
+125
+00:05:22,950 --> 00:05:24,100
+methods, the notations,
+
+126
+00:05:27,560 --> 00:05:30,210
+for implementation of design,
+
+127
+00:05:30,210 --> 00:05:32,300
+evolution of design
+
+128
+00:05:32,300 --> 00:05:34,010
+and implementation
+
+129
+00:05:34,010 --> 00:05:36,733
+and the management of
+all of these activities.
+
+130
+00:05:38,150 --> 00:05:40,100
+So the topics are:
+
+131
+00:05:40,100 --> 00:05:42,437
+Lifecycle models again,
+
+132
+00:05:42,437 --> 00:05:44,840
+always apply to this phase.
+
+133
+00:05:44,840 --> 00:05:46,390
+Modularity,
+
+134
+00:05:46,390 --> 00:05:47,820
+Architecture,
+
+135
+00:05:47,820 --> 00:05:50,640
+Design Notation and Processes,
+
+136
+00:05:50,640 --> 00:05:53,030
+Management and Cost Estimation
+
+137
+00:05:53,030 --> 00:05:56,210
+based on design rather than requirement
+
+138
+00:05:56,210 --> 00:05:58,050
+and Risk Management,
+
+139
+00:05:58,050 --> 00:05:59,850
+trying to prevent all those things
+
+140
+00:05:59,850 --> 00:06:02,810
+that could go wrong from killing you,
+
+141
+00:06:02,810 --> 00:06:04,060
+Implementation,
+
+142
+00:06:04,060 --> 00:06:06,900
+Integration and Configuration Management,
+
+143
+00:06:06,900 --> 00:06:10,260
+Evolution, Maintenance and Enhancement.
+
+144
+00:06:10,260 --> 00:06:11,093
+Okay.
+
+145
+00:06:13,520 --> 00:06:14,433
+Thank you.
+
+146
+00:06:14,433 --> 00:06:17,850
+Are there any questions about it?
+
+147
+00:06:17,850 --> 00:06:19,707
+In case you're worried,
+
+148
+00:06:19,707 --> 00:06:23,003
+all of these courses
+have a heavy workload.
+
+149
+00:06:24,020 --> 00:06:25,410
+So don't be surprised.
+
+150
+00:06:25,410 --> 00:06:27,263
+But, you're gonna have fun.
+
+151
+00:06:29,820 --> 00:06:32,267
+Okay, because your TA's
+
+152
+00:06:32,267 --> 00:06:35,053
+and your professors
+will be your customers.
+
