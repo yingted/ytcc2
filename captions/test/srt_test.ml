@@ -10,13 +10,13 @@ let listFiles: string -> string Js.Array.t = [%raw {|
     return files;
   }
 |}]
-let readFile: string -> string = [%raw {|
+let readFile: string -> Encoding.bytes = [%raw {|
   function (path) {
-    return require('fs').readFileSync(path, {encoding: 'utf-8'});
+    return require('fs').readFileSync(path);
   }
 |}]
 
-let roundtrip codec (data: string): (string, exn) result =
+let roundtrip codec data =
   data
   |> Codec.try_decode codec
   |> Result.map ~f:(Codec.encode codec)
