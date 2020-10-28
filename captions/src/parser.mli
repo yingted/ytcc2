@@ -33,6 +33,8 @@ val first: ('a * unit) t -> 'a t
 val second: (unit * 'a) t -> 'a t
 (* Ignore, with a default value on encode *)
 val ignore: 'a -> 'a t -> unit t
+(* Decode to the serialized representation *)
+val serialized: 'a t -> string t
 
 (* Easy version that turns "my_regex" into /^(?:my_regex)/g *)
 val easy_re0: string -> string t
@@ -46,6 +48,22 @@ val any_newline: unit t
 val any_newline_or_eof: unit t
 
 module Text : sig
+  (* Printf names for text format *)
   val i: int t
   val f: float t
+end
+module Ocaml : sig
+  (* Ocaml names for combinators *)
+  val pair  : 'a t -> 'b t ->                                         ('a * 'b                         ) t
+  val tuple3: 'a t -> 'b t -> 'c t ->                                 ('a * 'b * 'c                    ) t
+  val tuple4: 'a t -> 'b t -> 'c t -> 'd t ->                         ('a * 'b * 'c * 'd               ) t
+  val tuple5: 'a t -> 'b t -> 'c t -> 'd t -> 'e t ->                 ('a * 'b * 'c * 'd * 'e          ) t
+  val tuple6: 'a t -> 'b t -> 'c t -> 'd t -> 'e t -> 'f t ->         ('a * 'b * 'c * 'd * 'e * 'f     ) t
+  val tuple7: 'a t -> 'b t -> 'c t -> 'd t -> 'e t -> 'f t -> 'g t -> ('a * 'b * 'c * 'd * 'e * 'f * 'g) t
+  val result: 'a t -> 'b t -> ('a, 'b) result t
+  val option: 'a t -> 'a option t
+  val list: 'a t -> 'a list t
+  val unit: 'a -> 'a t -> unit t
+
+  val map: decode:('a -> 'b) -> encode:('b -> 'a) -> 'a t -> 'b t
 end

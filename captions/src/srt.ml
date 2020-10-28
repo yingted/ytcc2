@@ -1,5 +1,8 @@
 type seconds = float
-type text = string
+type token =
+  | Tag of string
+  | Plain of string
+type text = token list
 type cue = {
   start: seconds;
   end_: seconds;
@@ -41,29 +44,52 @@ let time_parser: seconds Parser.t =
         (((hh, mm), ss), mmm)
       ))
 
-let text_parser: text Parser.t = Parser.id
+let text_parser: text Parser.t =
+  let ( * ) = Parser.pair in
+  let tag = Parser.((expect "\\{\\\\" * easy_re0 "[^{}]*" * expect "\\}") |> first |> second) in
+  (* Fallback: don't match into a tag *)
+  let plain = Parser.(easy_re0 "(?:(?!\\{\\\\).)+|[^a]|a") in
+  Parser.Ocaml.result tag plain
+  |> Parser.Ocaml.map
+    ~decode:(fun x ->
+      match x with
+      | Ok tag -> Tag tag
+      | Error plain -> Plain plain)
+    ~encode:(fun x ->
+      match x with
+      | Tag tag -> Ok tag
+      | Plain plain -> Error plain)
+  |> Parser.Ocaml.list
 
 let cue_parser: cue Parser.t =
-  Parser.postprocess
-    Parser.(
-      let ( * ) = pair in
-      let term x t = first (x * t) in
-      (* First line: sequence *)
-      seq_parser *
-      (* Second line: timestamps and position *)
-      (term time_parser (easy_expect_re0 ~re:"\\s*-->\\s*" ~default:" --> ")) * time_parser *
-        (term (optional (easy_re0 " .*")) any_newline) *
-      (* Rest of the lines: text *)
-      term (repeated (term (easy_re0 ".+") any_newline_or_eof)) any_newline_or_eof)
-    (Codec.pure
-      ~decode:(fun ((((index, start), end_), position), lines) ->
-        let text = String.concat "\n" lines in
-        { index; start; end_; position; text; })
-      ~encode:(fun { index; start; end_; position; text; } ->
-        let lines =
-          String.split_on_char '\n' text
-          |> List.filter (fun s -> String.length s = 0) in
-        ((((index, start), end_), position), lines)))
+  let remove_duplicate_newlines_on_encode: (string, string) Codec.t =
+    Codec.pure
+      ~encode:Util.id
+      ~decode:(fun s ->
+        String.split_on_char '\n' s
+        |> List.filter (fun s -> String.length s = 0)
+        |> String.concat "\n") in
+  Parser.(
+    let ( * ) = pair in
+    let term x t = first (x * t) in
+    (* First line: sequence *)
+    seq_parser *
+    (* Second line: timestamps and position *)
+    (term time_parser (easy_expect_re0 ~re:"\\s*-->\\s*" ~default:" --> ")) * time_parser *
+      (term (optional (easy_re0 " .*")) any_newline) *
+    (* Rest of the lines: text *)
+    postprocess
+      (postprocess
+        (serialized
+          (term (repeated (term (easy_re0 ".+") any_newline_or_eof)) any_newline_or_eof))
+        remove_duplicate_newlines_on_encode)
+      (Parser.at_end text_parser)
+  )
+  |> Parser.Ocaml.map
+    ~decode:(fun ((((index, start), end_), position), text) ->
+      { index; start; end_; position; text; })
+    ~encode:(fun { index; start; end_; position; text; } ->
+      ((((index, start), end_), position), text))
   
 
 let srt_parser: track Parser.t =

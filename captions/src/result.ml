@@ -10,6 +10,12 @@ let ok r =
   | Ok x -> Some x
   | Error _ -> None
 
+exception Result_error
+let ok_exn r =
+  match r with
+  | Ok x -> x
+  | Error _ -> raise Result_error
+
 let error r =
   match r with
   | Ok _ -> None

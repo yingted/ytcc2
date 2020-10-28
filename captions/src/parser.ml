@@ -155,6 +155,18 @@ let second a =
     ~encode:(fun a -> ((), a)))
 
 exception Trailing_garbage of string
+
+let serialized (t: 'a t): string t =
+  postprocess t (Codec.pure
+    ~decode:(fun (x: 'a) -> Codec.encode t (x, ""))
+    ~encode:(fun x ->
+      let (y, tail) = x
+      |> Codec.try_decode t
+      |> Result.ok_exn in
+      match tail with
+      | "" -> y
+      | _ -> raise (Trailing_garbage tail)))
+
 let at_end a =
   Codec.stack a (Codec.make
     ~try_decode:(fun (output, tail) ->
@@ -175,4 +187,42 @@ let any_newline_or_eof: unit t =
 module Text = struct
   let i = text_int
   let f = text_float
+end
+module Ocaml = struct
+  let pair = pair
+  let tuple3 (a: 'a t) (b: 'b t) (c: 'c t): ('a * 'b * 'c) t =
+    postprocess
+      (c |> pair b |> pair a)
+      (Codec.pure
+        ~decode:(fun (a, (b, c)) -> (a, b, c))
+        ~encode:(fun (a, b, c) -> (a, (b, c))))
+  let tuple4 a b c d =
+    postprocess
+      (d |> pair c |> pair b |> pair a)
+      (Codec.pure
+        ~decode:(fun (a, (b, (c, d))) -> (a, b, c, d))
+        ~encode:(fun (a, b, c, d) -> (a, (b, (c, d)))))
+  let tuple5 a b c d e =
+    postprocess
+      (e |> pair d |> pair c |> pair b |> pair a)
+      (Codec.pure
+        ~decode:(fun (a, (b, (c, (d, e)))) -> (a, b, c, d, e))
+        ~encode:(fun (a, b, c, d, e) -> (a, (b, (c, (d, e))))))
+  let tuple6 a b c d e f =
+    postprocess
+      (f |> pair e |> pair d |> pair c |> pair b |> pair a)
+      (Codec.pure
+        ~decode:(fun (a, (b, (c, (d, (e, f))))) -> (a, b, c, d, e, f))
+        ~encode:(fun (a, b, c, d, e, f) -> (a, (b, (c, (d, (e, f)))))))
+  let tuple7 a b c d e f g =
+    postprocess
+      (g |> pair f |> pair e |> pair d |> pair c |> pair b |> pair a)
+      (Codec.pure
+        ~decode:(fun (a, (b, (c, (d, (e, (f, g)))))) -> (a, b, c, d, e, f, g))
+        ~encode:(fun (a, b, c, d, e, f, g) -> (a, (b, (c, (d, (e, (f, g))))))))
+  let result = try_catch
+  let option = optional
+  let list = repeated
+  let unit = ignore
+  let map ~decode ~encode a = postprocess a (Codec.pure ~decode ~encode)
 end
