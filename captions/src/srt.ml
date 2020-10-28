@@ -86,9 +86,65 @@ let track_cue =
       let text = Lens.set track_text cue.text text in
       { cue with start; end_; text; })
 
-let track =
+(* 4 types of updates: delete + default/copy/move constructors *)
+type cue_update =
+  | Move of cue
+  | New of Track.cue
+  | Copy of cue
+let cue_of_update =
+  Lens.make
+    ~get:(fun x ->
+      match x with
+      | Move cue -> Lens.get track_cue cue
+      | New cue -> cue
+      | Copy cue -> Lens.get track_cue cue)
+    ~set:(fun v x ->
+      match x with
+      | Move cue -> Move (Lens.set track_cue v cue)
+      | New _cue -> New v
+      | Copy cue -> Copy (Lens.set track_cue v cue))
+let allocator = Allocator.create_copying
+  ~new_:(fun () -> New { start = 0.; end_ = 0.; text = ""; })
+  ~delete:(fun _x -> ())
+  ~copy:(fun x ->
+    match x with
+    | Copy cue -> Copy cue
+    | New cue -> New cue
+    | Move cue -> Copy cue)
+let list_filter_map f l =
+  l |> List.map (fun x ->
+    match f x with
+    | None -> []
+    | Some y -> [y]) |> List.flatten
+let track: (t, cue_update Track.t) Lens.t =
   Lens.make
     ~get:(fun { cues; } ->
-      cues |> List.map (Lens.get track_cue))
-    ~set:(fun cues t ->
-      { (* t with *) cues = List.map2 (Lens.set track_cue) cues t.cues })
+      (* Need to create a new one each time. *)
+      let updates = List.map (fun cue -> Move cue) cues in
+      Lens_array.create updates cue_of_update allocator)
+    ~set:(fun cues _t ->
+      let updates = Lens_array.inspect cues in
+      let indices =
+        updates
+        |> list_filter_map (fun u ->
+            match u with
+            | Move cue -> Some (string_of_int cue.index, ())
+            | _ -> None)
+        |> Js.Dict.fromList
+      in
+      let next_index = ref 1 in
+      let cues =
+        updates
+        |> List.map (fun u ->
+            match u with
+            | Move cue -> cue
+            | New { start; end_; text; _; }
+            | Copy { start; end_; text; _; } ->
+                while Option.is_some (Js.Dict.get indices (string_of_int !next_index)) do
+                  next_index := !next_index + 1;
+                done;
+                Js.Dict.set indices (string_of_int !next_index) ();
+                let index = !next_index in
+                { start; end_; text; position = None; index; })
+      in
+      { cues })

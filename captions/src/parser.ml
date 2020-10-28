@@ -56,16 +56,11 @@ let re_match re: matches t =
       string_of_match match_
       |> Js.String.concat tail)
 
-let makeArray: unit -> 'a array = [%raw {|Array|}]
-
 let re_match0 re: string t =
   postprocess (re_match re)
     (Codec.pure
       ~decode:string_of_match
-      ~encode:(fun s ->
-        let a = makeArray () in
-        let _ = Js.Array.push(a, (Js.Nullable.return s)) in
-        a))
+      ~encode:(fun s -> [|(Js.Nullable.return s)|]))
 
 let re_expect re s =
   postprocess (re_match0 re) (Codec.assume () s)
