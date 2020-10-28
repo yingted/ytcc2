@@ -1,13 +1,10 @@
-type seconds = float
-type token =
-  | Tag of string
-  | Plain of string
+type seconds = Track.seconds
+type nonstandard_tag = string
+type token = nonstandard_tag Track.token
 type text = token list
+type super_cue = nonstandard_tag Track.cue
 type cue = {
-  start: seconds;
-  end_: seconds;
-  text: text;
-
+  super: super_cue;
   index: int;
   position: string option;
 }
@@ -51,14 +48,14 @@ let text_parser: text Parser.t =
   let plain = Parser.(easy_re0 "(?:(?!\\{\\\\).)+|[^a]|a") in
   Parser.Ocaml.result tag plain
   |> Parser.Ocaml.map
-    ~decode:(fun x ->
+    ~decode:(fun x: token ->
       match x with
-      | Ok tag -> Tag tag
-      | Error plain -> Plain plain)
+      | Ok tag -> Tag (Unrecognized tag)
+      | Error text -> Text text)
     ~encode:(fun x ->
       match x with
-      | Tag tag -> Ok tag
-      | Plain plain -> Error plain)
+      | Tag (Unrecognized tag) -> Ok tag
+      | Text text -> Error text)
   |> Parser.Ocaml.list
 
 let cue_parser: cue Parser.t =
@@ -87,8 +84,8 @@ let cue_parser: cue Parser.t =
   )
   |> Parser.Ocaml.map
     ~decode:(fun ((((index, start), end_), position), text) ->
-      { index; start; end_; position; text; })
-    ~encode:(fun { index; start; end_; position; text; } ->
+      { super = { start; end_; text; }; index; position; })
+    ~encode:(fun { super = { start; end_; text; }; index; position; } ->
       ((((index, start), end_), position), text))
   
 
@@ -101,29 +98,22 @@ type t = track
 let text_codec = Parser.at_end text_parser
 let codec = Codec.stack Encoding.prefer_utf8 (Parser.at_end srt_parser)
 
-let track_text = Lens.id
 let track_cue =
   (* Ahh, we can't generate this yet. *)
   Lens.make
-    ~get:(fun ({ start; end_; text; _ }: cue) ->
-      let text = Lens.get track_text text in
-      ({ start; end_; text; }: Track.cue))
-    ~set:(fun { start; end_; text; } (cue: cue) ->
-      let text = Lens.set track_text cue.text text in
-      { cue with start; end_; text; })
+    ~get:(fun cue -> cue.super)
+    ~set:(fun super cue -> { cue with super; })
 
 (* 4 types of updates: delete + default/copy/move constructors *)
-type cue_update = (cue, Track.cue) Allocator.update_copying
+type cue_update = (cue, super_cue) Allocator.update_copying
 let cue_of_update = Allocator.pure_copying_lens track_cue
-let allocator =
-  Allocator.pure_copying
-    ({ start = 0.; end_ = 0.; text = ""; }: Track.cue)
+let allocator = Track.allocator ()
 let list_filter_map f l =
   l |> List.map (fun x ->
     match f x with
     | None -> []
     | Some y -> [y]) |> List.flatten
-let track: (t, cue_update Track.t) Lens.t =
+let track: (t, (cue_update, nonstandard_tag) Track.t) Lens.t =
   Lens.make
     ~get:(fun { cues; } ->
       (* Need to create a new one each time. *)
@@ -141,18 +131,19 @@ let track: (t, cue_update Track.t) Lens.t =
         |> Js.Dict.fromList
       in
       let next_index = ref 1 in
+      let make_index () =
+        while Option.is_some (Js.Dict.get indices (string_of_int !next_index)) do
+          next_index := !next_index + 1;
+        done;
+        Js.Dict.set indices (string_of_int !next_index) ();
+        !next_index
+      in
       let cues =
         updates
         |> List.map (fun (u: cue_update) ->
             match u with
             | Move cue -> cue
-            | New { start; end_; text; _; }
-            | Copy { start; end_; text; _; } ->
-                while Option.is_some (Js.Dict.get indices (string_of_int !next_index)) do
-                  next_index := !next_index + 1;
-                done;
-                Js.Dict.set indices (string_of_int !next_index) ();
-                let index = !next_index in
-                { start; end_; text; position = None; index; })
+            | New super -> { super; position = None; index = make_index (); }
+            | Copy { super; position; _; } -> { super; position; index = make_index (); })
       in
       { cues })
