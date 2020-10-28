@@ -87,30 +87,11 @@ let track_cue =
       { cue with start; end_; text; })
 
 (* 4 types of updates: delete + default/copy/move constructors *)
-type cue_update =
-  | Move of cue
-  | New of Track.cue
-  | Copy of cue
-let cue_of_update =
-  Lens.make
-    ~get:(fun x ->
-      match x with
-      | Move cue -> Lens.get track_cue cue
-      | New cue -> cue
-      | Copy cue -> Lens.get track_cue cue)
-    ~set:(fun v x ->
-      match x with
-      | Move cue -> Move (Lens.set track_cue v cue)
-      | New _cue -> New v
-      | Copy cue -> Copy (Lens.set track_cue v cue))
-let allocator = Allocator.create_copying
-  ~new_:(fun () -> New { start = 0.; end_ = 0.; text = ""; })
-  ~delete:(fun _x -> ())
-  ~copy:(fun x ->
-    match x with
-    | Copy cue -> Copy cue
-    | New cue -> New cue
-    | Move cue -> Copy cue)
+type cue_update = (cue, Track.cue) Allocator.update_copying
+let cue_of_update = Allocator.pure_copying_lens track_cue
+let allocator =
+  Allocator.pure_copying
+    ({ start = 0.; end_ = 0.; text = ""; }: Track.cue)
 let list_filter_map f l =
   l |> List.map (fun x ->
     match f x with
@@ -120,13 +101,14 @@ let track: (t, cue_update Track.t) Lens.t =
   Lens.make
     ~get:(fun { cues; } ->
       (* Need to create a new one each time. *)
-      let updates = List.map (fun cue -> Move cue) cues in
+      let updates = List.map (fun cue -> (Move cue: cue_update)) cues in
       Lens_array.create updates cue_of_update allocator)
     ~set:(fun cues _t ->
       let updates = Lens_array.inspect cues in
+      (* Assign new ids to each thing *)
       let indices =
         updates
-        |> list_filter_map (fun u ->
+        |> list_filter_map (fun (u: cue_update) ->
             match u with
             | Move cue -> Some (string_of_int cue.index, ())
             | _ -> None)
@@ -135,7 +117,7 @@ let track: (t, cue_update Track.t) Lens.t =
       let next_index = ref 1 in
       let cues =
         updates
-        |> List.map (fun u ->
+        |> List.map (fun (u: cue_update) ->
             match u with
             | Move cue -> cue
             | New { start; end_; text; _; }
