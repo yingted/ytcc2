@@ -1,5 +1,8 @@
 type seconds = Track.seconds
-type nonstandard_tag = string
+type ass_tag = string
+type nonstandard_tag =
+  | Special of string
+  | Ass_tag of ass_tag
 type token = nonstandard_tag Track.token
 type text = token list
 type super_cue = nonstandard_tag Track.cue
@@ -41,21 +44,33 @@ let time_parser: seconds Parser.t =
         (((hh, mm), ss), mmm)
       ))
 
+let ass_tag_codec: (string, ass_tag) Codec.t =
+  Codec.pure
+    ~decode:(fun s ->
+      match s with
+      | _ -> s)
+    ~encode:(fun x ->
+      match x with
+      | s -> s)
+
 let text_parser: text Parser.t =
   let ( * ) = Parser.pair in
-  let tag = Parser.((expect "{\\" * easy_re0 "[^{}]*" * expect "}") |> first |> second) in
+  let tag = Parser.((expect "{\\" * (postprocess (easy_re0 "[^{}]*") ass_tag_codec) * expect "}") |> first |> second) in
+  let special = Parser.(expect "\\" * easy_re0 "[nNh]" |> second) in
   (* Fallback: don't match into a tag *)
-  let plain = Parser.(easy_re0 "(?:(?!\\{\\\\)(?:[^a]|a))+|[^a]|a") in
-  Parser.Ocaml.result tag plain
+  let plain = Parser.(easy_re0 "(?:(?!\\{\\\\|\\\\[nNh])(?:[^a]|a))+|[^a]|a") in
+  Parser.Ocaml.(result tag (result special plain))
   |> Parser.Ocaml.map
     ~decode:(fun x: token ->
       match x with
-      | Ok tag -> Tag (Unrecognized tag)
-      | Error text -> Text text)
+      | Ok tag -> Tag (Unrecognized (Ass_tag tag))
+      | Error (Ok special) -> Tag (Unrecognized (Special special))
+      | Error (Error text) -> Text text)
     ~encode:(fun x ->
       match x with
-      | Tag (Unrecognized tag) -> Ok tag
-      | Text text -> Error text)
+      | Tag (Unrecognized (Ass_tag tag)) -> Ok tag
+      | Tag (Unrecognized (Special special)) -> Error (Ok special)
+      | Text text -> Error (Error text))
   |> Parser.Ocaml.list
 
 let cue_parser: cue Parser.t =
