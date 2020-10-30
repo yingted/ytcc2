@@ -43,9 +43,9 @@ let time_parser: seconds Parser.t =
 
 let text_parser: text Parser.t =
   let ( * ) = Parser.pair in
-  let tag = Parser.((expect "\\{\\\\" * easy_re0 "[^{}]*" * expect "\\}") |> first |> second) in
+  let tag = Parser.((expect "{\\" * easy_re0 "[^{}]*" * expect "}") |> first |> second) in
   (* Fallback: don't match into a tag *)
-  let plain = Parser.(easy_re0 "(?:(?!\\{\\\\).)+|[^a]|a") in
+  let plain = Parser.(easy_re0 "(?:(?!\\{\\\\)(?:[^a]|a))+|[^a]|a") in
   Parser.Ocaml.result tag plain
   |> Parser.Ocaml.map
     ~decode:(fun x: token ->

@@ -4,8 +4,9 @@ type seconds = float
 (* Tags are assumed to be pure, so we don't need the Lens_array.t *)
 type 't tag =
   | Unrecognized of 't
-(* Formatted text is given as a sequence tags and text *)
+(* Formatted text is a sequence of tags and text *)
 (* The tag changes the formatting after it, and the text appends something *)
+(* There may be adjacent text elements in the list. *)
 type 't token =
   | Tag of 't tag
   | Text of string

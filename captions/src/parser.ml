@@ -120,18 +120,15 @@ let optional (a: 'a t): 'a option t =
         | Some a_ -> Ok a_
         | None -> Error ()))
 
-(* Repeated field using explicit loop *)
 let repeated (a: 'a t): 'a list t =
   Codec.make
     ~try_decode:(fun input ->
-      let outputs: 'a list ref = ref [] in
-      let rec loop input =
+      let rec decode prev input =
         match Codec.try_decode a input with
-        | Error _ -> ([], input)
-        | Ok (output, tail) ->
-            outputs := output :: !outputs;
-            loop tail in
-      let (rev_outputs, tail) = loop input in
+        | Error _ -> (prev, input)
+        | Ok (output, tail) -> decode (output :: prev) tail
+      in
+      let (rev_outputs, tail) = decode [] input in
       Ok (List.rev rev_outputs, tail))
     ~encode:(fun (items, tail) ->
       let output = ref tail in
