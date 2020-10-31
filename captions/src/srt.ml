@@ -1,8 +1,108 @@
 type seconds = Track.seconds
 type ass_tag = string
+
+(* Parsing almost-HTML. *)
+(* Tags don't have to be correctly nested. *)
+module Html = struct
+  type attrs = string Js.Dict.t
+  type tag =
+    (* All strings got lowercased *)
+    | Open of string * attrs
+    | Close of string
+
+  let tag_name_parser: string Parser.t =
+    Parser.(easy_re0 "[a-zA-Z][a-zA-Z0-9]*" |> postprocess)
+      (Codec.pure
+        ~decode:String.lowercase_ascii
+        ~encode:Util.id)
+
+  let quoted_parser left pat right: string Parser.t =
+    let ( * ) = Parser.pair in
+    Parser.(
+      expect left *
+      postprocess
+        (re_match (Js.Re.fromStringWithFlags ("^(?:" ^ pat ^ ")") ~flags:"g"))
+        (Codec.pure
+          ~decode:(fun m -> Js.Array.unsafe_get m 1 |> Js.Nullable.toOption |> Option.value_exn)
+          ~encode:(fun s -> [|(Js.Nullable.return s)|])) *
+      expect right
+      |> first |> second)
+
+  let attrs_parser: (string * string) Parser.t =
+    let ( * ) = Parser.pair in
+    (* Attribute name *)
+    Parser.(easy_re0 "[^\\t\\n\\f />\"'=]+" * Ocaml.option (
+      (* Attribute value *)
+      (* We're not decoding HTML entities - too much work *)
+      expect "\\s*=\\s*" * (
+        (* Unquoted *)
+        fallback
+          (quoted_parser "\"" "[^\"]*" "\"")
+          (fallback
+            (quoted_parser "" "[^ \\n\\r\\f\\t\"'=<>`]+" "")
+            (quoted_parser "'" "[^']*" "'")))
+      |> second) |> postprocess)
+      (Codec.pure
+        ~decode:(fun (name, value) -> (name, Option.value ~default:"" value))
+        ~encode:(fun (name, value) -> (name, Some value)))
+
+  let open_parser: (string * string Js.Dict.t) Parser.t =
+    let ( * ) = Parser.pair in
+    Parser.(expect "<" * tag_name_parser * Ocaml.list (pair (easy_expect_re ~default:" " ~re:"\\s*") attrs_parser |> second) * expect ">" |> first |> postprocess)
+      (Codec.pure
+        ~decode:(fun (((), tag_name), attrs) ->
+          (tag_name, Js.Dict.fromList attrs))
+        ~encode:(fun (tag_name, attrs) ->
+          (((), tag_name), Js.Dict.entries attrs |> Array.to_list)))
+
+  let close_parser: string Parser.t =
+    let ( * ) = Parser.pair in
+    Parser.(expect "</" * tag_name_parser * easy_expect_re ~default:"" ~re:"\\s*" * expect ">" |> first |> first |> second)
+
+  let tag_parser: tag Parser.t =
+    Parser.Ocaml.result open_parser close_parser
+    |> Parser.Ocaml.map
+      ~decode:(fun result ->
+        match result with
+        | Ok (name, attrs) -> Open (name, attrs)
+        | Error name -> Close name)
+      ~encode:(fun tag ->
+        match tag with
+        | Open (name, attrs) -> Ok (name, attrs)
+        | Close name -> Error name)
+
+  (* type style = attrs Js.Array.t Js.Dict.t *)
+  let default_style () = Js.Dict.fromList []
+
+  let obj_assign_many: 'a Js.Dict.t Js.Array.t -> 'a Js.Dict.t =
+    [%raw {|
+      function obj_assign_many(args) {
+        return Object.assign({}, ...args);
+      }
+    |}]
+
+  let apply style tag =
+    match tag with
+    | Open (name, attrs) ->
+        let a = Js.Dict.get style name
+          |> Option.value ~default:[||]
+        in
+        let _ = Js.Array.push attrs a in
+        Js.Dict.set style name a;
+        obj_assign_many a
+    | Close name ->
+        let a = Js.Dict.get style name
+          |> Option.value ~default:[||]
+        in
+        if Array.length a > 0
+        then let _ = Js.Array.pop a in ();
+        else ();
+        obj_assign_many a
+end
+(* Unrecognized tags *)
 type nonstandard_tag =
-  | Special of string
-  | Ass_tag of ass_tag
+  | Ass of ass_tag
+  | Html of Html.tag
 type token = nonstandard_tag Track.token
 type text = token list
 type super_cue = nonstandard_tag Track.cue
@@ -44,34 +144,59 @@ let time_parser: seconds Parser.t =
         (((hh, mm), ss), mmm)
       ))
 
-let ass_tag_codec: (string, ass_tag) Codec.t =
+let ass_tag_codec: (string, (Style.t, ass_tag) result) Codec.t =
+  (* TODO *)
   Codec.pure
-    ~decode:(fun s ->
-      match s with
-      | _ -> s)
+    ~decode:(fun s -> Error s)
     ~encode:(fun x ->
       match x with
-      | s -> s)
+      | Ok _style -> failwith ""
+      | Error tag -> tag)
+
+exception Assertion_error
 
 let text_parser: text Parser.t =
   let ( * ) = Parser.pair in
   let tag = Parser.((expect "{\\" * (postprocess (easy_re0 "[^{}]*") ass_tag_codec) * expect "}") |> first |> second) in
   let special = Parser.(expect "\\" * easy_re0 "[nNh]" |> second) in
   (* Fallback: don't match into a tag *)
-  let plain = Parser.(easy_re0 "(?:(?!\\{\\\\|\\\\[nNh])(?:[^a]|a))+|[^a]|a") in
-  Parser.Ocaml.(result tag (result special plain))
-  |> Parser.Ocaml.map
-    ~decode:(fun x: token ->
-      match x with
-      | Ok tag -> Tag (Unrecognized (Ass_tag tag))
-      | Error (Ok special) -> Tag (Unrecognized (Special special))
-      | Error (Error text) -> Text text)
-    ~encode:(fun x ->
-      match x with
-      | Tag (Unrecognized (Ass_tag tag)) -> Ok tag
-      | Tag (Unrecognized (Special special)) -> Error (Ok special)
-      | Text text -> Error (Error text))
+  let plain = Parser.(easy_re0 "(?:(?!\\{\\\\|\\\\[nNh]|</?[a-zA-Z])(?:[^a]|a))+|[^a]|a") in
+  Parser.Ocaml.(result
+    (* ASS format *)
+    (result tag special)
+    (result Html.tag_parser plain))
   |> Parser.Ocaml.list
+  |> Parser.Ocaml.map
+    ~decode:(fun tokens ->
+      let html_style = Html.default_style () in
+      tokens
+      |> List.map (fun (token: _): token ->
+          match token with
+          | Ok (Ok (Ok style)) -> Style style
+          | Ok (Ok (Error ass)) -> Unrecognized (Ass ass)
+          | Ok (Error special) ->
+              (match special with
+              | "N" -> Text "\n"
+              | "h" -> Text "\xa0"
+              (* TODO: make it \n if we are in mode \q2. *)
+              | "n" -> Text " "
+              | _ -> raise Assertion_error)
+          | Error (Ok html) ->
+              (* TODO: parse this properly *)
+              let _style = Html.apply html_style html in
+              Unrecognized (Html html)
+          | Error (Error text) -> Text text))
+    ~encode:(fun xs ->
+      xs
+      |> List.map (fun (x: token) ->
+          let _html_style = Html.default_style () in
+          match x with
+          (* TODO: decide between ASS and HTML style *)
+          | Style style -> Ok (Ok (Ok style))
+          | Unrecognized (Ass ass) -> Ok (Ok (Error ass))
+          | Unrecognized (Html html) -> Error (Ok html)
+          | Text text -> Error (Error text)
+          ))
 
 let cue_parser: cue Parser.t =
   let remove_duplicate_newlines_on_encode: (string, string) Codec.t =
@@ -87,7 +212,7 @@ let cue_parser: cue Parser.t =
     (* First line: sequence *)
     seq_parser *
     (* Second line: timestamps and position *)
-    (term time_parser (easy_expect_re0 ~re:"\\s*-->\\s*" ~default:" --> ")) * time_parser *
+    (term time_parser (easy_expect_re ~re:"\\s*-->\\s*" ~default:" --> ")) * time_parser *
       (term (optional (easy_re0 " .*")) any_newline) *
     (* Rest of the lines: text *)
     postprocess

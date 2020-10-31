@@ -35,10 +35,12 @@ val second: (unit * 'a) t -> 'a t
 val ignore: 'a -> 'a t -> unit t
 (* Decode to the serialized representation *)
 val serialized: 'a t -> string t
+(* Decode with the first if possible. Encode with the first. *)
+val fallback: 'a t -> 'a t -> 'a t
 
 (* Easy version that turns "my_regex" into /^(?:my_regex)/g *)
 val easy_re0: string -> string t
-val easy_expect_re0: re:string -> default:string -> unit t
+val easy_expect_re: re:string -> default:string -> unit t
 
 (* Convert to codec *)
 val at_end: 'a t -> (string, 'a) Codec.t

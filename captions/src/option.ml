@@ -8,3 +8,8 @@ let is_some t =
   match t with
   | Some _ -> true
   | None -> false
+
+let value t ~default =
+  match t with
+  | Some x -> x
+  | None -> default

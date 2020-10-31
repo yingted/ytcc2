@@ -164,6 +164,15 @@ let serialized (t: 'a t): string t =
       | "" -> y
       | _ -> raise (Trailing_garbage tail)))
 
+let fallback a b =
+  postprocess (try_catch a b)
+    (Codec.pure
+      ~decode:(fun r ->
+        match r with
+        | Ok x -> x
+        | Error x -> x)
+      ~encode:(fun x -> Ok x))
+
 let at_end a =
   Codec.stack a (Codec.make
     ~try_decode:(fun (output, tail) ->
@@ -174,12 +183,12 @@ let at_end a =
 
 let easy_re0 pat: string t =
   re_match0 (Js.Re.fromStringWithFlags ("^(?:" ^ pat ^ ")") ~flags:"g")
-let easy_expect_re0 ~re ~default =
+let easy_expect_re ~re ~default =
   re_expect (Js.Re.fromStringWithFlags ("^(?:" ^ re ^ ")") ~flags:"g") default
 let any_newline: unit t =
-  easy_expect_re0 ~re:"\\r\\n?|\\n" ~default:"\n"
+  easy_expect_re ~re:"\\r\\n?|\\n" ~default:"\n"
 let any_newline_or_eof: unit t =
-  easy_expect_re0 ~re:"\\r\\n?|\\n|$" ~default:"\n"
+  easy_expect_re ~re:"\\r\\n?|\\n|$" ~default:"\n"
 
 module Text = struct
   let i = text_int

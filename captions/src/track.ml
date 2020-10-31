@@ -1,10 +1,8 @@
 type seconds = float
-(* Tags are assumed to be pure, so we don't need the Lens_array.t *)
-type 't tag =
-  | Unrecognized of 't
 type 't token =
-  | Tag of 't tag
   | Text of string
+  | Style of Style.v
+  | Unrecognized of 't
 type 't text = 't token list
 type 't cue = {
   start: seconds;

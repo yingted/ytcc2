@@ -1,15 +1,14 @@
 (* Time, relative to the start of the video *)
 type seconds = float
 
-(* Tags are assumed to be pure, so we don't need the Lens_array.t *)
-type 't tag =
-  | Unrecognized of 't
 (* Formatted text is a sequence of tags and text *)
 (* The tag changes the formatting after it, and the text appends something *)
 (* There may be adjacent text elements in the list. *)
+(* Tokens are trivially copyable, no Lens_array.t needed. *)
 type 't token =
-  | Tag of 't tag
   | Text of string
+  | Style of Style.v
+  | Unrecognized of 't
 type 't text = 't token list
 
 type 't cue = {
