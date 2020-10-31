@@ -21,6 +21,10 @@ import {CaptionsEditor} from './editor.js';
 const video = new YouTubeVideo('gKqypLvwd70');
 const editor = new CaptionsEditor(video);
 
+// For debugging:
+window.video = video;
+window.editor = editor;
+
 render(html`
   ${video.render()}
   ${editor.render()}

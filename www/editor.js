@@ -19,6 +19,21 @@ import {EditorView, keymap} from "@codemirror/next/view"
 import {defaultKeymap} from "@codemirror/next/commands"
 import {history, historyKeymap} from "@codemirror/next/history"
 import {html} from 'lit-html';
+import {StreamSyntax} from "@codemirror/next/stream-syntax"
+import {defaultHighlighter} from "@codemirror/next/highlight"
+
+class TimedTextStreamParser {
+  token(stream, state, editorState) {
+    if (stream.sol()) {
+      if (stream.match(/^\d+:\d{2}(?::\d{2})?(?:\.\d{0,3})?/) !== null) {
+        // I guess it's technically a number?
+        return 'number';
+      }
+    }
+    stream.skipToEnd();
+    return null;
+  }
+}
 
 export class CaptionsEditor {
   /**
@@ -29,13 +44,15 @@ export class CaptionsEditor {
     this.video = video;
     this.view = new EditorView({
       state: EditorState.create({
-        doc: 'Transcript goes here',
+        doc: '0:00 hello\n0:12.34 testing',
         extensions: [
           history(),
           keymap([
             ...defaultKeymap,
             ...historyKeymap,
           ]),
+          new StreamSyntax(new TimedTextStreamParser()).extension,
+          defaultHighlighter,
         ],
       }),
     });
