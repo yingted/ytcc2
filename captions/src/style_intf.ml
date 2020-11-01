@@ -43,6 +43,7 @@ module Attr = struct
     (* Styles *)
     | Font_style: cea708_style attr
     | Font_script: script attr
+    (* Stored in rem (1.0 = default font size) *)
     | Font_size: float attr
     | Border_style: cea708_border attr
 

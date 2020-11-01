@@ -21,6 +21,9 @@ let to_list m =
   |> List.map (fun (Attr.Attr k, Attr.Value v) ->
       Attr.Binding (k, Obj.magic v))
 
+let singleton k v =
+  Attr.Map.singleton (Attr.Attr k) (Attr.Value v)
+
 let set k v t =
   let v = v |> Option.map (fun x -> Attr.Value x) in
   Attr.Map.update (Attr k) (fun _ -> v) t

@@ -54,7 +54,8 @@ describe "roundtrips" (fun () ->
 describe "parses tags" (fun () ->
   let t tag =
     test tag (fun () ->
-      expect(roundtrip Srt.ass_tag_codec tag) |> toEqual (Ok tag))
+      expect(Codec.try_decode Srt.ass_tag_codec tag |> Result.error)
+      |> toEqual (None))
   in
 
   (* http://docs.aegisub.org/3.2/ASS_Tags/ *)

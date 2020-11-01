@@ -12,6 +12,7 @@ val empty : t
 val from_list : Attr.binding' list -> t
 (* Convert to list. *)
 val to_list : t -> Attr.binding' list
+val singleton : 'a Attr.attr -> 'a option -> t
 
 (* Get or set the attribute values *)
 val get : 'a Attr.attr -> t -> 'a option
