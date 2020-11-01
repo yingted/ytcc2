@@ -9,6 +9,7 @@ end
 
 type t = Attr.value' Attr.Map.t
 
+let empty = Attr.Map.empty
 let from_list kvs =
   List.fold_right
     (fun kv t ->

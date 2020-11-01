@@ -6,3 +6,4 @@ val error: ('ok, 'err) t -> 'err option
 val return: 'a -> ('a, 'err) t
 val bind: ('a, 'err) t -> ('a -> ('b, 'err) t) -> ('b, 'err) t
 val map: ('a, 'err) t -> f:('a -> 'b) -> ('b, 'err) t
+val value: ('a, 'e) result -> default:'a -> 'a

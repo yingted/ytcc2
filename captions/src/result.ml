@@ -32,3 +32,8 @@ let map r ~f =
   match r with
   | Ok x -> Ok (f x)
   | Error e -> Error e
+
+let value r ~default =
+  match r with
+  | Ok x -> x
+  | Error _ -> default

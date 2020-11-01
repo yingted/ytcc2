@@ -7,6 +7,7 @@ end
 (* A set of attr bindings representing the computed style. *)
 type t
 
+val empty : t
 (* Convert from list, preferring first bindings (near list head). *)
 val from_list : Attr.binding' list -> t
 (* Convert to list. *)
