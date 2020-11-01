@@ -1,20 +1,28 @@
+(* This interface is for any captions track to implement. *)
+
 (* Time, relative to the start of the video *)
 type seconds = float
 
-(* Formatted text is a sequence of tags and text *)
-(* The tag changes the formatting after it, and the text appends something *)
-(* There may be adjacent text elements in the list. *)
-(* Tokens are trivially copyable, no Lens_array.t needed. *)
+(* Captions formats are pretty nasty, with hierarchical styles. *)
+(* I've used the analogy of terminal emulators here, where each cue is *)
+(* the output of a program that outputted some text and escape sequences. *)
 type 't token =
-  | Text of string
-  | Style of Style.t
+  (* Append some text. *)
+  | Append of string
+  (* Change the text style. *)
+  | Set_style of Style.t
+  (* Wait until this time (karaoke) *)
+  (* | Wait_until of seconds *)
+  (* Window resize/move/restyle *)
+  (* | Reconfigure_window of cea708_window *)
+  (* Unrecognized data *)
   | Unrecognized of 't
-type 't text = 't token list
 
+(* Text that shares the same window. *)
 type 't cue = {
   start: seconds;
   end_: seconds;
-  text: 't text;
+  text: 't token list;
 }
 
 (* This allocator is pure, but for some reason I need unit here *)

@@ -1,7 +1,7 @@
 type seconds = float
 type 't token =
   | Text of string
-  | Style of Style.v
+  | Style of Style.t
   | Unrecognized of 't
 type 't text = 't token list
 type 't cue = {

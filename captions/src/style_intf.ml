@@ -57,6 +57,19 @@ module Attr = struct
     (* Ruby and bouten (set together) *)
     | Ruby: (ruby * bool) attr
 
+  (* type cea708_window = { *)
+  (*   print_direction: `Left_to_right | `Right_to_left | `Top_to_bottom | `Bottom_to_top; *)
+  (*   scroll_direction: `Left_to_right | `Right_to_left; *)
+  (*   justification: `Left | `Center | `Right; *)
+  (*   num_rows: int; *)
+  (*   num_cols: int; *)
+  (*   fill: color; *)
+  (*   fill_alpha: alpha8; *)
+  (*   border_type: ...; *)
+  (*   border: color; *)
+  (*   border_alpha: alpha8; *)
+  (* } *)
+
   type attr' = Attr: 'a attr -> attr'
   type value' = Value: 'a -> value'
   type binding' = Binding: 'a attr * 'a -> binding'
