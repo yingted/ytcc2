@@ -13,3 +13,8 @@ let value t ~default =
   match t with
   | Some x -> x
   | None -> default
+
+let map f t =
+  match t with
+  | Some x -> Some (f x)
+  | None -> None

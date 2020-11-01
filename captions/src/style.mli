@@ -1,24 +1,25 @@
-(* CSS algebra *)
-(* Each key has an associated value type and diff type. *)
-(* THe diff type only applies if they are different. *)
-type ('v, 'd) k =
-  | Bold: (bool, bool) k
-  | Italic: (bool, bool) k
-  | Underline: (bool, bool) k
-  | Strikethrough: (bool, bool) k
+module Attr : sig
+  (* A single style attribute, like "font-family: Arial;". *)
+  include (module type of Style_intf.Attr)
+  (* module Diff : (Diff_intf.S with type value = value') *)
+  module Map : Map.S with type key = t
+end
 
-(* A map of attribute to their values *)
-type v
-type t = v
-val none: v
-(* Attribute access: *)
-val at: ('v, 'd) k -> (v, 'v option) Lens.t
+module Style : sig
+  (* A set of attr bindings representing the computed style. *)
+  type t
+  (* module Diff : (Diff_intf.S with type value = t) *)
 
+  (* Get or set the attribute values *)
+  val get: 'a Attr.attr -> t -> 'a option
+  val set: 'a Attr.attr -> 'a option -> t -> t
 
-(* A map of attribute to diffs *)
-(* type d *)
-(* val id: d *)
-(* Diffing: ab = diff a b *)
-val diff: ('v, 'd) k -> 'v -> 'v -> 'd option
-(* Patching: b = patch ab a *)
-val patch: ('v, 'd) k -> 'd -> 'v -> 'v
+  (* Same thing, but as a Diff.t *)
+  (* Advantage of a Diff.t over t -> t is that we can print it to the screen and file. *)
+  val set': 'a Attr.attr -> 'a option -> Diff.t
+
+  (* Apply multiple attributes, taking the first if there are conflicts. *)
+  val merge_first: Diff.t list -> Diff.t
+
+  val to_list: t -> Attr.binding' list
+end

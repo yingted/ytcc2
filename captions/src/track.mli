@@ -7,7 +7,7 @@ type seconds = float
 (* Tokens are trivially copyable, no Lens_array.t needed. *)
 type 't token =
   | Text of string
-  | Style of Style.v
+  | Style of Style.t
   | Unrecognized of 't
 type 't text = 't token list
 
