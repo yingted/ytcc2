@@ -20,6 +20,7 @@ val encode: ('co, 'dec) t -> 'dec -> 'co
 
 (* Codec combinators *)
 val stack: ('a, 'b) t -> ('b, 'c) t -> ('a, 'c) t
+val fallback : ('a, 'b) t -> ('a, 'b) t -> ('a , 'b) t
 
 
 (* Common codecs *)

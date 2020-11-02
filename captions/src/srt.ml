@@ -1,5 +1,3 @@
-type seconds = Track.seconds
-
 (* Unrecognized tags *)
 type raw = string
 type cue = raw Track.cue
@@ -20,7 +18,7 @@ let idivmod (a: int) (b: int): int * int =
   (q, int_of_float r)
 
 exception Invalid_time of string
-let time_parser: seconds Parser.t =
+let time_parser: Track.seconds Parser.t =
   Codec.make
     ~try_decode:(fun s ->
       match Scanf.sscanf s "%02d:%02d:%02d,%03d%n"

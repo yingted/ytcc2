@@ -77,3 +77,11 @@ let stack lower higher = {
     | Error e -> Error e);
   encode = (fun x -> lower.encode (higher.encode x));
 }
+
+let fallback a b = {
+  try_decode = (fun s ->
+    match a.try_decode s with
+    | Ok x -> Ok x
+    | Error _ -> b.try_decode s);
+  encode = a.encode;
+}

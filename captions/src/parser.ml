@@ -164,14 +164,7 @@ let serialized (t: 'a t): string t =
       | "" -> y
       | _ -> raise (Trailing_garbage tail)))
 
-let fallback a b =
-  postprocess (try_catch a b)
-    (Codec.pure
-      ~decode:(fun r ->
-        match r with
-        | Ok x -> x
-        | Error x -> x)
-      ~encode:(fun x -> Ok x))
+let fallback = Codec.fallback
 
 let at_end a =
   Codec.stack a (Codec.make
