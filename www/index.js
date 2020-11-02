@@ -23,6 +23,10 @@ app.use(express.static('static'));
 app.get('/', (req, res) => {
   const params = {
     video: req.query.video,
+    captions:
+      require('fs').readFileSync(
+        process.env.HOME + '/Downloads/CPC Closed Captioning Demo Video-BbqPe-IceP4.en.vtt',
+        {encoding: 'utf-8'}),
   };
   renderToStream(html`
     <!DOCTYPE html>

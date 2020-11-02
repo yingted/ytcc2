@@ -18,7 +18,8 @@ import {html, render} from 'lit-html';
 import {YouTubeVideo} from './youtube.js';
 import {CaptionsEditor} from './editor.js';
 
-const video = new YouTubeVideo('gKqypLvwd70');
+// const video = new YouTubeVideo('gKqypLvwd70');
+const video = new YouTubeVideo('BbqPe-IceP4');
 const editor = new CaptionsEditor(video);
 
 // For debugging:
