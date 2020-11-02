@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
     video: req.query.video,
     captions:
       require('fs').readFileSync(
-        process.env.HOME + '/Downloads/CPC Closed Captioning Demo Video-BbqPe-IceP4.en.vtt',
+        process.env.HOME + '/Downloads/BbqPe-IceP4.en.json3',
         {encoding: 'utf-8'}),
   };
   renderToStream(html`
