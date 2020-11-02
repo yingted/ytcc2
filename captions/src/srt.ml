@@ -27,7 +27,7 @@ let time_parser: seconds Parser.t =
         (fun hh mm ss mmm n ->
           (
             float_of_int (hh * 3600 + mm * 60 + ss) +. float_of_int mmm *. 0.001,
-            String.sub s n (String.length s)))
+            String.sub s n (String.length s - n)))
       with
       | (secs, tail) -> Ok (secs, tail)
       | exception Scanf.Scan_failure err -> Error (Invalid_time err))
@@ -42,7 +42,9 @@ let with_raw p =
   Codec.make
     ~try_decode:(fun s ->
       match Codec.try_decode p s with
-      | Ok (output, tail) -> Ok ((output, Some s), tail)
+      | Ok (output, tail) ->
+          let head = String.sub s 0 (String.length s - String.length tail) in
+          Ok ((output, Some head), tail)
       | Error error -> Error error)
     ~encode:(fun ((output, raw), tail) ->
       (match raw with
@@ -173,35 +175,49 @@ let text_parser: text Parser.t =
           (* Plain text *)
           | Error (Error text) -> Append text))
     ~encode:(fun xs ->
-      let styles = ref Styles.empty in
+      (* The most recent style *)
+      let last_set_style = ref Styles.empty in
+      (* The most recent style that was used for Append *)
+      let last_append_style = ref Styles.empty in
       (* List of text and styles, some of which have a raw repr. *)
       (* Preserve the raw reprs, but possibly add styles around them. *)
       xs
+      (* Ensure we close all our tags *)
+      |> (fun x -> x @ [(Set_style Style.empty, None); (Append "", None)])
       |> List.map (fun ((x : Track.token), (raw : string option)) : ((_, _) result * string option) list ->
-          let old_style = !styles in
           (* Interpret the token, ignoring raw. *)
-          let append_ops : (_ * string option) list =
-            match x with
-            | Set_style new_style ->
-                styles := Styles.of_style new_style;
-                []
-            | Append text -> [(Error (Error text), raw)]
-          in
+          match x with
+          | Set_style new_style ->
+              last_set_style := Styles.of_style new_style;
+              []
+          | Append text ->
+              let append_ops : (_ * string option) list = [(Error (Error text), raw)] in
 
-          (* Diff the old and new styles. *)
-          let close_tags = ref @@ Styles.close_tags old_style in
-          let open_tags = ref @@ Styles.open_tags !styles in
-          let old_open_tags = ref @@ Styles.open_tags old_style in
-          while !open_tags != [] && !old_open_tags != [] && List.hd !open_tags = List.hd !old_open_tags do
-            open_tags := List.tl !open_tags;
-            old_open_tags := List.tl !old_open_tags;
-            close_tags := List.tl !close_tags;
-          done;
+              (* Diff the old and new styles. *)
+              let old_open_tags = ref @@ Styles.open_tags !last_append_style in
+              let close_tags = ref @@ Styles.close_tags !last_append_style in
+              let open_tags = ref @@ Styles.open_tags !last_set_style in
+              last_append_style := !last_set_style;
 
-          (* Change the style and append some text. *)
-          (* Only one of the style change and append types should be here at any time. *)
-          let wrap tags = tags |> List.map (fun tag -> (Error (Ok tag), None)) in
-          (wrap !close_tags) @ (wrap !open_tags) @ append_ops
+              (* Close tags are stored leaves first, open tags are roots first. *)
+              (* Temporarily flip it to roots first so we can compress away the common roots. *)
+              close_tags := List.rev !close_tags;
+              while !open_tags != [] && !old_open_tags != [] && List.hd !open_tags = List.hd !old_open_tags do
+                open_tags := List.tl !open_tags;
+                old_open_tags := List.tl !old_open_tags;
+                close_tags := List.tl !close_tags;
+              done;
+              close_tags := List.rev !close_tags;
+
+              (* Change the style and append some text. *)
+              (* Only one of the style change and append types should be here at any time. *)
+              let wrap tags = tags |> List.map (fun tag -> (Error (Ok tag), None)) in
+              (wrap !close_tags) @
+              (* [(Error (Error ""), Some "(close)")] @ *)
+              (wrap !open_tags) @
+              (* [(Error (Error ""), Some "(open)")] @ *)
+              append_ops
+              (* @ [(Error (Error ""), Some "(append)")] *)
         )
       |> List.flatten)
 

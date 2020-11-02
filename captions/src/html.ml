@@ -13,11 +13,7 @@ let quoted_parser left pat right: string Parser.t =
   let ( * ) = Parser.pair in
   Parser.(
     expect left *
-    postprocess
-      (re_match (Js.Re.fromStringWithFlags ("^(?:" ^ pat ^ ")") ~flags:"g"))
-      (Codec.pure
-        ~decode:(fun m -> Js.Array.unsafe_get m 1 |> Js.Nullable.toOption |> Option.value_exn)
-        ~encode:(fun s -> [|(Js.Nullable.return s)|])) *
+    easy_re0 pat *
     expect right
     |> first |> second)
 
@@ -27,7 +23,7 @@ let attrs_parser: (string * string) Parser.t =
   Parser.(easy_re0 "[^\\t\\n\\f />\"'=]+" * Ocaml.option (
     (* Attribute value *)
     (* We're not decoding HTML entities - too much work *)
-    expect "\\s*=\\s*" * (
+    easy_expect_re ~default:"=" ~re:"\\s*=\\s*" * (
       (* Unquoted *)
       fallback
         (quoted_parser "\"" "[^\"]*" "\"")
