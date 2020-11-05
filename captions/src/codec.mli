@@ -27,6 +27,7 @@ val fallback : ('a, 'b) t -> ('a, 'b) t -> ('a , 'b) t
 val id: ('a, 'a) t
 val text_int: (string, int) t
 val text_float: (string, float) t
+val json : (string, Js.Types.obj_val) t
 
 (* Assertion *)
 val expect: 'co -> ('co, unit) t

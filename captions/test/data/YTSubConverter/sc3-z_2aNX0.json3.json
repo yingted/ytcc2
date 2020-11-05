@@ -1,0 +1,2423 @@
+{
+  "wireMagic": "pb3",
+  "pens": [ {
+  
+  }, {
+    "fcForeColor": 14899090,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 824772,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16711422,
+    "bcBackColor": 0,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 824772,
+    "bcBackColor": 0,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 14899090,
+    "bcBackColor": 0,
+    "boBackAlpha": 254
+  }, {
+    "bAttr": 1,
+    "fcForeColor": 16711422,
+    "bcBackColor": 0,
+    "boBackAlpha": 254
+  }, {
+    "bAttr": 1,
+    "szPenSize": 500,
+    "fcForeColor": 16711422,
+    "bcBackColor": 0,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 890048,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 14506129,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "bAttr": 1,
+    "fcForeColor": 12632256,
+    "foForeAlpha": 132,
+    "boBackAlpha": 0
+  }, {
+    "bAttr": 1,
+    "etEdgeType": 3,
+    "fcForeColor": 16711422,
+    "bcBackColor": 14304113,
+    "boBackAlpha": 195,
+    "ecEdgeColor": 13959282
+  }, {
+    "bAttr": 1,
+    "szPenSize": 233,
+    "fcForeColor": 2262740,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "bAttr": 1,
+    "szPenSize": 233,
+    "fcForeColor": 825023,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "bAttr": 1,
+    "szPenSize": 500,
+    "fcForeColor": 16711422,
+    "bcBackColor": 16713486,
+    "boBackAlpha": 254
+  }, {
+    "bAttr": 1,
+    "szPenSize": 233,
+    "fcForeColor": 16711422,
+    "boBackAlpha": 0
+  }, {
+    "bAttr": 1,
+    "szPenSize": 233,
+    "fcForeColor": 14946675,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "bAttr": 1,
+    "szPenSize": 340,
+    "fcForeColor": 14637202,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "bAttr": 1,
+    "szPenSize": 233,
+    "fcForeColor": 16711422,
+    "foForeAlpha": 18,
+    "boBackAlpha": 0
+  }, {
+    "bAttr": 1,
+    "szPenSize": 233,
+    "fcForeColor": 16711422,
+    "foForeAlpha": 54,
+    "boBackAlpha": 0
+  }, {
+    "bAttr": 1,
+    "szPenSize": 233,
+    "fcForeColor": 16711422,
+    "foForeAlpha": 91,
+    "boBackAlpha": 0
+  }, {
+    "bAttr": 1,
+    "szPenSize": 233,
+    "fcForeColor": 16711422,
+    "foForeAlpha": 127,
+    "boBackAlpha": 0
+  }, {
+    "bAttr": 1,
+    "szPenSize": 233,
+    "fcForeColor": 16711422,
+    "foForeAlpha": 163,
+    "boBackAlpha": 0
+  }, {
+    "bAttr": 1,
+    "szPenSize": 233,
+    "fcForeColor": 16711422,
+    "foForeAlpha": 200,
+    "boBackAlpha": 0
+  }, {
+    "bAttr": 1,
+    "szPenSize": 233,
+    "fcForeColor": 16711422,
+    "foForeAlpha": 236,
+    "boBackAlpha": 0
+  }, {
+    "bAttr": 1,
+    "szPenSize": 180,
+    "fcForeColor": 13565952,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "bAttr": 1,
+    "szPenSize": 233,
+    "etEdgeType": 3,
+    "fcForeColor": 16711422,
+    "boBackAlpha": 0,
+    "ecEdgeColor": 0
+  }, {
+    "bAttr": 1,
+    "szPenSize": 233,
+    "fcForeColor": 16711422,
+    "bcBackColor": 3764082,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 15033755,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 15168420,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 15368621,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 15503286,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 15637695,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 15838152,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 15972561,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16107482,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16307683,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16442092,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16577013,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16711422,
+    "bcBackColor": 16777215,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16711422,
+    "bcBackColor": 1315860,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16711422,
+    "bcBackColor": 2631720,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16711422,
+    "bcBackColor": 4013373,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16711422,
+    "bcBackColor": 5329233,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16711422,
+    "bcBackColor": 6710886,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16711422,
+    "bcBackColor": 8026746,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16711422,
+    "bcBackColor": 9342606,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16711422,
+    "bcBackColor": 10724259,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16711422,
+    "bcBackColor": 12040119,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16711422,
+    "bcBackColor": 13421772,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16711422,
+    "bcBackColor": 14737632,
+    "boBackAlpha": 254
+  }, {
+    "fcForeColor": 16711422,
+    "bcBackColor": 16053492,
+    "boBackAlpha": 254
+  }, {
+    "szPenSize": 0,
+    "fcForeColor": 16711422,
+    "bcBackColor": 0,
+    "boBackAlpha": 95
+  }, {
+    "szPenSize": 0,
+    "fcForeColor": 14899090,
+    "bcBackColor": 0,
+    "boBackAlpha": 95
+  }, {
+    "szPenSize": 0,
+    "fcForeColor": 824772,
+    "bcBackColor": 0,
+    "boBackAlpha": 95
+  }, {
+    "etEdgeType": 3,
+    "fcForeColor": 16711422,
+    "bcBackColor": 10290191,
+    "boBackAlpha": 254,
+    "ecEdgeColor": 0
+  }, {
+    "iAttr": 1,
+    "fcForeColor": 0,
+    "foForeAlpha": 1,
+    "boBackAlpha": 0
+  } ],
+  "wsWinStyles": [ {
+  
+  }, {
+    "juJustifCode": 2,
+    "pdPrintDir": 0,
+    "sdScrollDir": 0
+  }, {
+    "juJustifCode": 0,
+    "pdPrintDir": 0,
+    "sdScrollDir": 0
+  }, {
+    "juJustifCode": 1,
+    "pdPrintDir": 0,
+    "sdScrollDir": 0
+  }, {
+    "juJustifCode": 0,
+    "pdPrintDir": 3,
+    "sdScrollDir": 0
+  } ],
+  "wpWinPositions": [ {
+  
+  }, {
+    "apPoint": 7,
+    "ahHorPos": 50,
+    "avVerPos": 100
+  }, {
+    "apPoint": 4,
+    "ahHorPos": 50,
+    "avVerPos": 72
+  }, {
+    "apPoint": 6,
+    "ahHorPos": 6,
+    "avVerPos": 32
+  }, {
+    "apPoint": 6,
+    "ahHorPos": 6,
+    "avVerPos": 64
+  }, {
+    "apPoint": 6,
+    "ahHorPos": 6,
+    "avVerPos": 97
+  }, {
+    "apPoint": 6,
+    "ahHorPos": 5,
+    "avVerPos": 32
+  }, {
+    "apPoint": 6,
+    "ahHorPos": 5,
+    "avVerPos": 65
+  }, {
+    "apPoint": 6,
+    "ahHorPos": 5,
+    "avVerPos": 98
+  }, {
+    "apPoint": 6,
+    "ahHorPos": 2,
+    "avVerPos": 31
+  }, {
+    "apPoint": 6,
+    "ahHorPos": 2,
+    "avVerPos": 65
+  }, {
+    "apPoint": 6,
+    "ahHorPos": 2,
+    "avVerPos": 97
+  }, {
+    "apPoint": 6,
+    "ahHorPos": 2,
+    "avVerPos": 34
+  }, {
+    "apPoint": 6,
+    "ahHorPos": 2,
+    "avVerPos": 64
+  }, {
+    "apPoint": 8,
+    "ahHorPos": 97,
+    "avVerPos": 33
+  }, {
+    "apPoint": 8,
+    "ahHorPos": 97,
+    "avVerPos": 65
+  }, {
+    "apPoint": 8,
+    "ahHorPos": 97,
+    "avVerPos": 96
+  }, {
+    "apPoint": 1,
+    "ahHorPos": 80,
+    "avVerPos": 72
+  }, {
+    "apPoint": 1,
+    "ahHorPos": 49,
+    "avVerPos": 17
+  }, {
+    "apPoint": 7,
+    "ahHorPos": 73,
+    "avVerPos": 18
+  }, {
+    "apPoint": 7,
+    "ahHorPos": 50,
+    "avVerPos": 62
+  }, {
+    "apPoint": 7,
+    "ahHorPos": 81,
+    "avVerPos": 90
+  }, {
+    "apPoint": 7,
+    "ahHorPos": 15,
+    "avVerPos": 18
+  }, {
+    "apPoint": 7,
+    "ahHorPos": 62,
+    "avVerPos": 58
+  }, {
+    "apPoint": 7,
+    "ahHorPos": 19,
+    "avVerPos": 87
+  }, {
+    "apPoint": 7,
+    "ahHorPos": 24,
+    "avVerPos": 17
+  }, {
+    "apPoint": 7,
+    "ahHorPos": 65,
+    "avVerPos": 58
+  }, {
+    "apPoint": 7,
+    "ahHorPos": 26,
+    "avVerPos": 88
+  }, {
+    "apPoint": 8,
+    "ahHorPos": 98,
+    "avVerPos": 32
+  }, {
+    "apPoint": 8,
+    "ahHorPos": 98,
+    "avVerPos": 64
+  }, {
+    "apPoint": 8,
+    "ahHorPos": 98,
+    "avVerPos": 97
+  }, {
+    "apPoint": 1,
+    "ahHorPos": 50,
+    "avVerPos": 0
+  }, {
+    "apPoint": 1,
+    "ahHorPos": 50,
+    "avVerPos": 18
+  }, {
+    "apPoint": 1,
+    "ahHorPos": 14,
+    "avVerPos": 26
+  }, {
+    "apPoint": 1,
+    "ahHorPos": 85,
+    "avVerPos": 26
+  }, {
+    "apPoint": 7,
+    "ahHorPos": 50,
+    "avVerPos": 94
+  }, {
+    "apPoint": 1,
+    "ahHorPos": 50,
+    "avVerPos": 94
+  }, {
+    "apPoint": 4,
+    "ahHorPos": 13,
+    "avVerPos": 9
+  }, {
+    "apPoint": 1,
+    "ahHorPos": 12,
+    "avVerPos": 22
+  }, {
+    "apPoint": 1,
+    "ahHorPos": 87,
+    "avVerPos": 22
+  }, {
+    "apPoint": 7,
+    "ahHorPos": 50,
+    "avVerPos": 67
+  }, {
+    "apPoint": 4,
+    "ahHorPos": 50,
+    "avVerPos": 61
+  }, {
+    "apPoint": 0,
+    "ahHorPos": 11,
+    "avVerPos": 29
+  }, {
+    "apPoint": 4,
+    "ahHorPos": 50,
+    "avVerPos": 14
+  }, {
+    "apPoint": 2,
+    "ahHorPos": 100,
+    "avVerPos": 0
+  }, {
+    "apPoint": 8,
+    "ahHorPos": 0,
+    "avVerPos": 0
+  } ],
+  "events": [ {
+    "tStartMs": 207,
+    "dDurationMs": 1769,
+    "segs": [ {
+      "utf8": "Haooo! HimeHina here!​\n​",
+      "pPenId": 1
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "Haooo! HimeHina here!",
+      "pPenId": 2
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 1976,
+    "dDurationMs": 968,
+    "segs": [ {
+      "utf8": "This time!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 2944,
+    "dDurationMs": 3136,
+    "segs": [ {
+      "utf8": "We’re going to answer the questions we got in our question box,"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 6080,
+    "dDurationMs": 767,
+    "segs": [ {
+      "utf8": "except!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 6847,
+    "dDurationMs": 768,
+    "segs": [ {
+      "utf8": "Except?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 7615,
+    "dDurationMs": 1301,
+    "segs": [ {
+      "utf8": "We’ll answer in rap"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 8916,
+    "dDurationMs": 1168,
+    "segs": [ {
+      "utf8": "Answering questions​\n​",
+      "pPenId": 1
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "Answering questions",
+      "pPenId": 2
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 10084,
+    "dDurationMs": 2835,
+    "segs": [ {
+      "utf8": "while rapping!​\n​",
+      "pPenId": 1
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "while rapping!",
+      "pPenId": 2
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 13854,
+    "dDurationMs": 1400,
+    "segs": [ {
+      "utf8": "Rapping!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 16657,
+    "dDurationMs": 1635,
+    "segs": [ {
+      "utf8": "This pumping beat"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 18292,
+    "dDurationMs": 1301,
+    "segs": [ {
+      "utf8": "This swinging heart"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 19593,
+    "dDurationMs": 968,
+    "segs": [ {
+      "utf8": "Heart, T, T..."
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 20561,
+    "dDurationMs": 1068,
+    "segs": [ {
+      "utf8": "Tick the boxes"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 21629,
+    "dDurationMs": 1700,
+    "segs": [ {
+      "utf8": "Shiritori"
+    } ],
+    "wpWinPosId": 2,
+    "wsWinStyleId": 1,
+    "pPenId": 3
+  }, {
+    "tStartMs": 27768,
+    "dDurationMs": 1936,
+    "segs": [ {
+      "utf8": "I have some questions I want to ask you"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 4
+  }, {
+    "tStartMs": 29704,
+    "dDurationMs": 1935,
+    "segs": [ {
+      "utf8": "Answer them while rapping as you should do"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 4
+  }, {
+    "tStartMs": 31639,
+    "dDurationMs": 2102,
+    "segs": [ {
+      "utf8": "Ordinary rap can go far away"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 5
+  }, {
+    "tStartMs": 33741,
+    "dDurationMs": 1969,
+    "segs": [ {
+      "utf8": "We’re doing giggle rap, HimeHina"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 5
+  }, {
+    "tStartMs": 35710,
+    "dDurationMs": 2002,
+    "segs": [ {
+      "utf8": "One, two"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 4
+  }, {
+    "tStartMs": 37712,
+    "dDurationMs": 1901,
+    "segs": [ {
+      "utf8": "Are you ready?​\n​",
+      "pPenId": 5
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "Are you ready?",
+      "pPenId": 4
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 39613,
+    "dDurationMs": 2069,
+    "segs": [ {
+      "utf8": "What is your favorite special day?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 41682,
+    "dDurationMs": 2002,
+    "segs": [ {
+      "utf8": "Let’s listen"
+    } ],
+    "wpWinPosId": 3,
+    "wsWinStyleId": 2,
+    "pPenId": 7
+  }, {
+    "tStartMs": 42216,
+    "dDurationMs": 1468,
+    "segs": [ {
+      "utf8": "to what Hime"
+    } ],
+    "wpWinPosId": 4,
+    "wsWinStyleId": 2,
+    "pPenId": 7
+  }, {
+    "tStartMs": 42717,
+    "dDurationMs": 967,
+    "segs": [ {
+      "utf8": "has to say!"
+    } ],
+    "wpWinPosId": 5,
+    "wsWinStyleId": 2,
+    "pPenId": 7
+  }, {
+    "tStartMs": 43684,
+    "dDurationMs": 2036,
+    "segs": [ {
+      "utf8": "Alright, leave it to me, this one’s easy"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 45720,
+    "dDurationMs": 1968,
+    "segs": [ {
+      "utf8": "Goes without saying that it’s the Hinamatsuri!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 47688,
+    "dDurationMs": 2002,
+    "segs": [ {
+      "utf8": "Third day of third month, festival of peaches"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 49690,
+    "dDurationMs": 2036,
+    "segs": [ {
+      "utf8": "Wishing for little girls’ health and fitness!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 51726,
+    "dDurationMs": 2002,
+    "segs": [ {
+      "utf8": "Nice one"
+    } ],
+    "wpWinPosId": 6,
+    "wsWinStyleId": 2,
+    "pPenId": 7
+  }, {
+    "tStartMs": 52226,
+    "dDurationMs": 1502,
+    "segs": [ {
+      "utf8": "Nice one"
+    } ],
+    "wpWinPosId": 7,
+    "wsWinStyleId": 2,
+    "pPenId": 7
+  }, {
+    "tStartMs": 52693,
+    "dDurationMs": 1035,
+    "segs": [ {
+      "utf8": "That’s a nice one"
+    } ],
+    "wpWinPosId": 8,
+    "wsWinStyleId": 2,
+    "pPenId": 7
+  }, {
+    "tStartMs": 53728,
+    "dDurationMs": 1935,
+    "segs": [ {
+      "utf8": "Now tell us how you like your ramen done!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 55663,
+    "dDurationMs": 2035,
+    "segs": [ {
+      "utf8": "Lots of types are going ‘round, so what ramen?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 57698,
+    "dDurationMs": 1969,
+    "segs": [ {
+      "utf8": "The one I like most would be tonkotsu, yeah"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 59667,
+    "dDurationMs": 2069,
+    "segs": [ {
+      "utf8": "Pictures at midnight make me so hungry"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 61736,
+    "dDurationMs": 1968,
+    "segs": [ {
+      "utf8": "Ramen, Tsukemen, Tanaka Himen!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 63704,
+    "dDurationMs": 2002,
+    "segs": [ {
+      "utf8": "This here"
+    } ],
+    "wpWinPosId": 9,
+    "wsWinStyleId": 2,
+    "pPenId": 7
+  }, {
+    "tStartMs": 64238,
+    "dDurationMs": 1468,
+    "segs": [ {
+      "utf8": "is the next"
+    } ],
+    "wpWinPosId": 10,
+    "wsWinStyleId": 2,
+    "pPenId": 7
+  }, {
+    "tStartMs": 64705,
+    "dDurationMs": 1001,
+    "segs": [ {
+      "utf8": "question I got for ya"
+    } ],
+    "wpWinPosId": 11,
+    "wsWinStyleId": 2,
+    "pPenId": 7
+  }, {
+    "tStartMs": 65706,
+    "dDurationMs": 1969,
+    "segs": [ {
+      "utf8": "What angle should a comaneci be performed at?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 67675,
+    "dDurationMs": 1535,
+    "segs": [ {
+      "utf8": "This is really important to me so listen close"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 69210,
+    "dDurationMs": 1535,
+    "segs": [ {
+      "utf8": "I do a lotta cool comanecis in the Roki video,"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 70745,
+    "dDurationMs": 934,
+    "segs": [ {
+      "utf8": "well that’s the ideal"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 71679,
+    "dDurationMs": 2035,
+    "segs": [ {
+      "utf8": "The sign of V is 45° "
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 73714,
+    "dDurationMs": 1969,
+    "segs": [ {
+      "utf8": "Bring your hands up, move diagonally"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 75683,
+    "dDurationMs": 2035,
+    "segs": [ {
+      "utf8": "About those"
+    } ],
+    "wpWinPosId": 12,
+    "wsWinStyleId": 2,
+    "pPenId": 7
+  }, {
+    "tStartMs": 76217,
+    "dDurationMs": 1501,
+    "segs": [ {
+      "utf8": "gigglebuns you"
+    } ],
+    "wpWinPosId": 13,
+    "wsWinStyleId": 2,
+    "pPenId": 7
+  }, {
+    "tStartMs": 76717,
+    "dDurationMs": 1001,
+    "segs": [ {
+      "utf8": "have on your head"
+    } ],
+    "wpWinPosId": 11,
+    "wsWinStyleId": 2,
+    "pPenId": 7
+  }, {
+    "tStartMs": 77718,
+    "dDurationMs": 1935,
+    "segs": [ {
+      "utf8": "Do you normally tie those up yourself?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 79653,
+    "dDurationMs": 1936,
+    "segs": [ {
+      "utf8": "Hina does that for me at morning"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 81589,
+    "dDurationMs": 901,
+    "segs": [ {
+      "utf8": "Right? Hina"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 82490,
+    "dDurationMs": 1067,
+    "segs": [ {
+      "utf8": "I do"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 83557,
+    "dDurationMs": 2136,
+    "segs": [ {
+      "utf8": "I shake her awake in bed every time in the morning"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 85693,
+    "dDurationMs": 1967,
+    "segs": [ {
+      "utf8": "and then tie her hair into neat gigglebuns"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 88596,
+    "dDurationMs": 1768,
+    "segs": [ {
+      "utf8": "Now it’s your turn, Hina!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 5
+  }, {
+    "tStartMs": 90364,
+    "dDurationMs": 1568,
+    "segs": [ {
+      "utf8": "Mic check, one, okay"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 4
+  }, {
+    "tStartMs": 91932,
+    "dDurationMs": 700,
+    "segs": [ {
+      "utf8": "It’s my turn"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 4
+  }, {
+    "tStartMs": 94902,
+    "dDurationMs": 1802,
+    "segs": [ {
+      "utf8": "Let’s go then"
+    } ],
+    "wpWinPosId": 14,
+    "wsWinStyleId": 3,
+    "pPenId": 7
+  }, {
+    "tStartMs": 95369,
+    "dDurationMs": 1335,
+    "segs": [ {
+      "utf8": "Answer me"
+    } ],
+    "wpWinPosId": 15,
+    "wsWinStyleId": 3,
+    "pPenId": 7
+  }, {
+    "tStartMs": 95836,
+    "dDurationMs": 868,
+    "segs": [ {
+      "utf8": "this nice question over here"
+    } ],
+    "wpWinPosId": 16,
+    "wsWinStyleId": 3,
+    "pPenId": 7
+  }, {
+    "tStartMs": 96704,
+    "dDurationMs": 1601,
+    "segs": [ {
+      "utf8": "What is your English word of the year?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 98305,
+    "dDurationMs": 2036,
+    "segs": [ {
+      "utf8": "English is not in my zone, but anyway"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 100341,
+    "dDurationMs": 1334,
+    "segs": [ {
+      "utf8": "If I had to pick, it be PSYCHO-PASS"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 101675,
+    "dDurationMs": 1902,
+    "segs": [ {
+      "utf8": "Any place you go, get a free pass"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 102777,
+    "dDurationMs": 800,
+    "segs": [ {
+      "utf8": "※ Just wanted to say it"
+    } ],
+    "wpWinPosId": 17,
+    "wsWinStyleId": 1,
+    "pPenId": 3
+  }, {
+    "tStartMs": 103577,
+    "dDurationMs": 1669,
+    "segs": [ {
+      "utf8": "Being VIP sounds amazing, right?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 105246,
+    "dDurationMs": 1668,
+    "segs": [ {
+      "utf8": "Suzuki Hina Hinna"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 106914,
+    "dDurationMs": 634,
+    "segs": [ {
+      "utf8": "HinaHina"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 107548,
+    "dDurationMs": 934,
+    "segs": [ {
+      "utf8": "Is this a question?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 108482,
+    "dDurationMs": 1535,
+    "segs": [ {
+      "utf8": "Is that from Golden Kamuy?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 110017,
+    "dDurationMs": 1935,
+    "segs": [ {
+      "utf8": "“Hinna” means “thanks a lot” in Ainu"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 111185,
+    "dDurationMs": 1935,
+    "segs": [ {
+      "utf8": "“Hinna” expresses gratitude in the Ainu language"
+    } ],
+    "wpWinPosId": 18,
+    "wsWinStyleId": 1,
+    "pPenId": 3
+  }, {
+    "tStartMs": 111952,
+    "dDurationMs": 1168,
+    "segs": [ {
+      "utf8": "So Suzuki Thanks Thanks?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 113120,
+    "dDurationMs": 2369,
+    "segs": [ {
+      "utf8": "It’s closer to “thanks for the food”"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 115489,
+    "dDurationMs": 1769,
+    "segs": [ {
+      "utf8": "Uho Uho Uhohoho"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 117258,
+    "dDurationMs": 801,
+    "segs": [ {
+      "utf8": "KYAAI! KYAAI!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 118059,
+    "dDurationMs": 900,
+    "segs": [ {
+      "utf8": "AH AH AH"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 118959,
+    "dDurationMs": 1702,
+    "segs": [ {
+      "utf8": "Uho"
+    } ],
+    "wpWinPosId": 19,
+    "wsWinStyleId": 1,
+    "pPenId": 8
+  }, {
+    "tStartMs": 119427,
+    "dDurationMs": 1234,
+    "segs": [ {
+      "utf8": "Uho"
+    } ],
+    "wpWinPosId": 20,
+    "wsWinStyleId": 1,
+    "pPenId": 8
+  }, {
+    "tStartMs": 119894,
+    "dDurationMs": 767,
+    "segs": [ {
+      "utf8": "Uhoho?"
+    } ],
+    "wpWinPosId": 21,
+    "wsWinStyleId": 1,
+    "pPenId": 8
+  }, {
+    "tStartMs": 120661,
+    "dDurationMs": 1769,
+    "segs": [ {
+      "utf8": "Uhho"
+    } ],
+    "wpWinPosId": 22,
+    "wsWinStyleId": 1,
+    "pPenId": 9
+  }, {
+    "tStartMs": 121062,
+    "dDurationMs": 1368,
+    "segs": [ {
+      "utf8": "Uhho"
+    } ],
+    "wpWinPosId": 23,
+    "wsWinStyleId": 1,
+    "pPenId": 9
+  }, {
+    "tStartMs": 121595,
+    "dDurationMs": 835,
+    "segs": [ {
+      "utf8": "Uhohoho"
+    } ],
+    "wpWinPosId": 24,
+    "wsWinStyleId": 1,
+    "pPenId": 9
+  }, {
+    "tStartMs": 122430,
+    "dDurationMs": 1134,
+    "segs": [ {
+      "utf8": "Uhho"
+    } ],
+    "wpWinPosId": 25,
+    "wsWinStyleId": 1,
+    "pPenId": 9
+  }, {
+    "tStartMs": 122897,
+    "dDurationMs": 667,
+    "segs": [ {
+      "utf8": "Uhho"
+    } ],
+    "wpWinPosId": 26,
+    "wsWinStyleId": 1,
+    "pPenId": 9
+  }, {
+    "tStartMs": 123230,
+    "dDurationMs": 334,
+    "segs": [ {
+      "utf8": "Uhohoho"
+    } ],
+    "wpWinPosId": 27,
+    "wsWinStyleId": 1,
+    "pPenId": 9
+  }, {
+    "tStartMs": 123564,
+    "dDurationMs": 1702,
+    "segs": [ {
+      "utf8": "I’m trying to rap here, please be quiet"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 125266,
+    "dDurationMs": 534,
+    "segs": [ {
+      "utf8": "Sorry"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 125800,
+    "dDurationMs": 1735,
+    "segs": [ {
+      "utf8": "“Hey, are you good at rapping?”, they ask"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 127535,
+    "dDurationMs": 1701,
+    "segs": [ {
+      "utf8": "Go ahead and"
+    } ],
+    "wpWinPosId": 28,
+    "wsWinStyleId": 3,
+    "pPenId": 7
+  }, {
+    "tStartMs": 127968,
+    "dDurationMs": 1268,
+    "segs": [ {
+      "utf8": "show them"
+    } ],
+    "wpWinPosId": 29,
+    "wsWinStyleId": 3,
+    "pPenId": 7
+  }, {
+    "tStartMs": 128436,
+    "dDurationMs": 800,
+    "segs": [ {
+      "utf8": "Hina-chan"
+    } ],
+    "wpWinPosId": 30,
+    "wsWinStyleId": 3,
+    "pPenId": 7
+  }, {
+    "tStartMs": 129236,
+    "dDurationMs": 1702,
+    "segs": [ {
+      "utf8": "OK putting my soul in these lyrics here"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 130938,
+    "dDurationMs": 1702,
+    "segs": [ {
+      "utf8": "Making them ring in my heart Division"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 132640,
+    "dDurationMs": 2502,
+    "segs": [ {
+      "utf8": "I am rap-Taro, born from rap"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 135142,
+    "dDurationMs": 901,
+    "segs": [ {
+      "utf8": "Simple rapping is"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 136043,
+    "dDurationMs": 633,
+    "segs": [ {
+      "utf8": "good for wrapping"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 4
+  }, {
+    "tStartMs": 137378,
+    "dDurationMs": 2369,
+    "segs": [ {
+      "utf8": "Meaning unclear"
+    } ],
+    "wpWinPosId": 31,
+    "wsWinStyleId": 1,
+    "pPenId": 10
+  }, {
+    "tStartMs": 137378,
+    "dDurationMs": 2369,
+    "segs": [ {
+      "utf8": "Syllable overflow"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 5
+  }, {
+    "tStartMs": 139747,
+    "dDurationMs": 1268,
+    "segs": [ {
+      "utf8": "Good for wrapping​\n​",
+      "pPenId": 5
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "That didn’t make much sense, did it",
+      "pPenId": 4
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 141015,
+    "dDurationMs": 1468,
+    "segs": [ {
+      "utf8": "What’s simple rapping?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 5
+  }, {
+    "tStartMs": 142483,
+    "dDurationMs": 1535,
+    "segs": [ {
+      "utf8": "Compare each other to animals!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 144018,
+    "dDurationMs": 1468,
+    "segs": [ {
+      "utf8": "We’ll say the same thing, I’m sure"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 145486,
+    "dDurationMs": 767,
+    "segs": [ {
+      "utf8": "One, two"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 146253,
+    "dDurationMs": 801,
+    "segs": [ {
+      "utf8": "Bunny!​\n​",
+      "pPenId": 1
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "Bunny!",
+      "pPenId": 2
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 147054,
+    "dDurationMs": 1435,
+    "segs": [ {
+      "utf8": "Miracle"
+    } ],
+    "wpWinPosId": 32,
+    "wsWinStyleId": 1,
+    "pPenId": 11
+  }, {
+    "tStartMs": 147688,
+    "dDurationMs": 801,
+    "segs": [ {
+      "utf8": "Wow, we got the same"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 148489,
+    "dDurationMs": 1535,
+    "segs": [ {
+      "utf8": "What’s your source of happiness?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 150024,
+    "dDurationMs": 1134,
+    "segs": [ {
+      "utf8": "Seeing that Jojimin are up and having fun"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 151158,
+    "dDurationMs": 334,
+    "segs": [ {
+      "utf8": "Fun!​\n​",
+      "pPenId": 1
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "Seeing that Jojimin are up and having fun",
+      "pPenId": 2
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 151492,
+    "dDurationMs": 1101,
+    "segs": [ {
+      "utf8": "That’s what we get lots of our happiness from"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 152593,
+    "dDurationMs": 400,
+    "segs": [ {
+      "utf8": "From!​\n​",
+      "pPenId": 1
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "That’s what we get lots of our happiness from",
+      "pPenId": 2
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 152993,
+    "dDurationMs": 1535,
+    "segs": [ {
+      "utf8": "Thank you"
+    } ],
+    "wpWinPosId": 33,
+    "wsWinStyleId": 1,
+    "pPenId": 12
+  }, {
+    "tStartMs": 153327,
+    "dDurationMs": 1201,
+    "segs": [ {
+      "utf8": "I’m so glad"
+    } ],
+    "wpWinPosId": 34,
+    "wsWinStyleId": 1,
+    "pPenId": 12
+  }, {
+    "tStartMs": 153761,
+    "dDurationMs": 767,
+    "segs": [ {
+      "utf8": "Hina-arare"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 13
+  }, {
+    "tStartMs": 154528,
+    "dDurationMs": 1502,
+    "segs": [ {
+      "utf8": "Super sweet picture time!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 156030,
+    "dDurationMs": 1501,
+    "segs": [ {
+      "utf8": "Huh? What?​\n​",
+      "pPenId": 2
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "Yes, just like that, cute",
+      "pPenId": 1
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 157531,
+    "dDurationMs": 399,
+    "segs": [ {
+      "utf8": "Look at the camera!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 158299,
+    "dDurationMs": 1001,
+    "segs": [ {
+      "utf8": "Stop that~​\n​",
+      "pPenId": 2
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "Excuse me, could you-",
+      "pPenId": 1
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 159300,
+    "dDurationMs": 1201,
+    "segs": [ {
+      "utf8": "Yes, just like that!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 160501,
+    "dDurationMs": 1468,
+    "segs": [ {
+      "utf8": "What’s your favorite four-character expression?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 161969,
+    "dDurationMs": 834,
+    "segs": [ {
+      "utf8": "Sessatakuma!"
+    } ],
+    "wpWinPosId": 35,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 161969,
+    "dDurationMs": 834,
+    "segs": [ {
+      "utf8": "(※ Cultivating oneself through diligent study)"
+    } ],
+    "wpWinPosId": 36,
+    "wsWinStyleId": 1,
+    "pPenId": 3
+  }, {
+    "tStartMs": 162803,
+    "dDurationMs": 734,
+    "segs": [ {
+      "utf8": "Azabu-jūban!"
+    } ],
+    "wpWinPosId": 35,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 162803,
+    "dDurationMs": 734,
+    "segs": [ {
+      "utf8": "(※ District in Tokyo)"
+    } ],
+    "wpWinPosId": 36,
+    "wsWinStyleId": 1,
+    "pPenId": 3
+  }, {
+    "tStartMs": 163537,
+    "dDurationMs": 1735,
+    "segs": [ {
+      "utf8": "Just saying those sounds like you’re rapping, no?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 165272,
+    "dDurationMs": 1234,
+    "segs": [ {
+      "utf8": "Only sounds like it"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 167041,
+    "dDurationMs": 2335,
+    "segs": [ {
+      "utf8": "How long can Hime stand still?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 6
+  }, {
+    "tStartMs": 169376,
+    "dDurationMs": 1535,
+    "segs": [ {
+      "utf8": "Let’s find out!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 4
+  }, {
+    "tStartMs": 170911,
+    "dDurationMs": 1100,
+    "segs": [ {
+      "utf8": "And start!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 172179,
+    "dDurationMs": 3970,
+    "segs": [ {
+      "utf8": "Testing"
+    } ],
+    "wpWinPosId": 37,
+    "wsWinStyleId": 1,
+    "pPenId": 14
+  }, {
+    "tStartMs": 176450,
+    "dDurationMs": 601,
+    "segs": [ {
+      "utf8": "You moved!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 177051,
+    "dDurationMs": 934,
+    "segs": [ {
+      "utf8": "5 seconds? That’s it?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 177985,
+    "dDurationMs": 2870,
+    "segs": [ {
+      "utf8": "Alright, we’re leaving the ballad behind, hitting that 200BPM!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 4
+  }, {
+    "tStartMs": 180855,
+    "dDurationMs": 867,
+    "segs": [ {
+      "utf8": "Ballad’s over!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 5
+  }, {
+    "tStartMs": 181722,
+    "dDurationMs": 1235,
+    "segs": [ {
+      "utf8": "How’s it going? How you doing?"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 15
+  }, {
+    "tStartMs": 182957,
+    "dDurationMs": 1301,
+    "segs": [ {
+      "utf8": "Fairly"
+    } ],
+    "wpWinPosId": 38,
+    "wsWinStyleId": 1,
+    "pPenId": 16
+  }, {
+    "tStartMs": 182957,
+    "dDurationMs": 1301,
+    "segs": [ {
+      "utf8": "Nicely"
+    } ],
+    "wpWinPosId": 39,
+    "wsWinStyleId": 1,
+    "pPenId": 16
+  }, {
+    "tStartMs": 182957,
+    "dDurationMs": 1301,
+    "segs": [ {
+      "utf8": "Perfectly"
+    } ],
+    "wpWinPosId": 40,
+    "wsWinStyleId": 1,
+    "pPenId": 17
+  }, {
+    "tStartMs": 184258,
+    "dDurationMs": 1134,
+    "segs": [ {
+      "utf8": "All day and all year having fun YO!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 185392,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Who is that standing there behind you?"
+    } ],
+    "wpWinPosId": 41,
+    "wsWinStyleId": 1,
+    "pPenId": 18
+  }, {
+    "tStartMs": 185459,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Who is that standing there behind you?"
+    } ],
+    "wpWinPosId": 41,
+    "wsWinStyleId": 1,
+    "pPenId": 19
+  }, {
+    "tStartMs": 185526,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Who is that standing there behind you?"
+    } ],
+    "wpWinPosId": 41,
+    "wsWinStyleId": 1,
+    "pPenId": 20
+  }, {
+    "tStartMs": 185593,
+    "dDurationMs": 66,
+    "segs": [ {
+      "utf8": "Who is that standing there behind you?"
+    } ],
+    "wpWinPosId": 41,
+    "wsWinStyleId": 1,
+    "pPenId": 21
+  }, {
+    "tStartMs": 185659,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Who is that standing there behind you?"
+    } ],
+    "wpWinPosId": 41,
+    "wsWinStyleId": 1,
+    "pPenId": 22
+  }, {
+    "tStartMs": 185726,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Who is that standing there behind you?"
+    } ],
+    "wpWinPosId": 41,
+    "wsWinStyleId": 1,
+    "pPenId": 23
+  }, {
+    "tStartMs": 185793,
+    "dDurationMs": 100,
+    "segs": [ {
+      "utf8": "Who is that standing there behind you?"
+    } ],
+    "wpWinPosId": 41,
+    "wsWinStyleId": 1,
+    "pPenId": 24
+  }, {
+    "tStartMs": 185893,
+    "dDurationMs": 699,
+    "segs": [ {
+      "utf8": "Who is that standing there behind you?"
+    } ],
+    "wpWinPosId": 41,
+    "wsWinStyleId": 1,
+    "pPenId": 15
+  }, {
+    "tStartMs": 187595,
+    "dDurationMs": 1368,
+    "segs": [ {
+      "utf8": "Can’t take horror"
+    } ],
+    "wpWinPosId": 42,
+    "wsWinStyleId": 4,
+    "pPenId": 25
+  }, {
+    "tStartMs": 186961,
+    "dDurationMs": 634,
+    "segs": [ {
+      "utf8": "Nonono"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 187595,
+    "dDurationMs": 1368,
+    "segs": [ {
+      "utf8": "Don’t say that, someone will actually show up!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 188963,
+    "dDurationMs": 1168,
+    "segs": [ {
+      "utf8": "Do the subscription dance at lightspeed"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 26
+  }, {
+    "tStartMs": 190131,
+    "dDurationMs": 1101,
+    "segs": [ {
+      "utf8": "Tantaranta tantaranta subscribe!​\n​",
+      "pPenId": 1
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "Tantaranta tantaranta subscribe!",
+      "pPenId": 2
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 191232,
+    "dDurationMs": 1301,
+    "segs": [ {
+      "utf8": "Tanaka and Suzuki, subscribe YO!​\n​",
+      "pPenId": 1
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "Tanaka and Suzuki, subscribe YO!",
+      "pPenId": 2
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 192533,
+    "dDurationMs": 1201,
+    "segs": [ {
+      "utf8": "You’re going to die from laughing too much"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 27
+  }, {
+    "tStartMs": 193734,
+    "dDurationMs": 1101,
+    "segs": [ {
+      "utf8": "We’ll laugh until our last breath!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 194835,
+    "dDurationMs": 601,
+    "segs": [ {
+      "utf8": "Always happy"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 195436,
+    "dDurationMs": 1400,
+    "segs": [ {
+      "utf8": "HimeHina channel!​\n​",
+      "pPenId": 1
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "HimeHina channel!",
+      "pPenId": 2
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 198472,
+    "dDurationMs": 1068,
+    "segs": [ {
+      "utf8": "It’s over!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 199540,
+    "dDurationMs": 2135,
+    "segs": [ {
+      "utf8": "We did it!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 201675,
+    "dDurationMs": 2335,
+    "segs": [ {
+      "utf8": "Our rapping power (?) is higher than ever"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 206247,
+    "dDurationMs": 2502,
+    "segs": [ {
+      "utf8": "Hey man"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 208749,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Hey man"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 28
+  }, {
+    "tStartMs": 208816,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Hey man"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 29
+  }, {
+    "tStartMs": 208883,
+    "dDurationMs": 66,
+    "segs": [ {
+      "utf8": "Hey man"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 30
+  }, {
+    "tStartMs": 208949,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Hey man"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 31
+  }, {
+    "tStartMs": 209016,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Hey man"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 32
+  }, {
+    "tStartMs": 209083,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Hey man"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 33
+  }, {
+    "tStartMs": 209150,
+    "dDurationMs": 66,
+    "segs": [ {
+      "utf8": "Hey man"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 34
+  }, {
+    "tStartMs": 209216,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Hey man"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 35
+  }, {
+    "tStartMs": 209283,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Hey man"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 36
+  }, {
+    "tStartMs": 209350,
+    "dDurationMs": 66,
+    "segs": [ {
+      "utf8": "Hey man"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 37
+  }, {
+    "tStartMs": 209416,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Hey man"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 38
+  }, {
+    "tStartMs": 209483,
+    "dDurationMs": 66,
+    "segs": [ {
+      "utf8": "Hey man"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 39
+  }, {
+    "tStartMs": 207214,
+    "dDurationMs": 1368,
+    "segs": [ {
+      "utf8": "Filler phrase"
+    } ],
+    "wpWinPosId": 43,
+    "wsWinStyleId": 1,
+    "pPenId": 3
+  }, {
+    "tStartMs": 208582,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Filler phrase"
+    } ],
+    "wpWinPosId": 43,
+    "wsWinStyleId": 1,
+    "pPenId": 40
+  }, {
+    "tStartMs": 208649,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Filler phrase"
+    } ],
+    "wpWinPosId": 43,
+    "wsWinStyleId": 1,
+    "pPenId": 41
+  }, {
+    "tStartMs": 208716,
+    "dDurationMs": 66,
+    "segs": [ {
+      "utf8": "Filler phrase"
+    } ],
+    "wpWinPosId": 43,
+    "wsWinStyleId": 1,
+    "pPenId": 42
+  }, {
+    "tStartMs": 208782,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Filler phrase"
+    } ],
+    "wpWinPosId": 43,
+    "wsWinStyleId": 1,
+    "pPenId": 43
+  }, {
+    "tStartMs": 208849,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Filler phrase"
+    } ],
+    "wpWinPosId": 43,
+    "wsWinStyleId": 1,
+    "pPenId": 44
+  }, {
+    "tStartMs": 208916,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Filler phrase"
+    } ],
+    "wpWinPosId": 43,
+    "wsWinStyleId": 1,
+    "pPenId": 45
+  }, {
+    "tStartMs": 208983,
+    "dDurationMs": 66,
+    "segs": [ {
+      "utf8": "Filler phrase"
+    } ],
+    "wpWinPosId": 43,
+    "wsWinStyleId": 1,
+    "pPenId": 46
+  }, {
+    "tStartMs": 209049,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Filler phrase"
+    } ],
+    "wpWinPosId": 43,
+    "wsWinStyleId": 1,
+    "pPenId": 47
+  }, {
+    "tStartMs": 209116,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Filler phrase"
+    } ],
+    "wpWinPosId": 43,
+    "wsWinStyleId": 1,
+    "pPenId": 48
+  }, {
+    "tStartMs": 209183,
+    "dDurationMs": 67,
+    "segs": [ {
+      "utf8": "Filler phrase"
+    } ],
+    "wpWinPosId": 43,
+    "wsWinStyleId": 1,
+    "pPenId": 49
+  }, {
+    "tStartMs": 209250,
+    "dDurationMs": 66,
+    "segs": [ {
+      "utf8": "Filler phrase"
+    } ],
+    "wpWinPosId": 43,
+    "wsWinStyleId": 1,
+    "pPenId": 50
+  }, {
+    "tStartMs": 209316,
+    "dDurationMs": 100,
+    "segs": [ {
+      "utf8": "Filler phrase"
+    } ],
+    "wpWinPosId": 43,
+    "wsWinStyleId": 1,
+    "pPenId": 51
+  }, {
+    "tStartMs": 212052,
+    "dDurationMs": 1368,
+    "segs": [ {
+      "utf8": "So yes!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 213420,
+    "dDurationMs": 2636,
+    "segs": [ {
+      "utf8": "Thank you for your many questions!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 216056,
+    "dDurationMs": 868,
+    "segs": [ {
+      "utf8": "Thank you"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 216924,
+    "dDurationMs": 1635,
+    "segs": [ {
+      "utf8": "We also got many that weren’t actually questions though"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 218559,
+    "dDurationMs": 867,
+    "segs": [ {
+      "utf8": "Right?​\n​",
+      "pPenId": 1
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "We also got many that weren’t actually questions though",
+      "pPenId": 2
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 219426,
+    "dDurationMs": 1435,
+    "segs": [ {
+      "utf8": "Hinna Hinna"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 220861,
+    "dDurationMs": 1802,
+    "segs": [ {
+      "utf8": "But they got us laughing, so it’s fine"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 2
+  }, {
+    "tStartMs": 222663,
+    "dDurationMs": 2769,
+    "segs": [ {
+      "utf8": "We’ll do another question corner sometime,"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 225432,
+    "dDurationMs": 1836,
+    "segs": [ {
+      "utf8": "so please send us many more then!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 227268,
+    "dDurationMs": 1701,
+    "segs": [ {
+      "utf8": "Thank you!​\n​",
+      "pPenId": 1
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "Thank you~",
+      "pPenId": 2
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 228969,
+    "dDurationMs": 968,
+    "segs": [ {
+      "utf8": "And now we say"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 1
+  }, {
+    "tStartMs": 229937,
+    "dDurationMs": 2936,
+    "segs": [ {
+      "utf8": "Goodbye!​\n​",
+      "pPenId": 1
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "Goodbye!",
+      "pPenId": 2
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1
+  }, {
+    "tStartMs": 232873,
+    "dDurationMs": 16415,
+    "segs": [ {
+      "utf8": "Join the unofficial ",
+      "pPenId": 52
+    }, {
+      "utf8": "​"
+    }, {
+      "utf8": "Hime",
+      "pPenId": 53
+    }, {
+      "utf8": "Hina",
+      "pPenId": 54
+    }, {
+      "utf8": " fanclub!​\n​https://discordapp.com/invite/yusTycR",
+      "pPenId": 52
+    } ],
+    "wpWinPosId": 44,
+    "wsWinStyleId": 3
+  }, {
+    "tStartMs": 232873,
+    "dDurationMs": 3537,
+    "segs": [ {
+      "utf8": "Tantaranta tantaranta sub-scri-be!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 55
+  }, {
+    "tStartMs": 236410,
+    "dDurationMs": 634,
+    "segs": [ {
+      "utf8": "Pipii!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 55
+  }, {
+    "tStartMs": 237044,
+    "dDurationMs": 1969,
+    "segs": [ {
+      "utf8": "Tanaka and Suzuki"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 55
+  }, {
+    "tStartMs": 239013,
+    "dDurationMs": 2801,
+    "segs": [ {
+      "utf8": "Sub-scri-be!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 55
+  }, {
+    "tStartMs": 247555,
+    "dDurationMs": 1733,
+    "segs": [ {
+      "utf8": "Aw yeah!"
+    } ],
+    "wpWinPosId": 1,
+    "wsWinStyleId": 1,
+    "pPenId": 55
+  }, {
+    "tStartMs": 1,
+    "dDurationMs": 99,
+    "segs": [ {
+      "utf8": "​"
+    } ],
+    "wpWinPosId": 45,
+    "wsWinStyleId": 3,
+    "pPenId": 56
+  } ]
+}

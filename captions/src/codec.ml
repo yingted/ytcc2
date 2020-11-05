@@ -54,6 +54,17 @@ let text_float = {
   encode = Js.Float.toString;
 }
 
+let json_of_string_exn : string -> Js.Types.obj_val = [%raw "JSON.parse"]
+let string_of_json : Js.Types.obj_val -> string = [%raw "JSON.stringify"]
+let json = {
+  try_decode = (fun s ->
+    match json_of_string_exn s with
+    | obj -> Ok obj
+    | exception e ->
+        Error e);
+  encode = string_of_json;
+}
+
 let expect x = {
   try_decode = (fun s ->
     if s = x

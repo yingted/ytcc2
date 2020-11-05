@@ -18,3 +18,8 @@ let map f t =
   match t with
   | Some x -> Some (f x)
   | None -> None
+
+let bind t f =
+  match t with
+  | None -> None
+  | Some x -> f x
