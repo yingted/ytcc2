@@ -185,6 +185,8 @@ let text_parser: text Parser.t =
       |> List.map (fun ((x : Track.token), (raw : string option)) : ((_, _) result * string option) list ->
           (* Interpret the token, ignoring raw. *)
           match x with
+          (* No karaoke support *)
+          | Wait_until _t -> []
           | Set_style new_style ->
               last_set_style := Styles.of_style new_style;
               []

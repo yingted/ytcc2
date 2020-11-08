@@ -7,7 +7,7 @@ type raw = unit
 (* Rescript docs suggests Obj.magic here is mostly safe (unlike in C/C++): *)
 (* https://rescript-lang.org/docs/manual/latest/json#parse *)
 type pb_bool = int
-let (_pb_false, pb_true) = (0, 1)
+let (pb_false, pb_true) = (0, 1)
 type int_enum = int
 type int_percent = int
 type int_ms = int
@@ -114,6 +114,7 @@ let apply_window =
 let font_size_of_int x = ((float_of_int x) -. 100.) /. 400. +. 1.
 let int_of_font_size x = (x -. 1.) *. 400. +. 100. +. 0.5 |> int_of_float
 let bool_of_pb (x : pb_bool) = x = pb_true
+let pb_of_bool x = if x then pb_true else pb_false
 (* Enums *)
 let make_enum values =
   let enum_of_int x = values.(x) in
@@ -145,11 +146,14 @@ let (border_style_of_int, int_of_border_style) = make_enum Style.Attr.[|
 |]
 let alpha_of_int x =
   max 0 (min 255 x)
+let int_of_alpha = alpha_of_int
 let color_of_int x = Style.Attr.{
   r8 = alpha_of_int (x asr 16);
   g8 = alpha_of_int (x asr 8);
   b8 = alpha_of_int x;
 }
+let int_of_color (c : Style.Attr.color) =
+  (c.r8 lsl 16) + (c.g8 lsl 8) + c.b8
 let (ruby'_of_int, int_of_ruby') = make_enum Style.Attr.[|
   Style.Attr.None;
   Base;
@@ -176,6 +180,37 @@ let codec' : (track, raw Track.t) Codec.t =
       let () = inherit_inplace "wpParentId" track.wpWinPositions in
       (* We've eliminated all the inheritance. *)
       (* We have final styles that will be associated with window/text events. *)
+
+      (* Convert the pens *)
+      let pens =
+        track.pens |> Array.map (fun p -> lazy (
+          let open Style.Attr in
+          [
+            p.bAttr |> Option.map (fun x -> Binding (Bold, bool_of_pb x));
+            p.iAttr |> Option.map (fun x -> Binding (Italic, bool_of_pb x));
+            p.uAttr |> Option.map (fun x -> Binding (Underline, bool_of_pb x));
+            (* Some @@ Binding (Strikethrough, true); *)
+
+            p.fsFontStyle |> Option.map (fun x -> Binding (Font_style, font_style_of_int x));
+            p.ofOffset |> Option.map (fun x -> Binding (Font_script, font_script_of_int x));
+            p.szPenSize |> Option.map (fun x -> Binding (Font_size, font_size_of_int x));
+            p.etEdgeType |> Option.map (fun x -> Binding (Border_style, border_style_of_int x));
+
+            p.fcForeColor |> Option.map (fun x -> Binding (Font_color, color_of_int x));
+            p.bcBackColor |> Option.map (fun x -> Binding (Background_color, color_of_int x));
+            p.ecEdgeColor |> Option.map (fun x -> Binding (Border_color, color_of_int x));
+            p.foForeAlpha |> Option.map (fun x -> Binding (Font_alpha, alpha_of_int x));
+            p.boBackAlpha |> Option.map (fun x -> Binding (Background_alpha, alpha_of_int x));
+            (* p.eoEdgeAlpha |> Option.map (fun x -> Binding (Border_alpha, alpha_of_int x)); *)
+
+            p.rbRuby |> Option.map (fun x -> Binding (Ruby, ruby_of_int x));
+            (* p.hgHorizGroup |> Option.map (fun x -> Binding (Force_horizontal, x)); *)
+          ]
+          |> List.filter Option.is_some
+          |> List.map Option.value_exn
+          |> Style.from_list
+        ))
+      in
 
       (* Resolve all declared windows and styles: *)
       let windows = Belt.MutableMap.Int.make () in
@@ -242,66 +277,133 @@ let codec' : (track, raw Track.t) Codec.t =
 
       (* Convert each event to a cue: *)
       events |> List.map (fun event ->
-        let convert_time t = float_of_int t *. 1000. in
+        let convert_time t = float_of_int t /. 1000. in
         let start = event.tStartMs |> convert_time in
+        (* let wp = event.wpWinPosId |> Option.map (fun i -> track.wpWinPositions.(i)) in *)
+        (* let ws = event.wsWinStyleId |> Option.map (fun i -> track.wsWinStyles.(i)) in *)
         let rec convert_seg now segs acc =
           match segs with
           | [] -> acc
           | seg :: segs ->
-              let now = seg.tOffsetMs |> Option.value ~default:now in
+              (* Relative to segment start *)
+              let now' = seg.tOffsetMs |> Option.map convert_time |> Option.value ~default:now in
               let text = Option.value ~default:"" seg.utf8 in
-              let pen = seg.pPenId |> Option.map (fun i -> track.pens.(i)) in
+              let pen = seg.pPenId |> Option.map (fun i -> pens.(i)) in
               let style =
                 match pen with
                 | None -> Style.empty
-                | Some p ->
-                    let open Style.Attr in
-                    [
-                      p.bAttr |> Option.map (fun x -> Binding (Bold, bool_of_pb x));
-                      p.iAttr |> Option.map (fun x -> Binding (Italic, bool_of_pb x));
-                      p.uAttr |> Option.map (fun x -> Binding (Underline, bool_of_pb x));
-                      (* Some @@ Binding (Strikethrough, true); *)
-
-                      p.fsFontStyle |> Option.map (fun x -> Binding (Font_style, font_style_of_int x));
-                      p.ofOffset |> Option.map (fun x -> Binding (Font_script, font_script_of_int x));
-                      p.szPenSize |> Option.map (fun x -> Binding (Font_size, font_size_of_int x));
-                      p.etEdgeType |> Option.map (fun x -> Binding (Border_style, border_style_of_int x));
-
-                      p.fcForeColor |> Option.map (fun x -> Binding (Font_color, color_of_int x));
-                      p.bcBackColor |> Option.map (fun x -> Binding (Background_color, color_of_int x));
-                      p.ecEdgeColor |> Option.map (fun x -> Binding (Border_color, color_of_int x));
-                      p.foForeAlpha |> Option.map (fun x -> Binding (Font_alpha, alpha_of_int x));
-                      p.boBackAlpha |> Option.map (fun x -> Binding (Background_alpha, alpha_of_int x));
-                      (* p.eoEdgeAlpha |> Option.map (fun x -> Binding (Border_alpha, alpha_of_int x)); *)
-
-                      p.rbRuby |> Option.map (fun x -> Binding (Ruby, ruby_of_int x));
-                      (* p.hgHorizGroup |> Option.map (fun x -> Binding (Force_horizontal, x)); *)
-                    ]
-                    |> List.filter Option.is_some
-                    |> List.map Option.value_exn
-                    |> Style.from_list
+                | Some (lazy style) -> style
               in
-
+              let acc =
+                if now = now'
+                then acc
+                else (Track.Wait_until (start +. now'), None) :: acc
+              in
               let acc = (Track.Set_style style, None) :: acc in
               let acc =
                 if text = ""
                 then acc
                 else (Append text, None) :: acc
               in
-              convert_seg now segs acc;
+              convert_seg now' segs acc;
         in
         ({
           start;
           end_ = event.dDurationMs |> Option.value_exn |> convert_time;
-          text = convert_seg 0 (Array.to_list event.segs) [] |> List.rev;
+          text = convert_seg 0. (Array.to_list event.segs) [] |> List.rev;
         } : raw Track.cue)
       )
       |> List.rev
       |> (fun x -> Ok x)
     )
     ~encode:(fun track ->
-      failwith ""
-    )
+      let pens = [||] in
+      let events = track
+        |> List.map (fun ({ start; end_; text; } : _ Track.cue) ->
+            let convert_time t = t *. 1000. +. 0.5 |> int_of_float in
+            let start_ms = convert_time start in
+            let end_ms = convert_time end_ in
+            let style = ref Style.empty in
+            let pens = [||] in
+            let pens_assoc = ref [] in
+            let now = ref start in
+            let now' = ref start in
+            let segs = [||] in
+            text |> List.iter (fun (token, _raw) ->
+              match token with
+              | Track.Set_style s ->
+                  style := s;
+              | Track.Wait_until t ->
+                  now' := t;
+              | Track.Append s ->
+                  let tOffsetMs =
+                    if !now = !now'
+                    then None
+                    else Some (!now' -. start |> convert_time)
+                  in
+                  now := !now';
+                  let pPenId =
+                    if !style = Style.empty
+                    then None
+                    else Some (
+                      (* TODO: optimize this *)
+                      match List.assoc_opt !style !pens_assoc with
+                      | Some p -> p
+                      | None ->
+                          let pen = {
+                            pParentId = None;
+                            bAttr = Style.get Bold !style |> Option.map pb_of_bool;
+                            iAttr = Style.get Italic !style |> Option.map pb_of_bool;
+                            uAttr = Style.get Underline !style |> Option.map pb_of_bool;
+
+                            fsFontStyle = Style.get Font_style !style |> Option.map int_of_font_style;
+                            ofOffset = Style.get Font_script !style |> Option.map int_of_font_script;
+                            szPenSize = Style.get Font_size !style |> Option.map int_of_font_size;
+                            etEdgeType = Style.get Border_style !style |> Option.map int_of_border_style;
+
+                            fcForeColor = Style.get Font_color !style |> Option.map int_of_color;
+                            bcBackColor = Style.get Background_color !style |> Option.map int_of_color;
+                            ecEdgeColor = Style.get Border_color !style |> Option.map int_of_color;
+                            foForeAlpha = Style.get Font_alpha !style |> Option.map int_of_alpha;
+                            boBackAlpha = Style.get Background_alpha !style |> Option.map int_of_alpha;
+
+                            rbRuby = Style.get Ruby !style |> Option.map int_of_ruby;
+                            hgHorizGroup = None;
+                          } in
+                          let p = Js.Array.push pen pens - 1 in
+                          pens_assoc := (!style, p) :: !pens_assoc;
+                          p
+                    )
+                  in
+                  let seg = {
+                    utf8 = Some s;
+                    tOffsetMs;
+                    pPenId;
+                  } in
+                  let _ = Js.Array.push seg segs in
+                  ()
+            );
+            {
+              tStartMs = start_ms;
+              dDurationMs = Some (end_ms - start_ms);
+              segs;
+              wpWinPosId = None;
+              wsWinStyleId = None;
+              rcRowCount = None;
+              ccColCount = None;
+              pPenId = None;
+              id = None;
+              wWinId = None;
+              aAppend = None;
+            })
+        |> Array.of_list in
+      {
+        wireMagic = "pb3";
+        pens;
+        wsWinStyles = [||];
+        wpWinPositions = [||];
+        events;
+      })
 
 (* Assume the object is json3. *)
 let cast_json : (Js.Types.obj_val, track) Codec.t =

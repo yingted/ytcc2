@@ -11,8 +11,9 @@ type token =
   | Append of string
   (* Change the text style. *)
   | Set_style of Style.t
-  (* (1* Wait until this time (karaoke) *1) *)
-  (* | Wait_until of seconds *)
+  (* Wait until this time (karaoke) *)
+  (* Value must be between start and end_. *)
+  | Wait_until of seconds
   (* (1* Window resize/move/restyle *1) *)
   (* | Reconfigure_window of cea708_window *)
 
