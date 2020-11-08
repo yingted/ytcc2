@@ -279,6 +279,7 @@ let codec' : (track, raw Track.t) Codec.t =
       events |> List.map (fun event ->
         let convert_time t = float_of_int t /. 1000. in
         let start = event.tStartMs |> convert_time in
+        let end_ = event.tStartMs + (event.dDurationMs |> Option.value_exn) |> convert_time in
         (* let wp = event.wpWinPosId |> Option.map (fun i -> track.wpWinPositions.(i)) in *)
         (* let ws = event.wsWinStyleId |> Option.map (fun i -> track.wsWinStyles.(i)) in *)
         let rec convert_seg now segs acc =
@@ -309,7 +310,7 @@ let codec' : (track, raw Track.t) Codec.t =
         in
         ({
           start;
-          end_ = event.dDurationMs |> Option.value_exn |> convert_time;
+          end_;
           text = convert_seg 0. (Array.to_list event.segs) [] |> List.rev;
         } : raw Track.cue)
       )
@@ -318,14 +319,13 @@ let codec' : (track, raw Track.t) Codec.t =
     )
     ~encode:(fun track ->
       let pens = [||] in
+      let pens_assoc = ref [] in
       let events = track
         |> List.map (fun ({ start; end_; text; } : _ Track.cue) ->
             let convert_time t = t *. 1000. +. 0.5 |> int_of_float in
             let start_ms = convert_time start in
             let end_ms = convert_time end_ in
             let style = ref Style.empty in
-            let pens = [||] in
-            let pens_assoc = ref [] in
             let now = ref start in
             let now' = ref start in
             let segs = [||] in
