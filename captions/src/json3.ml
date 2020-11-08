@@ -1,4 +1,3 @@
-type raw = unit
 (* json3 format is (mostly) documented here: *)
 (* https://medium.com/@js_jrod/the-first-complete-guide-to-youtube-captions-f886e06f7d9d *)
 (* https://github.com/arcusmaximus/YTSubConverter/blob/3526b8f3bc85f3c78d68dcac9de1969b7c7098fc/ytt.ytt *)
@@ -79,6 +78,30 @@ type event = {
   aAppend : pb_bool option;
   segs : seg array;
 }
+type window = {
+  style : win_style;
+  pos : win_pos;
+}
+let empty_window = {
+  style = {
+    wsParentId = None;
+    mhModeHint = None;
+    juJustifCode = None;
+    sdScrollDir = None;
+    pdPaintDir = None;
+    wfcWinFillColor = None;
+    wfoWinFillAlpha = None;
+  };
+  pos = {
+    wpParentId = None;
+    apPoint = None;
+    ahHorPos = None;
+    avVerPos = None;
+    rcRows = None;
+    ccCols = None;
+  };
+}
+type raw = window
 type track = {
   wireMagic : string;  (* must be pb3 *)
   pens : pen array;
@@ -168,6 +191,28 @@ let ruby_of_int x =
   (ruby'_of_int (x land 7), x land 8 = 8)
 let int_of_ruby (ruby, bouten) =
   int_of_ruby' ruby lor (if bouten then 8 else 0)
+
+module IdMap = struct
+  type 'a t = {
+    values : 'a array;
+    assoc : ('a * int) list ref;
+  }
+
+  let make () = {
+    values = [||];
+    assoc = ref [];
+  }
+
+  let get t a =
+    match List.assoc_opt a !(t.assoc) with
+    | Some i -> i
+    | None ->
+        let i = Js.Array.push a t.values - 1 in
+        t.assoc := (a, i) :: !(t.assoc);
+        i
+
+  let values t = t.values
+end
 
 exception Invalid_data
 let codec' : (track, raw Track.t) Codec.t =
@@ -280,8 +325,14 @@ let codec' : (track, raw Track.t) Codec.t =
         let convert_time t = float_of_int t /. 1000. in
         let start = event.tStartMs |> convert_time in
         let end_ = event.tStartMs + (event.dDurationMs |> Option.value_exn) |> convert_time in
-        (* let wp = event.wpWinPosId |> Option.map (fun i -> track.wpWinPositions.(i)) in *)
-        (* let ws = event.wsWinStyleId |> Option.map (fun i -> track.wsWinStyles.(i)) in *)
+        let win = {
+          pos = event.wpWinPosId
+              |> Option.map (fun i -> track.wpWinPositions.(i))
+              |> Option.value ~default:empty_window.pos;
+          style = event.wsWinStyleId
+              |> Option.map (fun i -> track.wsWinStyles.(i))
+              |> Option.value ~default:empty_window.style;
+        } in
         let rec convert_seg now segs acc =
           match segs with
           | [] -> acc
@@ -300,7 +351,7 @@ let codec' : (track, raw Track.t) Codec.t =
                 then acc
                 else (Track.Wait_until (start +. now'), None) :: acc
               in
-              let acc = (Track.Set_style style, None) :: acc in
+              let acc = (Track.Set_style style, Some win) :: acc in
               let acc =
                 if text = ""
                 then acc
@@ -318,8 +369,9 @@ let codec' : (track, raw Track.t) Codec.t =
       |> (fun x -> Ok x)
     )
     ~encode:(fun track ->
-      let pens = [||] in
-      let pens_assoc = ref [] in
+      let pens = IdMap.make () in
+      let win_styles = IdMap.make () in
+      let win_pos = IdMap.make () in
       let events = track
         |> List.map (fun ({ start; end_; text; } : _ Track.cue) ->
             let convert_time t = t *. 1000. +. 0.5 |> int_of_float in
@@ -329,6 +381,10 @@ let codec' : (track, raw Track.t) Codec.t =
             let now = ref start in
             let now' = ref start in
             let segs = [||] in
+            let window = text
+              |> List.map snd
+              |> List.find_opt Option.is_some
+              |> Option.map Option.value_exn in
             text |> List.iter (fun (token, _raw) ->
               match token with
               | Track.Set_style s ->
@@ -345,35 +401,7 @@ let codec' : (track, raw Track.t) Codec.t =
                   let pPenId =
                     if !style = Style.empty
                     then None
-                    else Some (
-                      (* TODO: optimize this *)
-                      match List.assoc_opt !style !pens_assoc with
-                      | Some p -> p
-                      | None ->
-                          let pen = {
-                            pParentId = None;
-                            bAttr = Style.get Bold !style |> Option.map pb_of_bool;
-                            iAttr = Style.get Italic !style |> Option.map pb_of_bool;
-                            uAttr = Style.get Underline !style |> Option.map pb_of_bool;
-
-                            fsFontStyle = Style.get Font_style !style |> Option.map int_of_font_style;
-                            ofOffset = Style.get Font_script !style |> Option.map int_of_font_script;
-                            szPenSize = Style.get Font_size !style |> Option.map int_of_font_size;
-                            etEdgeType = Style.get Border_style !style |> Option.map int_of_border_style;
-
-                            fcForeColor = Style.get Font_color !style |> Option.map int_of_color;
-                            bcBackColor = Style.get Background_color !style |> Option.map int_of_color;
-                            ecEdgeColor = Style.get Border_color !style |> Option.map int_of_color;
-                            foForeAlpha = Style.get Font_alpha !style |> Option.map int_of_alpha;
-                            boBackAlpha = Style.get Background_alpha !style |> Option.map int_of_alpha;
-
-                            rbRuby = Style.get Ruby !style |> Option.map int_of_ruby;
-                            hgHorizGroup = None;
-                          } in
-                          let p = Js.Array.push pen pens - 1 in
-                          pens_assoc := (!style, p) :: !pens_assoc;
-                          p
-                    )
+                    else Some (IdMap.get pens !style)
                   in
                   let seg = {
                     utf8 = Some s;
@@ -387,8 +415,8 @@ let codec' : (track, raw Track.t) Codec.t =
               tStartMs = start_ms;
               dDurationMs = Some (end_ms - start_ms);
               segs;
-              wpWinPosId = None;
-              wsWinStyleId = None;
+              wpWinPosId = window |> Option.map (fun w -> IdMap.get win_pos w.pos);
+              wsWinStyleId = window |> Option.map (fun w -> IdMap.get win_styles w.style);
               rcRowCount = None;
               ccColCount = None;
               pPenId = None;
@@ -399,9 +427,28 @@ let codec' : (track, raw Track.t) Codec.t =
         |> Array.of_list in
       {
         wireMagic = "pb3";
-        pens;
-        wsWinStyles = [||];
-        wpWinPositions = [||];
+        pens = pens |> IdMap.values |> Array.map (fun style -> {
+          pParentId = None;
+          bAttr = Style.get Bold style |> Option.map pb_of_bool;
+          iAttr = Style.get Italic style |> Option.map pb_of_bool;
+          uAttr = Style.get Underline style |> Option.map pb_of_bool;
+
+          fsFontStyle = Style.get Font_style style |> Option.map int_of_font_style;
+          ofOffset = Style.get Font_script style |> Option.map int_of_font_script;
+          szPenSize = Style.get Font_size style |> Option.map int_of_font_size;
+          etEdgeType = Style.get Border_style style |> Option.map int_of_border_style;
+
+          fcForeColor = Style.get Font_color style |> Option.map int_of_color;
+          bcBackColor = Style.get Background_color style |> Option.map int_of_color;
+          ecEdgeColor = Style.get Border_color style |> Option.map int_of_color;
+          foForeAlpha = Style.get Font_alpha style |> Option.map int_of_alpha;
+          boBackAlpha = Style.get Background_alpha style |> Option.map int_of_alpha;
+
+          rbRuby = Style.get Ruby style |> Option.map int_of_ruby;
+          hgHorizGroup = None;
+        });
+        wsWinStyles = win_styles |> IdMap.values;
+        wpWinPositions = win_pos |> IdMap.values;
         events;
       })
 
