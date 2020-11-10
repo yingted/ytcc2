@@ -10,6 +10,10 @@ type ('co, 'dec) t = {
 
 let try_decode t co = t.try_decode co
 let encode t dec = t.encode dec
+let decode_exn t co =
+  match t.try_decode co with
+  | Ok x -> x
+  | Error e -> raise e
 let make ~try_decode ~encode = { try_decode; encode }
 let pure ~decode ~encode = {
   try_decode = (fun s -> Ok (decode s));

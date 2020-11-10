@@ -262,4 +262,5 @@ let srt_parser: cue list Parser.t =
 
 type t = cue list
 let text_codec = Parser.at_end text_parser
-let codec = Codec.stack Encoding.prefer_utf8 (Parser.at_end srt_parser)
+let string_codec = Parser.at_end srt_parser
+let codec = Codec.stack Encoding.prefer_utf8 string_codec

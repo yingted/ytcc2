@@ -170,10 +170,10 @@ let (border_style_of_int, int_of_border_style) = make_enum Style.Attr.[|
 let alpha_of_int x =
   max 0 (min 255 x)
 let int_of_alpha = alpha_of_int
-let color_of_int x = Style.Attr.{
-  r8 = alpha_of_int (x asr 16);
-  g8 = alpha_of_int (x asr 8);
-  b8 = alpha_of_int x;
+let color_of_int rrggbb = Style.Attr.{
+  r8 = alpha_of_int ((rrggbb asr 16) land 0xff);
+  g8 = alpha_of_int ((rrggbb asr  8) land 0xff);
+  b8 = alpha_of_int ( rrggbb         land 0xff);
 }
 let int_of_color (c : Style.Attr.color) =
   (c.r8 lsl 16) + (c.g8 lsl 8) + c.b8
@@ -365,7 +365,6 @@ let codec' : (track, raw Track.t) Codec.t =
           text = convert_seg 0. (Array.to_list event.segs) [] |> List.rev;
         } : raw Track.cue)
       )
-      |> List.rev
       |> (fun x -> Ok x)
     )
     ~encode:(fun track ->
@@ -456,7 +455,8 @@ let codec' : (track, raw Track.t) Codec.t =
 let cast_json : (Js.Types.obj_val, track) Codec.t =
   Codec.pure ~decode:Obj.magic ~encode:Obj.magic
 
-let codec = codec'
+let string_codec = codec'
   |> Codec.stack cast_json
   |> Codec.stack Codec.json
+let codec = string_codec
   |> Codec.stack Encoding.prefer_utf8

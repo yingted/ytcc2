@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-import {html} from 'lit-html';
+import {html, render} from 'lit-html';
 import {styleMap} from 'lit-html/directives/style-map.js';
 import {randomUuid, onRender} from './util.js';
+import {decodeJson3, toHtml} from 'ytcc2-captions';
 
  /**
   * Wait for `YT.Player` to be ready.
@@ -86,6 +87,10 @@ export class YouTubeVideo {
     this.ready = false;
     this.timer = new Timer(this._update.bind(this));
     this._handlers = [];
+    // TODO: fix this
+    this.captions = decodeJson3(params.captions);
+    this.captionsRegion = null;
+    this.html = null;
   }
 
   /**
@@ -93,7 +98,8 @@ export class YouTubeVideo {
    */
   render() {
     let id = 'youtube-player-' + randomUuid();
-    let src = `https://www.youtube.com/embed/${encodeURIComponent(this.videoId)}?enablejsapi=1`;
+    let src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(this.videoId)}?enablejsapi=1`;
+    let thiz = this;
     return html`
       <style>
         .player-container {
@@ -101,34 +107,28 @@ export class YouTubeVideo {
         }
         .captions-region {
           position: absolute;
-          width: 0;
           text-align: center;
-          /* Captions region: top/bottom anchors */
+          pointer-events: none;
+          display: flex;
+          /* Captions region */
+          left: 0%;
+          right: 0%;
           top: 50%;
           bottom: 12%;
         }
-        /* 100% height container around all the text */
-        .captions-valign {
-          position: absolute;
-          width: 0;
-          /* Horizontal alignment */
-          bottom: 0;
-        }
-        /* 100% width container around each line */
-        .captions-line {
-          font-size: 1.5em;
-          margin-bottom: 1em;
-          height: 0;
-          /* Captions region: left/right anchors */
-          left: 0;
-          width: ${this.width}px;
+        /* flex child to stick to the bottom */
+        .captions-bbox {
+          margin-top: auto;
+          width: 100%;
+          pointer-events: none;
         }
         /* Correctly-sized line boxes */
         .captions-text {
-          font-size: 1em;
+          pointer-events: auto;
           background-color: black;
           color: white;
-          font-family: monospace;
+          font-family: Roboto, "Arial Unicode Ms", Arial, Helvetica, Verdana, sans-serif;
+          white-space: pre-wrap;
         }
       </style>
       <div class="player-container" style=${styleMap({
@@ -146,10 +146,14 @@ export class YouTubeVideo {
               });
             });
           })}></iframe>
-        <div class="captions-region">
-          <div class="captions-valign">
-            <div class="captions-line"><span class="captions-text">The quick brown fox</span></div>
-            <div class="captions-line"><span class="captions-text">jumped over the lazy dogs.</span></div>
+        <div class="captions-region" @render=${onRender(function() {
+          thiz.captionsRegion = this;
+        })}>
+          <div class="captions-bbox">
+          <!--
+            <div class="captions-cue"><span class="captions-text">The quick brown fox jumped over the lazy dogs. The quick brown fox jumped over the lazy dogs.</span></div>
+            <div class="captions-cue"><span class="captions-text">The quick brown fox jumped over the lazy dogs.</span></div>
+          -->
           </div>
         </div>
       </div>
@@ -214,5 +218,8 @@ export class YouTubeVideo {
     for (let cb of this._handlers) {
       cb.call(this, t);
     }
+
+    this.html = toHtml({html, styleMap}, this.captions, t);
+    render(this.html, this.captionsRegion);
   }
 }

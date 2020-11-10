@@ -2,20 +2,20 @@ type bytes = Js.TypedArray2.ArrayBuffer.t
 
 let decode: string -> bytes -> string = [%raw {|
   function decode(codec, buf) {
-    let TD = typeof TextDecoder !== 'undefined' ? TextDecoder : require('util').TextDecoder;
+    require('text-encoding');
     let decoder;
     try {
-      decoder = new TD(codec);
+      decoder = new TextDecoder(codec);
     } catch (e) {
-      decoder = new TD('utf-8');
+      decoder = new TextDecoder('utf-8');
     }
     return decoder.decode(buf);
   }
 |}]
 let encodeUtf8: string -> bytes = [%raw {|
   function encodeUtf8(s) {
-    let TE = typeof TextEncoder !== 'undefined' ? TextEncoder : require('util').TextEncoder;
-    return new TE().encode(s).buffer;
+    require('text-encoding');
+    return new TextEncoder().encode(s).buffer;
   }
 |}]
 let guessEncoding: bytes -> string = [%raw {|

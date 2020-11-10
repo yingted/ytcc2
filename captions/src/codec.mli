@@ -17,6 +17,7 @@ val assume: 'dec -> 'co -> ('co, 'dec) t
 (* Use codecs *)
 val try_decode: ('co, 'dec) t -> 'co -> ('dec, exn) result
 val encode: ('co, 'dec) t -> 'dec -> 'co
+val decode_exn : ('co, 'dec) t -> 'co -> 'dec
 
 (* Codec combinators *)
 val stack: ('a, 'b) t -> ('b, 'c) t -> ('a, 'c) t
