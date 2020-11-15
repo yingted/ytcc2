@@ -29,6 +29,7 @@ describe "stabilizes" (fun () ->
       let data = readFile path in
       let data1 = roundtrip Json3.codec data in
       let data2 = Result.bind data1 (roundtrip Json3.codec) in
-      expect (Result.error data1, Result.ok data1)
-      |> toEqual (None, Result.ok data2)));
+      let decode_utf8 x = Result.ok x |> Option.map (Codec.decode_exn Encoding.prefer_utf8) in
+      expect (Result.error data1, decode_utf8 data2)
+      |> toEqual (None, decode_utf8 data1)));
 );

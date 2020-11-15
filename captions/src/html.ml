@@ -60,6 +60,30 @@ let tag_parser: tag Parser.t =
       | Open (name, attrs) -> Ok (name, attrs)
       | Close name -> Error name)
 
+exception Invalid_entity
+let entity_parser : string Parser.t =
+  let entities =
+    [
+      ("&amp;", "&");
+      ("&quot;", "\"");
+      ("&#39;", "\'");
+      ("&lt;", "<");
+      ("&gt;", ">");
+    ]
+  in
+  let rentities = entities |> List.map (fun (x, y) -> (y, x)) in
+  let entity_parser =
+    Parser.postprocess
+      (Parser.easy_re0 "&(amp|quot|#39|lt|gt);")
+      (Codec.make
+        ~try_decode:(fun s ->
+          match List.assoc_opt s entities with
+          | Some x -> Ok x
+          | None -> Error Invalid_entity)
+        ~encode:(fun x -> List.assoc_opt x rentities |> Option.value ~default:x))
+  in
+  Parser.fallback entity_parser (Parser.easy_re0 "[^a]|a")
+
 (* https://stackoverflow.com/questions/819079/how-to-convert-font-size-10-to-px *)
 let rem_of_html4_font_size =
   [|0.63; 0.82; 1.0; 1.13; 1.5; 2.; 3.|]

@@ -23,7 +23,19 @@ import {StreamSyntax} from "@codemirror/next/stream-syntax"
 import {defaultHighlighter} from "@codemirror/next/highlight"
 
 class TimedTextStreamParser {
+  // Parser state:
+  startState(editorState) {
+    return {row: 0};
+  }
+  copyState({row}) {
+    return {row};
+  }
+
+  // Parsing:
   token(stream, state, editorState) {
+    let lines = editorState.doc.text;
+    console.assert(stream.string === lines[state.row]);
+
     if (stream.sol()) {
       if (stream.match(/^\d+:\d{2}(?::\d{2})?(?:\.\d{0,3})?/) !== null) {
         // I guess it's technically a number?
@@ -31,7 +43,11 @@ class TimedTextStreamParser {
       }
     }
     stream.skipToEnd();
+    ++state.row;
     return null;
+  }
+  blankLine(state, editorState) {
+    ++state.row;
   }
 }
 

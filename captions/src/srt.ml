@@ -133,12 +133,10 @@ let text_parser: text Parser.t =
     Parser.((expect "{\\" * (postprocess (easy_re0 "[^{}]*") (or_raw ass_tag_codec)) * expect "}") |> first |> second)
   in
   let special = Parser.(expect "\\" * easy_re0 "[nNh]" |> second) in
-  (* Fallback: don't match into a tag *)
-  let plain = Parser.(easy_re0 "(?:(?!\\{\\\\|\\\\[nNh]|</?[a-zA-Z])(?:[^a]|a))+|[^a]|a") in
   Parser.Ocaml.(result
     (* ASS format *)
     (result tag special)
-    (result Html.tag_parser plain))
+    (result Html.tag_parser Html.entity_parser))
   |> with_raw
   |> Parser.Ocaml.list
   |> Parser.Ocaml.map

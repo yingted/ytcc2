@@ -29,8 +29,13 @@ describe "stabilizes" (fun () ->
       let data = readFile path in
       let data1 = roundtrip Srt.codec data in
       let data2 = Result.bind data1 (roundtrip Srt.codec) in
-      expect (Result.error data1, Result.ok data1)
-      |> toEqual (None, Result.ok data2)));
+      (* for i = 0 to 999 do *)
+      (*   let data1 = roundtrip Srt.codec data in *)
+      (*   let data2 = Result.bind data1 (roundtrip Srt.codec) in *)
+      (*   () *)
+      (* done; *)
+      expect (Result.error data1, Result.ok data2)
+      |> toEqual (None, Result.ok data1)));
 );
 
 describe "roundtrips" (fun () ->
