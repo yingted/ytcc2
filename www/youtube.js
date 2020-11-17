@@ -17,7 +17,7 @@
 import {html, render} from 'lit-html';
 import {styleMap} from 'lit-html/directives/style-map.js';
 import {randomUuid, onRender} from './util.js';
-import {decodeJson3, toHtml} from 'ytcc2-captions';
+import {empty, toHtml} from 'ytcc2-captions';
 
  /**
   * Wait for `YT.Player` to be ready.
@@ -70,6 +70,7 @@ class Timer {
 /**
  * Wrapper for the YouTube IFrame Player API.
  * You can't use more than one of these at once.
+ * this.captions is a 'raw t you can update.
  */
 export class YouTubeVideo {
   /**
@@ -77,6 +78,7 @@ export class YouTubeVideo {
    * @param {string} videoId 
    * @param {number} [options.height=390]
    * @param {number} [options.width=640]
+   * @param {object} [options.captions=empty]
    */
   constructor(videoId, options) {
     this.videoId = videoId;
@@ -87,8 +89,7 @@ export class YouTubeVideo {
     this.ready = false;
     this.timer = new Timer(this._update.bind(this));
     this._handlers = [];
-    // TODO: fix this
-    this.captions = decodeJson3(params.captions);
+    this.captions = options.captions || empty;
     this.captionsRegion = null;
     this.html = null;
   }
@@ -190,7 +191,12 @@ export class YouTubeVideo {
   }
 
   getCurrentTime() {
+    if (!this.ready) return 0;
     return this.player.getCurrentTime();
+  }
+  seekTo(time) {
+    if (!this.ready) return;
+    this.player.seekTo(time, true);
   }
 
   _onReady(event) {
@@ -219,7 +225,9 @@ export class YouTubeVideo {
       cb.call(this, t);
     }
 
-    this.html = toHtml({html, styleMap}, this.captions, t);
-    render(this.html, this.captionsRegion);
+    if (this.captionsRegion !== null) {
+      this.html = toHtml({html, styleMap}, this.captions, t);
+      render(this.html, this.captionsRegion);
+    }
   }
 }

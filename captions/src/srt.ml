@@ -262,3 +262,30 @@ type t = cue list
 let text_codec = Parser.at_end text_parser
 let string_codec = Parser.at_end srt_parser
 let codec = Codec.stack Encoding.prefer_utf8 string_codec
+
+type raw_cue = {
+  time: Track.seconds;
+  text: string;
+}
+let to_raw_cues t =
+  let now = ref None in
+  t
+  |> List.sort (fun (a : _ Track.cue) (b : _ Track.cue) -> compare a.start b.start)
+  |> List.map (fun ({ start; end_; text } : _ Track.cue) ->
+    let text =
+      text
+      |> List.map (fun (span, _raw) -> (span, None))
+      |> Codec.encode text_codec
+    in
+    (* cue to clear the previous cue *)
+    let clear_cue =
+      match !now with
+      | Some now when now < start -> [{ time = now; text = ""; }]
+      | _ -> []
+    in
+    let new_cue = { time = start; text; } in
+    now := Some (max start end_ |> max (Option.value ~default:0.0 !now));
+    clear_cue @ [new_cue]
+  )
+  |> List.flatten
+  |> Array.of_list

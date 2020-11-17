@@ -26,6 +26,8 @@ function decodeJson3(data) {
   return decode(json3, data);
 }
 
+var empty = track.empty;
+
 /**
  * @param data {ArrayBuffer|string}
  * @returns Srt.raw Track.t
@@ -44,8 +46,28 @@ function toHtml(deps, t, time) {
   return track.to_html(deps, time, t);
 }
 
+/**
+ * @params t 'raw Track.t
+ * @returns {array<{time: ..., text: ...}>}
+ */
+function toSrtCues(t) {
+  return srt.to_raw_cues(t);
+}
+
+/**
+ * @param srtText {string}
+ * @returns {TemplateResult}
+ */
+function srtTextToHtml(srtText) {
+  let text = codec.decode_exn(srt.text_codec, srtText);
+  return track.text_to_html(text);
+}
+
 module.exports = {
   decodeJson3,
   decodeSrt,
+  empty,
   toHtml,
+  toSrtCues,
+  srtTextToHtml,
 };
