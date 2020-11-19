@@ -137,6 +137,7 @@ export class YouTubeVideo {
         height: this.height + 'px',
       })}>
         <iframe id=${id} width=${this.width} height=${this.height} frameborder="0" src=${src}
+          title="YouTube player"
           @render=${onRender(() => {
             waitForYouTubeIframeAPI().then(() => {
               this.player = new YT.Player(id, {

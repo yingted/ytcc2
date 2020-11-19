@@ -15,33 +15,72 @@
  */
 
 import {EditorState, EditorSelection} from "@codemirror/next/state"
-import {EditorView, keymap, Decoration, ViewPlugin} from "@codemirror/next/view"
+import {EditorView, keymap, Decoration, ViewPlugin, WidgetType} from "@codemirror/next/view"
 import {defaultKeymap} from "@codemirror/next/commands"
 import {history, historyKeymap} from "@codemirror/next/history"
-import {html} from 'lit-html';
+import {render, html} from 'lit-html';
 import {StreamSyntax} from "@codemirror/next/stream-syntax"
-import {decodeJson3, srtTextToHtml, toSrtCues} from 'ytcc2-captions';
+import {decodeJson3, stripRaw, srtTextToHtml, toSrtCues, fromSrtCues, decodeTimeSpace, encodeTimeSpace} from 'ytcc2-captions';
 import {RangeSetBuilder} from '@codemirror/next/rangeset';
 import {StyleModule} from 'style-mod';
 
+function captionToText({time, text}) {
+  return encodeTimeSpace(time) + text.replace(/^(\d+:\d)/mg, " $1");
+}
 function toText(captions) {
-  return toSrtCues(captions).map(({time, text}) => {
-    return time + ' ' + text;
-  }).join('\n');
+  return captions.map(captionToText).join('\n');
+}
+function getOffset(state) {
+  return state.selection.asSingle().ranges[0].head;
 }
 
 function timeToOffset(captions, time) {
-  return time | 0;
+  let curOffset = 0;
+  let nextOffset = 0;
+  // Find the last caption where caption.time <= time:
+  for (let caption of captions) {
+    let timeLength = captionToText({time: caption.time, text: ''}).length;
+    curOffset += timeLength;
+    if (caption.time > time) break;
+    curOffset = nextOffset;
+    nextOffset = curOffset + timeLength + caption.text.length + 1;
+  }
+  return curOffset;
 }
 
 function offsetToTime(captions, offset) {
-  return offset;
+  let curOffset = 0;
+  let curTime = 0;
+  // Find the last time where curOffset <= offset:
+  for (let caption of captions) {
+    curTime = caption.time;
+    let nextOffset = curOffset + captionToText(caption).length + 1;
+    if (nextOffset > offset) break;
+    curOffset = nextOffset;
+  }
+  return curTime;
+}
+
+class TemplateWidget extends WidgetType {
+  constructor(template) {
+    super(template);
+    this._template = template;
+  }
+  toDOM(view) {
+    let div = document.createElement('DIV');
+    render(this._template, div);
+    console.assert(div.firstElementChild === div.lastElementChild);
+    return div.firstElementChild;
+  }
 }
 
 class CaptionsHighlighter /*extends PluginValue*/ {
   static styleModule = EditorView.styleModule.of(new StyleModule({
-    '.cm-content .testing': {
-      color: 'red',
+    '.cm-content .cue-start-time': {
+      color: '#444',
+    },
+    '[x-caret-line]': {
+      'background-color': '#ddd',
     },
   }))
   constructor(view) {
@@ -49,23 +88,48 @@ class CaptionsHighlighter /*extends PluginValue*/ {
     this.decorations = this._getDecorations(view);
   }
   _getDecorations(view) {
+    // Syntax:
     let builder = new RangeSetBuilder();
-    // this.view.visibleRanges;
-    builder.add(0, 4, Decoration.mark({ class: 'testing' }));
-    return builder.finish();
+    for (let {from, to} of view.visibleRanges) {
+      let text = view.state.doc.sliceString(from, to);
+      let lines = text.split('\n');
+      let lastLineOffset = 0;
+      for (let i = 0, offset = 0; i < lines.length; offset += lines[i].length + 1, ++i) {
+        let line = lines[i];
+        let timeOffset = decodeTimeSpace(line);
+        if (timeOffset === null) {
+          // Continuation:
+          builder.add(offset, offset, Decoration.widget({
+            widget: new TemplateWidget(html`<span class="cue-continuation-indent">${new Array(lastLineOffset + 1).join(' ')}</span>`),
+            side: -1,
+            block: false,
+          }));
+        } else {
+          let {time, offset: lineOffset} = timeOffset;
+          builder.add(offset, offset + lineOffset, Decoration.mark({ class: 'cue-start-time' }));
+          lastLineOffset = lineOffset;
+        }
+      }
+    }
+    let ranges = builder.finish();
+
+    // Caret:
+    let cursorLine = view.state.doc.lineAt(getOffset(view.state));
+    ranges = ranges.update({
+      add: [
+        {
+          from: cursorLine.from,
+          to: cursorLine.from,
+          value: Decoration.line({attributes: { 'x-caret-line': 'true' }}),
+        },
+      ],
+    });
+    return ranges;
   }
   update(update) {
-    // let syntax = update.state.facet(EditorState.syntax);
-    // if (!syntax.length) {
-    //   this.decorations = Decoration.none;
-    // }
-    // else if (syntax[0].parsePos(update.state) < update.view.viewport.to) {
-    //   this.decorations = this.decorations.map(update.changes);
-    // }
-    // else if (this.tree != syntax[0].getTree(update.state) || update.viewportChanged) {
-    //   this.tree = syntax[0].getTree(update.state);
-    //   this.decorations = this.buildDeco(update.view.visibleRanges, this.tree);
-    // }
+    if (update.viewportChanged || update.docChanged || update.selectionSet) {
+      this.decorations = this._getDecorations(update.view);
+    }
   }
 }
 let captionsHighlighterExtension = [
@@ -81,12 +145,8 @@ export class CaptionsEditor {
    * @param {YouTubeVideo} video 
    */
   constructor(video) {
+    // Widgets:
     this.video = video;
-    // Binding:
-    // - this._captions: the actual captions
-    // - this.view.state.doc: text rendering of the captions
-    // - this.video.captions: next captions to render
-
     this.view = new EditorView({
       state: EditorState.create({
         doc: '',
@@ -102,28 +162,35 @@ export class CaptionsEditor {
       }),
     });
 
+    // Event handlers:
+    this._inSetCaptions = false;
+    this._inOnVideoUpdate = false;
     this.video.addUpdateListener(this._onVideoUpdate.bind(this));
 
-    this._inSetCaptions = false;
-    this._inOnEditorUpdate = false;
-    this._inOnVideoUpdate = false;
-    this.setCaptions(decodeJson3(params.captions));
+    // Initialize the captions:
+    this.setCaptions(stripRaw(decodeJson3(params.captions)));
   }
 
   /**
    * Set the captions.
-   * @param {'raw Track.t} captions
+   * @param {Srt.raw Track.t} captions
    */
   setCaptions(captions) {
     this._inSetCaptions = true;
     {
-      this._captions = captions
-      this.video.captions = captions;
+      // {'raw Track.t} captions with style and karaoke, but no unknown tags
+      // Used for rendering.
+      this._rawCaptions = captions;
+      // {array<{time: ..., text: ...}>} captions with style, but no karaoke or unknown tags
+      // Used for editing.
+      this._editableCaptions = toSrtCues(captions);
+
+      this.video.captions = this._rawCaptions;
       this.view.dispatch(this.view.state.update({
         changes: {
           from: 0,
           to: this.view.state.doc.length,
-          insert: toText(this._captions),
+          insert: toText(this._editableCaptions),
         }
       }));
     }
@@ -133,35 +200,56 @@ export class CaptionsEditor {
   _onEditorUpdate(update) {
     if (this._inSetCaptions) return;
     if (this._inOnVideoUpdate) return;
-    this._inOnEditorUpdate = true;
     {
       if (update.docChanged) {
+        // TODO call this.setCaptions
         console.log('update', update.changes);
       }
       if (update.selectionSet) {
-        let offset = this.view.state.selection.asSingle().ranges[0].head;
-        this.video.seekTo(offsetToTime(this._captions, offset));
+        let prevOffset = getOffset(update.prevState);
+        let offset = getOffset(update.state);
+        let prevTime = offsetToTime(this._editableCaptions, prevOffset);
+        let time = offsetToTime(this._editableCaptions, offset);
+        if (time !== prevTime) {
+          this.video.seekTo(time);
+        }
       }
     }
-    this._inOnEditorUpdate = false;
   }
 
   _onVideoUpdate(time) {
-    if (this._inOnEditorUpdate) return;
+    let lastVideoUpdate = this._lastVideoUpdate;
+    this._lastVideoUpdate = {
+      videoTime: time,
+      realTime: Date.now() / 1000,
+    };
+    // Don't scroll the editor if we're focused on it.
+    // This means we only focus once after seeking.
+    if (this.view.hasFocus) return;
     this._inOnVideoUpdate = true;
     {
-      this.view.dispatch(this.view.state.update({
-        selection: EditorSelection.single(timeToOffset(this._captions, time)),
-        scrollIntoView: true,
-      }));
-      this.view.focus();
+      let prevOffset = getOffset(this.view.state);
+      let offset = timeToOffset(this._editableCaptions, time);
+      if (offset !== prevOffset) {
+        // Scroll the current position into view:
+        this.view.dispatch(this.view.state.update({
+          selection: EditorSelection.single(offset),
+          scrollIntoView: true,
+        }));
+      }
     }
     this._inOnVideoUpdate = false;
   }
 
   render() {
+    let textbox = this.view.dom.querySelector('[role=textbox]');
+    if (textbox !== null) {
+      textbox.setAttribute('aria-label', 'Captions editor');
+    }
     return html`
-      ${this.view.dom}
+      <div style="height: 25em; width: 640px; overflow: auto;">
+        ${this.view.dom}
+      </div>
     `;
   }
 }

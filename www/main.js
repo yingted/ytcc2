@@ -26,6 +26,11 @@ const editor = new CaptionsEditor(video);
 window.video = video;
 window.editor = editor;
 
+// Remove noscript:
+Array.from(document.getElementsByTagName('noscript')).forEach(noscript => {
+  noscript.parentNode.removeChild(noscript);
+});
+
 render(html`
   ${video.render()}
   ${editor.render()}

@@ -34,13 +34,14 @@ app.get('/', (req, res) => {
       <head>
         <meta charset="UTF-8" />
         <title>Captions editor</title>
+        <meta name="viewport" content="width=640">
       </head>
-      <body>
+      <body style="margin: 0;">
+        <noscript>You need JavaScript to view this page.</noscript>
         <script>
           const params = ${JSON.stringify(params)};
         </script>
         <script src="/main.bundle.js"></script>
-        <noscript>You need JavaScript to view this page.</noscript>
       </body>
     </html>
   `).pipe(res);

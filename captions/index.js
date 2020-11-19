@@ -26,6 +26,10 @@ function decodeJson3(data) {
   return decode(json3, data);
 }
 
+function stripRaw(t) {
+  return track.strip_raw(t);
+}
+
 var empty = track.empty;
 
 /**
@@ -47,11 +51,14 @@ function toHtml(deps, t, time) {
 }
 
 /**
- * @params t 'raw Track.t
+ * @params t Srt.raw Track.t
  * @returns {array<{time: ..., text: ...}>}
  */
 function toSrtCues(t) {
   return srt.to_raw_cues(t);
+}
+function fromSrtCues(cues) {
+  return srt.from_raw_cues(cues);
 }
 
 /**
@@ -63,11 +70,38 @@ function srtTextToHtml(srtText) {
   return track.text_to_html(text);
 }
 
+/**
+ * @param srtTimeAndText {string} a string "0:12.34 a" or "a"
+ * @returns {{time: number, offset: number}|null} either {time:12.34 offset:8} or null
+ */
+function decodeTimeSpace(srtTimeAndText) {
+  try {
+    var [time, tail] = codec.decode_exn(srt.short_time_space, srtTimeAndText);
+  } catch (e) {
+    return null;
+  }
+  return {
+    time,
+    offset: srtTimeAndText.length - tail.length,
+  };
+}
+/**
+ * @param time {number}
+ * @returns string "0:12.34 "
+ */
+function encodeTimeSpace(time) {
+  return codec.encode(srt.short_time_space, [time, '']);
+}
+
 module.exports = {
   decodeJson3,
+  stripRaw,
   decodeSrt,
   empty,
   toHtml,
   toSrtCues,
+  fromSrtCues,
   srtTextToHtml,
+  decodeTimeSpace,
+  encodeTimeSpace,
 };

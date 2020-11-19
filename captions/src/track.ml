@@ -33,63 +33,87 @@ let normalize (cue : _ cue) =
 let css_color (c : Style.Attr.color) (a : Style.Attr.alpha8) =
   Printf.sprintf "rgba(%d, %d, %d, %f)" c.r8 c.g8 c.b8 (float_of_int a /. 255.)
 
+let css_of_style visible style =
+  [
+    if visible then None else Some ("visibility", "hidden");
+
+    Style.get Bold style |> Option.map (fun x -> ("font-weight", if x then "bold" else "normal"));
+    Style.get Italic style |> Option.map (fun x -> ("font-style", if x then "italic" else "normal"));
+    Some (
+      "text-decoration",
+      (match Style.get Underline style |> Option.value ~default:false, Style.get Strikethrough style |> Option.value ~default:false with
+      | false, false -> "none"
+      | false, true -> "line-through"
+      | true, false -> "underline"
+      | true, true -> "underline line-through"));
+
+    Style.get Font_style style |> Option.map (fun f ->
+      ("font-family", match f with
+      | Style.Attr.Serif_2 -> "serif"
+      (* Don't have separate mono serif/sans fonts. *)
+      | Mono_serif_1
+      | Mono_sans_3 -> "monospace"
+      | Default_0 -> "inherit"
+      (* Set casual/small caps to sans. *)
+      | Casual_5
+      | Small_caps_7
+      | Sans_4 -> "sans-serif"
+      | Cursive_6 -> "cursive"
+      )
+    );
+    (* Style.get Font_script style |> Option.map int_of_font_script; *)
+    Style.get Font_size style |> Option.map (fun x -> ("font-size", (Js.Float.toString x) ^ "em"));
+    (* Style.get Border_style style |> Option.map int_of_border_style; *)
+
+    Some (
+      "color",
+      css_color
+        (Style.get Font_color style |> Option.value ~default:({ r8 = 255; g8 = 255; b8 = 255; } : Style.Attr.color))
+        (Style.get Font_alpha style |> Option.value ~default:255));
+    Some (
+      "background-color",
+      css_color
+        (Style.get Background_color style |> Option.value ~default:({ r8 = 8; g8 = 8; b8 = 8; } : Style.Attr.color))
+        (Style.get Background_alpha style |> Option.value ~default:191));
+    (* Style.get Border_color style |> Option.map int_of_color; *)
+
+    (* Style.get Ruby style |> Option.map int_of_ruby; *)
+  ]
+  |> List.filter Option.is_some
+  |> List.map Option.value_exn
+  |> Js.Dict.fromList
+
 let cue_to_html deps now (cue : _ cue) =
-  normalize cue
-  |> List.map (fun { start; style; text; } ->
-      let s : string Js.Dict.t =
-        [
-          if start <= now then None else Some ("visibility", "hidden");
-
-          Style.get Bold style |> Option.map (fun x -> ("font-weight", if x then "bold" else "normal"));
-          Style.get Italic style |> Option.map (fun x -> ("font-style", if x then "italic" else "normal"));
-          Some (
-            "text-decoration",
-            (match Style.get Underline style |> Option.value ~default:false, Style.get Strikethrough style |> Option.value ~default:false with
-            | false, false -> "none"
-            | false, true -> "line-through"
-            | true, false -> "underline"
-            | true, true -> "underline line-through"));
-
-          Style.get Font_style style |> Option.map (fun f ->
-            ("font-family", match f with
-            | Style.Attr.Serif_2 -> "serif"
-            (* Don't have separate mono serif/sans fonts. *)
-            | Mono_serif_1
-            | Mono_sans_3 -> "monospace"
-            | Default_0 -> "inherit"
-            (* Set casual/small caps to sans. *)
-            | Casual_5
-            | Small_caps_7
-            | Sans_4 -> "sans-serif"
-            | Cursive_6 -> "cursive"
-            )
-          );
-          (* Style.get Font_script style |> Option.map int_of_font_script; *)
-          Style.get Font_size style |> Option.map (fun x -> ("font-size", (Js.Float.toString x) ^ "em"));
-          (* Style.get Border_style style |> Option.map int_of_border_style; *)
-
-          Some (
-            "color",
-            css_color
-              (Style.get Font_color style |> Option.value ~default:({ r8 = 255; g8 = 255; b8 = 255; } : Style.Attr.color))
-              (Style.get Font_alpha style |> Option.value ~default:255));
-          Some (
-            "background-color",
-            css_color
-              (Style.get Background_color style |> Option.value ~default:({ r8 = 0; g8 = 0; b8 = 0; } : Style.Attr.color))
-              (Style.get Background_alpha style |> Option.value ~default:191));
-          (* Style.get Border_color style |> Option.map int_of_color; *)
-
-          (* Style.get Ruby style |> Option.map int_of_ruby; *)
-        ]
-        |> List.filter Option.is_some
-        |> List.map Option.value_exn
-        |> Js.Dict.fromList
-      in
-      [%raw {|({html, styleMap}, text, s) => html`<span class="captions-text" style=${styleMap(s)}>${text}</span>`|}] deps text s
-    )
+  let text_css =
+    normalize cue
+    |> List.map (fun { start; style; text; } ->
+        let s : string Js.Dict.t = css_of_style (start <= now) style in
+        (text, s))
+  in
+  let merged = ref [] in
+  text_css |> List.iter (fun (text, s) ->
+    merged := (
+      match !merged with
+      (* Some browsers render gaps between letters for background color when the zoom is weird. *)
+      (* Ideally, we'd merge the background color spans and generate nested spans for text style, *)
+      (* but this is much easier: *)
+      | (prev_text, prev_s) :: tail when prev_s = s ->
+          (prev_text ^ text, prev_s) :: tail
+      | tail -> (text, s) :: tail));
+  merged := List.rev !merged;
+  let plain_text =
+    !merged
+    |> List.map (fun (text, _s) -> text)
+    |> String.concat ""
+  in
+  !merged
+  |> List.map (fun (text, s) ->
+      [%raw {|({html, styleMap}, text, s) => html`<span class="captions-text" style=${styleMap(s)}>${text}</span>`|}] deps text s)
   |> Array.of_list
-  |> [%raw {|({html}, spans) => html`<div class="captions-cue">${spans}</div>`|}] deps
+  |> [%raw {|({html}, plain_text, spans) => html`
+    <div role="alert" aria-live="assertive" aria-label=${plain_text}></div>
+    <div class="captions-cue" aria-hidden="true">${spans}</div>
+  `|}] deps plain_text
 
 let infinity = 1.0 /. 0.0
 let text_to_html deps (text : _ text) =
@@ -106,5 +130,11 @@ let to_html deps now t =
   |> List.map (cue_to_html deps now)
   |> Array.of_list
   |> [%raw {|({html}, cues) => html`<div class="captions-bbox">${cues}</div>`|}] deps
+
+let strip_raw (type a) (type b) (t : a t) : b t =
+  t |> List.map (fun (cue : a cue) -> {
+    cue with text = cue.text
+      |> List.map (fun (span, _raw) -> (span, None))
+  })
 
 let empty = []

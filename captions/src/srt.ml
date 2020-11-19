@@ -36,6 +36,35 @@ let time_parser: Track.seconds Parser.t =
       let (hh, mm) = idivmod mm 60 in
       Printf.sprintf "%02d:%02d:%02d,%03d" hh mm ss mmm ^ tail)
 
+(* Same as time_parser, but prefer to skip leading zeros and hours. *)
+let short_time_parser: Track.seconds Parser.t =
+  Codec.make
+    ~try_decode:(fun s ->
+      match Scanf.sscanf s "%d:%02d:%f%n"
+        (fun hh mm ssmmm n ->
+          (
+            float_of_int (hh * 3600 + mm * 60) +. ssmmm,
+            String.sub s n (String.length s - n)))
+      with
+      | (secs, tail) -> Ok (secs, tail)
+      | exception Scanf.Scan_failure _err ->
+      match Scanf.sscanf s "%d:%f%n"
+        (fun mm ssmmm n ->
+          (
+            float_of_int (mm * 60) +. ssmmm,
+            String.sub s n (String.length s - n)))
+      with
+      | (secs, tail) -> Ok (secs, tail)
+      | exception Scanf.Scan_failure err -> Error (Invalid_time err))
+    ~encode:(fun (ss, tail) ->
+      let (ss, mmm) = divmod ss 1. in
+      let mmm = int_of_float (round (mmm *. 100.)) in
+      let (mm, ss) = idivmod ss 60 in
+      let (hh, mm) = idivmod mm 60 in
+      if hh = 0
+      then Printf.sprintf "%d:%02d.%02d" mm ss mmm ^ tail
+      else Printf.sprintf "%d:%02d:%02d.%02d" hh mm ss mmm ^ tail)
+
 let with_raw p =
   Codec.make
     ~try_decode:(fun s ->
@@ -268,24 +297,43 @@ type raw_cue = {
   text: string;
 }
 let to_raw_cues t =
-  let now = ref None in
-  t
-  |> List.sort (fun (a : _ Track.cue) (b : _ Track.cue) -> compare a.start b.start)
-  |> List.map (fun ({ start; end_; text } : _ Track.cue) ->
-    let text =
-      text
-      |> List.map (fun (span, _raw) -> (span, None))
-      |> Codec.encode text_codec
-    in
-    (* cue to clear the previous cue *)
-    let clear_cue =
-      match !now with
-      | Some now when now < start -> [{ time = now; text = ""; }]
-      | _ -> []
-    in
-    let new_cue = { time = start; text; } in
-    now := Some (max start end_ |> max (Option.value ~default:0.0 !now));
-    clear_cue @ [new_cue]
-  )
-  |> List.flatten
-  |> Array.of_list
+  let cues =
+    t
+    |> List.sort (fun (a : _ Track.cue) (b : _ Track.cue) -> compare a.start b.start)
+    |> Array.of_list
+  in
+  let raw_cues = [||] in
+  for i = 0 to Array.length cues - 1 do
+    let ({ start; end_; text } : _ Track.cue) = cues.(i) in
+    let text = text |> Codec.encode text_codec in
+    let _ = Js.Array.push { time = start; text; } raw_cues in
+    (* Skip clearing the window if we can: *)
+    if i + 1 >= Array.length cues then () else
+    if end_ = cues.(i + 1).start then () else
+    let _ = Js.Array.push { time = end_; text = ""; } raw_cues in
+    ()
+  done;
+  raw_cues
+
+let max_cue_seconds = 366 * 24 * 3600 |> float_of_int
+let from_raw_cues (raw_cues : _) : 'raw Ytcc2Captions.Track.t =
+  let cues = [||] in
+  for i = 0 to Array.length raw_cues - 1 do
+    let { time; text; } = raw_cues.(i) in
+    (* Empty captions are already translated into clears. *)
+    if text = "" then () else
+    let _ = Js.Array.push ({
+      start = time;
+      end_ =
+        if i + 1 < Array.length raw_cues
+        then raw_cues.(i + 1).time
+        else time +. max_cue_seconds;
+      text = Codec.decode_exn text_codec text;
+    } : 'raw Track.cue) cues in
+    ()
+  done;
+  cues |> Array.to_list
+
+let short_time_space =
+  let ( * ) = Parser.pair in
+  Parser.(short_time_parser * easy_expect_re ~re:" ?" ~default:" " |> first)
