@@ -88,6 +88,7 @@ export class YouTubeVideo {
     this.player = null;
     this.ready = false;
     this.timer = new Timer(this._update.bind(this));
+    this.timer.setOn(true);
     this._handlers = [];
     this.captions = options.captions || empty;
     this.captionsRegion = null;
@@ -208,11 +209,9 @@ export class YouTubeVideo {
     if (!this.ready) return;
     switch (event.data) {
       case YT.PlayerState.PLAYING:
-        this.timer.setOn(true);
         break;
       case YT.PlayerState.PAUSED:
       case YT.PlayerState.BUFFERING:
-        this.timer.setOn(false);
         break;
       default:
         return;

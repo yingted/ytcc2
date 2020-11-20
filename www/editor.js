@@ -34,6 +34,7 @@ function getOffset(state) {
   return state.selection.asSingle().ranges[0].head;
 }
 
+// Find an offset <= this time.
 function timeToOffset(captions, time) {
   let curOffset = 0;
   let nextOffset = 0;
@@ -48,6 +49,9 @@ function timeToOffset(captions, time) {
   return curOffset;
 }
 
+// Find a time when this offset would be rendered.
+// We usually prefer earlier times, but for paused karaoke, we prefer later times.
+// For simplicity, just prefer earlier times, as it's easier to play forwards than back.
 function offsetToTime(captions, offset) {
   let curOffset = 0;
   let curTime = 0;
@@ -212,17 +216,13 @@ export class CaptionsEditor {
         let time = offsetToTime(this._editableCaptions, offset);
         if (time !== prevTime) {
           this.video.seekTo(time);
+          this._onVideoUpdate(time);
         }
       }
     }
   }
 
   _onVideoUpdate(time) {
-    let lastVideoUpdate = this._lastVideoUpdate;
-    this._lastVideoUpdate = {
-      videoTime: time,
-      realTime: Date.now() / 1000,
-    };
     // Don't scroll the editor if we're focused on it.
     // This means we only focus once after seeking.
     if (this.view.hasFocus) return;
