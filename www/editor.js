@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-import {EditorState, EditorSelection} from "@codemirror/next/state"
-import {EditorView, keymap, Decoration, ViewPlugin, WidgetType} from "@codemirror/next/view"
-import {defaultKeymap} from "@codemirror/next/commands"
-import {history, historyKeymap} from "@codemirror/next/history"
+import {EditorState, EditorSelection} from "@codemirror/next/state";
+import {EditorView, keymap, Decoration, ViewPlugin, WidgetType} from "@codemirror/next/view";
+import {defaultKeymap} from "@codemirror/next/commands";
+import {history, historyKeymap} from "@codemirror/next/history";
 import {render, html} from 'lit-html';
-import {StreamSyntax} from "@codemirror/next/stream-syntax"
+import {StreamSyntax} from "@codemirror/next/stream-syntax";
 import {decodeJson3, stripRaw, srtTextToHtml, toSrtCues, fromSrtCues, decodeTimeSpace, encodeTimeSpace} from 'ytcc2-captions';
 import {RangeSetBuilder} from '@codemirror/next/rangeset';
 import {StyleModule} from 'style-mod';
+import {homeEndKeymap} from './codemirror_indent_keymap';
 
 function captionToText({time, text}) {
   return encodeTimeSpace(time) + text.replace(/^(\d+:\d)/mg, " $1");
@@ -109,6 +110,7 @@ class CaptionsHighlighter /*extends PluginValue*/ {
             block: false,
           }));
         } else {
+          // Time + text:
           let {time, offset: lineOffset} = timeOffset;
           builder.add(offset, offset + lineOffset, Decoration.mark({ class: 'cue-start-time' }));
           lastLineOffset = lineOffset;
@@ -157,11 +159,20 @@ export class CaptionsEditor {
         extensions: [
           history(),
           keymap([
+            ...homeEndKeymap,
             ...defaultKeymap,
             ...historyKeymap,
           ]),
           captionsHighlighterExtension,
           EditorView.updateListener.of(this._onEditorUpdate.bind(this)),
+          EditorState.indentation.of((context, pos) => {
+            let line = context.doc.lineAt(pos);
+            let timeOffset = decodeTimeSpace(line.content);
+            if (timeOffset === null) {
+              return 0;
+            }
+            return timeOffset.offset;
+          }),
         ],
       }),
     });
@@ -216,7 +227,6 @@ export class CaptionsEditor {
         let time = offsetToTime(this._editableCaptions, offset);
         if (time !== prevTime) {
           this.video.seekTo(time);
-          this._onVideoUpdate(time);
         }
       }
     }
