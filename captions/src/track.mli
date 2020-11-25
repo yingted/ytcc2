@@ -1,6 +1,7 @@
 include module type of Track_intf
 
 val normalize : 'raw cue -> std_token list
+val normalize' : 'raw cue -> (std_token * 'raw option) list
 
 (* val at : seconds -> 'raw t -> (cea708_window * 'raw text) list *)
 val at : seconds -> 'raw t -> 'raw text list
@@ -13,3 +14,11 @@ val text_to_html : Js.Types.obj_val -> 'raw text -> Js.Types.obj_val
 val strip_raw : 'a t -> 'b t
 
 val empty : 'raw t
+
+type 'raw span = {
+  start : seconds;
+  style : string Js.Dict.t;
+  text : string;
+  raw: 'raw option;
+}
+val text_to_spans : string text -> string span array

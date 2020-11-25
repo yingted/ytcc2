@@ -30,6 +30,31 @@ let normalize (cue : _ cue) =
             else [])
   |> List.flatten
 
+let normalize' (cue : _ cue) =
+  let now = ref cue.start in
+  let style = ref Style.empty in
+  cue.text
+  |> List.map (fun (token, raw) ->
+      let text =
+        match token with
+          | Set_style s ->
+              style := s;
+              ""
+          | Wait_until t ->
+              now := max !now t;
+              ""
+          | Append text ->
+              (* Do not layout or read text that's never drawn. *)
+              if !now < cue.end_
+              then text
+              else ""
+      in
+      ({
+        start = !now;
+        style = !style;
+        text;
+      }, raw))
+
 let css_color (c : Style.Attr.color) (a : Style.Attr.alpha8) =
   Printf.sprintf "rgba(%d, %d, %d, %f)" c.r8 c.g8 c.b8 (float_of_int a /. 255.)
 
@@ -83,30 +108,35 @@ let css_of_style visible style =
   |> List.map Option.value_exn
   |> Js.Dict.fromList
 
+let merge collapse items =
+  let merged = ref [] in
+  items |> List.iter (fun x ->
+    merged := (
+      match !merged with
+      | prev_x :: tail ->
+          (match collapse prev_x x with
+          | Some x' -> x' :: tail
+          | None -> x :: prev_x :: tail)
+      | tail -> x :: tail));
+  List.rev !merged
+
 let cue_to_html deps now (cue : _ cue) =
-  let text_css =
+  let merged =
     normalize cue
     |> List.map (fun { start; style; text; } ->
         let s : string Js.Dict.t = css_of_style (start <= now) style in
         (text, s))
+    |> merge (fun (prev_text, prev_s) (text, s) ->
+        if prev_s = s
+        then Some (prev_text ^ text, prev_s)
+        else None)
   in
-  let merged = ref [] in
-  text_css |> List.iter (fun (text, s) ->
-    merged := (
-      match !merged with
-      (* Some browsers render gaps between letters for background color when the zoom is weird. *)
-      (* Ideally, we'd merge the background color spans and generate nested spans for text style, *)
-      (* but this is much easier: *)
-      | (prev_text, prev_s) :: tail when prev_s = s ->
-          (prev_text ^ text, prev_s) :: tail
-      | tail -> (text, s) :: tail));
-  merged := List.rev !merged;
   let plain_text =
-    !merged
+    merged
     |> List.map (fun (text, _s) -> text)
     |> String.concat ""
   in
-  !merged
+  merged
   |> List.map (fun (text, s) ->
       [%raw {|({html, styleMap}, text, s) => html`<span class="captions-text" style=${styleMap(s)}>${text}</span>`|}] deps text s)
   |> Array.of_list
@@ -138,3 +168,34 @@ let strip_raw (type a) (type b) (t : a t) : b t =
   })
 
 let empty = []
+
+type 'raw span = {
+  start : seconds;
+  style : string Js.Dict.t;
+  text : string;
+  raw: 'raw option;
+}
+let text_to_spans (text : _ text) =
+  normalize' {
+    start = 0.0;
+    end_ = infinity;
+    text;
+  }
+  |> merge (fun
+    (({ start; style; text; } : std_token), raw)
+    (({ start = start'; style = style'; text = text'; } : std_token), raw') ->
+      if style' = style && start' = start && text' != "" && text != ""
+      then Some (({
+        start;
+        style;
+        text = text' ^ text;
+      } : std_token), Option.map2 (^) raw' raw)
+      else None)
+  |> List.map (fun (({ start; style; text; } : std_token), raw) ->
+      { 
+        start;
+        style = css_of_style true style;
+        text;
+        raw;
+      })
+  |> Array.of_list

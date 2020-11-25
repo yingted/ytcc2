@@ -127,8 +127,9 @@ export class YouTubeVideo {
         /* Correctly-sized line boxes */
         .captions-text {
           pointer-events: auto;
-          background-color: black;
-          color: white;
+          /* background-color: black; */
+          /* color: white; */
+          /* YouTube-like fonts: */
           font-family: Roboto, "Arial Unicode Ms", Arial, Helvetica, Verdana, sans-serif;
           white-space: pre-wrap;
         }

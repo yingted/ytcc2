@@ -20,10 +20,12 @@ import {defaultKeymap} from "@codemirror/next/commands";
 import {history, historyKeymap} from "@codemirror/next/history";
 import {render, html} from 'lit-html';
 import {StreamSyntax} from "@codemirror/next/stream-syntax";
-import {decodeJson3, stripRaw, srtTextToHtml, toSrtCues, fromSrtCues, decodeTimeSpace, encodeTimeSpace} from 'ytcc2-captions';
+import {decodeJson3, stripRaw, srtTextToHtml, srtTextToSpans, toSrtCues, fromSrtCues, decodeTimeSpace, encodeTimeSpace} from 'ytcc2-captions';
 import {RangeSetBuilder} from '@codemirror/next/rangeset';
 import {StyleModule} from 'style-mod';
 import {homeEndKeymap} from './codemirror_indent_keymap';
+import {RangeSet} from "@codemirror/next/rangeset";
+import {oneDark} from "@codemirror/next/theme-one-dark";
 
 function captionToText({time, text}) {
   return encodeTimeSpace(time) + text.replace(/^(\d+:\d)/mg, " $1");
@@ -81,56 +83,225 @@ class TemplateWidget extends WidgetType {
 
 class CaptionsHighlighter /*extends PluginValue*/ {
   static styleModule = EditorView.styleModule.of(new StyleModule({
-    '.cm-content .cue-start-time': {
+    // All text (override CodeMirror style):
+    '.cm-content': {
+      'caret-color': 'auto !important',
+    },
+    // Unfortunately, CM dark selection is super hard to see.
+
+    // Timestamps:
+    '.cm-light .cm-content .cue-start-time': {
       color: '#444',
     },
-    '[x-caret-line]': {
+    '.cm-dark .cm-content .cue-start-time': {
+      color: '#ddd',
+    },
+    /* A little extra contrast: */
+    '.cm-light .cm-content [x-caret-line] .cue-start-time': {
+      color: '#000',
+    },
+    '.cm-dark .cm-content [x-caret-line] .cue-start-time': {
+      color: '#fff',
+    },
+
+    // Indents (for continuations):
+    '.cm-content .cue-continuation-indent': {
+      // Fixed-width, like the time, which is the default:
+      'font-family': 'monospace',
+    },
+
+    // Code tags:
+    '.cm-light .cm-content .cue-span-tag': {
+      color: '#00a',
+    },
+    '.cm-dark .cm-content .cue-span-tag': {
+      color: '#ccf',
+    },
+    /* A little extra contrast: */
+    '.cm-light .cm-content [x-caret-line] .cue-span-tag': {
+      color: '#008',
+    },
+    '.cm-dark .cm-content [x-caret-line] .cue-span-tag': {
+      color: '#ddf',
+    },
+
+    // Default captions text:
+    '.cm-content .cue-span-text': {
+      // YouTube-like fonts:
+      'font-family': 'Roboto, "Arial Unicode Ms", Arial, Helvetica, Verdana, sans-serif',
+    },
+
+    // Current (caret) line:
+    '.cm-light [x-caret-line]': {
       'background-color': '#ddd',
+    },
+    '.cm-dark [x-caret-line]': {
+      'background-color': '#000',
     },
   }))
   constructor(view) {
     this.view = view;
     this.decorations = this._getDecorations(view);
   }
+  /**
+   * Convert SRT text to ranges.
+   * @param {number} startIndex offset of text (added to all indices)
+   * @param {string} srtText the raw SRT text
+   * @return {array<Range<Decoration>>} styles relative to 
+   */
+  static srtTextToRanges(startIndex, srtText) {
+    // @type {array<Range<Decoration>>}
+    let ranges = [];
+
+    let spans = srtTextToSpans(srtText);
+    let textOffset = startIndex;
+    for (let span of spans) {
+      let nextTextOffset = textOffset + span.raw.length;
+
+      // Check if it's text or not.
+      if (span.text !== '') {
+        // Text: build the CSS
+        let style = '';
+        for (let [k, v] of Object.entries(span.style)) {
+          style += `${k}: ${v}; `;
+        }
+        ranges.push({
+          from: textOffset,
+          to: nextTextOffset,
+          value: Decoration.mark({attributes: {class: 'cue-span-text', style}}),
+        });
+      } else {
+        // Tag: style as a tag
+        ranges.push({
+          from: textOffset,
+          to: nextTextOffset,
+          value: Decoration.mark({class: 'cue-span-tag'}),
+        });
+      }
+
+      textOffset = nextTextOffset;
+    }
+
+    return ranges;
+  }
+  /**
+   * Get the previous line start.
+   * If lineStart is 0 (BOF), returns null.
+   * If the number is not a line start, implementation defined result.
+   * @param {Document} doc
+   * @param {number} lineStart the start of the current line (or doc.length for EOF)
+   * @returns {null|number} the start of the previous line
+   */
+  static prevLine(doc, lineStart) {
+    if (lineStart === 0) return null;
+    return doc.lineAt(lineStart - 1).from;
+  }
+  /**
+   * Get the next line start, or doc.length for EOF.
+   * If lineStart is doc.length (EOF), returns null.
+   * If the number is not a line start, implementation defined result.
+   * @param {Document} doc
+   * @param {number} lineStart the start of the current line
+   * @returns {null|number} the start of the next line, or doc.length for EOF
+   */
+  static nextLine(doc, lineStart) {
+    if (lineStart === doc.length) return null;
+    let line = doc.lineAt(lineStart);
+    if (line.to === doc.length) return doc.length;
+    return line.to + 1;
+  }
   _getDecorations(view) {
     // Syntax:
-    let builder = new RangeSetBuilder();
+    // @type {array<Range<Decoration>>}
+    let ranges = [];
+
+    let doc = view.state.doc;
     for (let {from, to} of view.visibleRanges) {
-      let text = view.state.doc.sliceString(from, to);
+      // Seek back to the nearest cue boundary:
+      while (decodeTimeSpace(doc.lineAt(from).content) === null) {
+        let prev = CaptionsHighlighter.prevLine(doc, from);
+        if (prev === null) break;
+        from = prev;
+      }
+      // Seek forward to the nearest cue boundary (not strictly needed):
+      for (;;) {
+        let next = CaptionsHighlighter.nextLine(doc, to);
+        if (next === null) break;
+        if (decodeTimeSpace(doc.lineAt(next).content) !== null) break
+        to = next;
+      }
+
+      // List the cues:
+      let text = doc.sliceString(from, to);
       let lines = text.split('\n');
-      let lastLineOffset = 0;
+      // {number} cues[i].from is the start index of the cue in text
+      // {number} cues[i].to is the end index of the cue in text
+      // {number} cues[i].time is when the cue is shown, in seconds
+      // {number} cues[i].indent is how many characters of indent for continuations (e.g. '1:23.45 '.length)
+      // {array<number>} cues[i].continuationOffsets[j] is the index of a continuation in text (e.g. '1:23.45 a\nb'.indexOf('b'))
+      let cues = [];
       for (let i = 0, offset = 0; i < lines.length; offset += lines[i].length + 1, ++i) {
-        let line = lines[i];
-        let timeOffset = decodeTimeSpace(line);
-        if (timeOffset === null) {
-          // Continuation:
-          builder.add(offset, offset, Decoration.widget({
-            widget: new TemplateWidget(html`<span class="cue-continuation-indent">${new Array(lastLineOffset + 1).join(' ')}</span>`),
-            side: -1,
-            block: false,
-          }));
-        } else {
-          // Time + text:
-          let {time, offset: lineOffset} = timeOffset;
-          builder.add(offset, offset + lineOffset, Decoration.mark({ class: 'cue-start-time' }));
-          lastLineOffset = lineOffset;
+        // Decode this line:
+        let timeOffset = decodeTimeSpace(lines[i]);
+        if (timeOffset !== null) {
+          // Time + text, so add a new cue:
+          let {time, offset: indent} = timeOffset;
+
+          cues.push({
+            from: offset,
+            to: offset + lines[i].length,
+            time,
+            indent,
+            continuationOffsets: [],
+          });
+        } else if (cues.length > 0) {
+          // Continuation, update the cue end:
+          let lastCue = cues[cues.length - 1];
+          lastCue.continuationOffsets.push(offset);
+          lastCue.to = offset + lines[i].length;
+        }
+      }
+
+      // Convert each cue:
+      for (let {from, to, time, indent, continuationOffsets} of cues) {
+        // Style the time:
+        ranges.push({
+          from,
+          to: from + indent,
+          value: Decoration.mark({class: 'cue-start-time'}),
+        });
+
+        // Style the text:
+        ranges.push.apply(
+          ranges,
+          CaptionsHighlighter.srtTextToRanges(
+            from + indent,
+            text.substring(from + indent, to)));
+
+        // Indent each continuation:
+        for (let offset of continuationOffsets) {
+          ranges.push({
+            from: offset,
+            to: offset,
+            value: Decoration.widget({
+              widget: new TemplateWidget(html`<span class="cue-continuation-indent">${new Array(indent + 1).join(' ')}</span>`),
+              side: -1,
+              block: false,
+            }),
+          });
         }
       }
     }
-    let ranges = builder.finish();
 
     // Caret:
-    let cursorLine = view.state.doc.lineAt(getOffset(view.state));
-    ranges = ranges.update({
-      add: [
-        {
-          from: cursorLine.from,
-          to: cursorLine.from,
-          value: Decoration.line({attributes: { 'x-caret-line': 'true' }}),
-        },
-      ],
+    let cursorLine = doc.lineAt(getOffset(view.state));
+    ranges.push({
+      from: cursorLine.from,
+      to: cursorLine.from,
+      value: Decoration.line({attributes: { 'x-caret-line': 'true' }}),
     });
-    return ranges;
+
+    return RangeSet.of(ranges, /*sort=*/true);
   }
   update(update) {
     if (update.viewportChanged || update.docChanged || update.selectionSet) {
@@ -173,6 +344,8 @@ export class CaptionsEditor {
             }
             return timeOffset.offset;
           }),
+          // Force dark theme for now:
+          oneDark,
         ],
       }),
     });

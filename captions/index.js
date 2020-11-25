@@ -71,6 +71,15 @@ function srtTextToHtml(srtText) {
 }
 
 /**
+ * @param srtText {string}
+ * @returns {array<{raw: string, text: string, style: object, start: number}>}
+ */
+function srtTextToSpans(srtText) {
+  let text = codec.decode_exn(srt.text_codec, srtText);
+  return track.text_to_spans(text);
+}
+
+/**
  * @param srtTimeAndText {string} a string "0:12.34 a" or "a"
  * @returns {{time: number, offset: number}|null} either {time:12.34 offset:8} or null
  */
@@ -102,6 +111,7 @@ module.exports = {
   toSrtCues,
   fromSrtCues,
   srtTextToHtml,
+  srtTextToSpans,
   decodeTimeSpace,
   encodeTimeSpace,
 };

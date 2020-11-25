@@ -23,3 +23,8 @@ let bind t f =
   match t with
   | None -> None
   | Some x -> f x
+
+let map2 f x y =
+  match x, y with
+  | Some x, Some y -> Some (f x y)
+  | _ -> None
