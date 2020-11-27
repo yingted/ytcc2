@@ -392,6 +392,9 @@ export class CaptionsEditor {
       if (update.docChanged) {
         // TODO call this.setCaptions
         console.log('update', update.changes);
+        update.changes.iterChanges(
+          ((fromA, toA, fromB, toB, inserted) =>
+            console.log([fromA, toA, fromB, toB, inserted.sliceString(0)])));
       }
       if (update.selectionSet) {
         let prevOffset = getOffset(update.prevState);

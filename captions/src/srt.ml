@@ -40,6 +40,7 @@ let time_parser: Track.seconds Parser.t =
 let short_time_parser: Track.seconds Parser.t =
   Codec.make
     ~try_decode:(fun s ->
+      (* TODO: optimize this *)
       match Scanf.sscanf s "%d:%02d:%f%n"
         (fun hh mm ssmmm n ->
           (
