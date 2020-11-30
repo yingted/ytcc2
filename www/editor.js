@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {EditorState, EditorSelection} from "@codemirror/next/state";
+import {EditorState, EditorSelection, Transaction} from "@codemirror/next/state";
 import {EditorView, keymap, Decoration, ViewPlugin, WidgetType} from "@codemirror/next/view";
 import {defaultKeymap} from "@codemirror/next/commands";
 import {history, historyKeymap} from "@codemirror/next/history";
@@ -27,7 +27,13 @@ import {homeEndKeymap} from './codemirror_indent_keymap';
 import {RangeSet} from "@codemirror/next/rangeset";
 import {oneDark} from "@codemirror/next/theme-one-dark";
 
-function captionToText({time, text}) {
+function assert(cond) {
+  console.assert(cond);
+  if (!cond) debugger;
+}
+
+function captionToText({time, text, source}) {
+  if (source !== undefined) return source;
   return encodeTimeSpace(time) + text.replace(/^(\d+:\d)/mg, " $1");
 }
 function textToCaption(textCaption) {
@@ -36,6 +42,40 @@ function textToCaption(textCaption) {
 }
 function toText(captions) {
   return captions.map(captionToText).join('\n');
+}
+/**
+ * Parse text to cues, skipping leading continuations.
+ */
+function textToCues(text) {
+  let lines = text.split('\n');
+  // {number} cues[i].from is the start index of the cue in text
+  // {number} cues[i].to is the end index of the cue in text
+  // {number} cues[i].time is when the cue is shown, in seconds
+  // {number} cues[i].indent is how many characters of indent for continuations (e.g. '1:23.45 '.length)
+  // {array<number>} cues[i].continuationOffsets[j] is the index of a continuation in text (e.g. '1:23.45 a\nb'.indexOf('b'))
+  let cues = [];
+  for (let i = 0, offset = 0; i < lines.length; offset += lines[i].length + 1, ++i) {
+    // Decode this line:
+    let timeOffset = decodeTimeSpace(lines[i]);
+    if (timeOffset !== null) {
+      // Time + text, so add a new cue:
+      let {time, offset: indent} = timeOffset;
+
+      cues.push({
+        from: offset,
+        to: offset + lines[i].length,
+        time,
+        indent,
+        continuationOffsets: [],
+      });
+    } else if (cues.length > 0) {
+      // Continuation, update the cue end:
+      let lastCue = cues[cues.length - 1];
+      lastCue.continuationOffsets.push(offset);
+      lastCue.to = offset + lines[i].length;
+    }
+  }
+  return cues;
 }
 function getOffset(state) {
   return state.selection.asSingle().ranges[0].head;
@@ -80,7 +120,7 @@ class TemplateWidget extends WidgetType {
   toDOM(view) {
     let div = document.createElement('DIV');
     render(this._template, div);
-    console.assert(div.firstElementChild === div.lastElementChild);
+    assert(div.firstElementChild === div.lastElementChild);
     return div.firstElementChild;
   }
 }
@@ -237,41 +277,15 @@ class CaptionsHighlighter /*extends PluginValue*/ {
 
       // List the cues:
       let text = doc.sliceString(from, to);
-      let lines = text.split('\n');
-      // {number} cues[i].from is the start index of the cue in text
-      // {number} cues[i].to is the end index of the cue in text
-      // {number} cues[i].time is when the cue is shown, in seconds
-      // {number} cues[i].indent is how many characters of indent for continuations (e.g. '1:23.45 '.length)
-      // {array<number>} cues[i].continuationOffsets[j] is the index of a continuation in text (e.g. '1:23.45 a\nb'.indexOf('b'))
-      let cues = [];
-      for (let i = 0, offset = 0; i < lines.length; offset += lines[i].length + 1, ++i) {
-        // Decode this line:
-        let timeOffset = decodeTimeSpace(lines[i]);
-        if (timeOffset !== null) {
-          // Time + text, so add a new cue:
-          let {time, offset: indent} = timeOffset;
-
-          cues.push({
-            from: offset,
-            to: offset + lines[i].length,
-            time,
-            indent,
-            continuationOffsets: [],
-          });
-        } else if (cues.length > 0) {
-          // Continuation, update the cue end:
-          let lastCue = cues[cues.length - 1];
-          lastCue.continuationOffsets.push(offset);
-          lastCue.to = offset + lines[i].length;
-        }
-      }
+      let baseFrom = from;
+      let cues = textToCues(text);
 
       // Convert each cue:
       for (let {from, to, time, indent, continuationOffsets} of cues) {
         // Style the time:
         ranges.push({
-          from,
-          to: from + indent,
+          from: baseFrom + from,
+          to: baseFrom + from + indent,
           value: Decoration.mark({class: 'cue-start-time'}),
         });
 
@@ -279,14 +293,14 @@ class CaptionsHighlighter /*extends PluginValue*/ {
         ranges.push.apply(
           ranges,
           CaptionsHighlighter.srtTextToRanges(
-            from + indent,
+            baseFrom + from + indent,
             text.substring(from + indent, to)));
 
         // Indent each continuation:
         for (let offset of continuationOffsets) {
           ranges.push({
-            from: offset,
-            to: offset,
+            from: baseFrom + offset,
+            to: baseFrom + offset,
             value: Decoration.widget({
               widget: new TemplateWidget(html`<span class="cue-continuation-indent">${new Array(indent + 1).join(' ')}</span>`),
               side: -1,
@@ -320,6 +334,22 @@ let captionsHighlighterExtension = [
   CaptionsHighlighter.styleModule,
 ];
 
+/**
+ * Caption editor for a video.
+ * Properties:
+ * - captions:
+ *   - time and text
+ * - captions source:
+ *   - optional prologue (ending in "\n")
+ *   - formatted cues
+ *   - includes some invalid syntax (in `source`)
+ * - player-only captions style, currently just karaoke timings
+ *   - TODO: reconsider this, maybe render them as ⏲️ but copy as full text
+ * Events:
+ * - captions edit: propagate change to the player, preserving styles for untouched lines
+ * - selection update: seek the player
+ * - player seek: update the selection
+ */
 export class CaptionsEditor {
   /**
    * Create a captions editor for a video.
@@ -365,6 +395,7 @@ export class CaptionsEditor {
 
   /**
    * Set the captions.
+   * This does not add the change to the history, so you should only call this once at the start.
    * @param {Srt.raw Track.t} captions
    */
   setCaptions(captions) {
@@ -383,7 +414,10 @@ export class CaptionsEditor {
           from: 0,
           to: this.view.state.doc.length,
           insert: toText(this._editableCaptions),
-        }
+        },
+        annotations: [
+          Transaction.addToHistory.of(false),
+        ],
       }));
     }
     this._inSetCaptions = false;
@@ -402,14 +436,26 @@ export class CaptionsEditor {
         changes.push({fromA, toA, textB: inserted.sliceString(0)}));
       changes.sort((x, y) => (x.fromA > y.fromA) - (x.fromA < y.fromA));
 
+      let docText = update.prevState.doc.toString();
+      let captionsText = toText(this._editableCaptions);
+      assert(docText.endsWith(captionsText));
+
       // Get the captions (numbers do not include "\n"):
-      // @type {{fromA: number, toA: number, caption: {time: ..., text: ..., raw: ...}}}
+      // @type {{fromA: number, toA: number, caption: {time: ..., text: ..., raw: ...}, text: string}}
       let captions = [];
-      let offset = 0;
+      // Length of text before first caption:
+      let prologueLength = docText.length - captionsText.length;
+      let prologue = docText.substring(0, prologueLength);
+      if (prologue !== '') {
+        assert(prologue[prologue.length - 1] === '\n');
+        prologue = prologue.substring(0, prologue.length - 1);
+      }
+      let offset = prologueLength;
       for (let caption of this._editableCaptions) {
         // Get the range of this line
-        let endOffset = offset + captionToText(caption).length;
-        captions.push({fromA: offset, toA: endOffset, caption});
+        let text = captionToText(caption);
+        let endOffset = offset + text.length;
+        captions.push({fromA: offset, toA: endOffset, caption, text});
         // Next offset comes after a newline, except for the last caption:
         offset = endOffset + 1;
       }
@@ -421,63 +467,93 @@ export class CaptionsEditor {
         let {fromA: from, toA: to, textB: insert} = change;
         // Delete [from, to), then add insert in the from position.
 
+        // Find the indices of the affected captions:
+        let affectedIndices = [];  // affected captions
         for (; i >= 0; --i) {
           let caption = captions[i];
-
-          if (from === to && insert === '') break;
-
-          // `to` should not be past this caption + newline, since the rest are finalized.
-          console.assert(from <= to);
-          console.assert(to <= caption.toA + 1);
-          if (i === captions.length - 1) {
-            // No newline, so `to` should not be past this caption:
-            console.assert(to <= caption.toA);
-          }
 
           // Restrict to captions that touch the change:
           if (caption.fromA > to) continue;
           if (caption.toA < from) break;
 
-          // Maybe delete the newline: [caption.toA, caption.toA + 1)
-          if (/*from <= caption.toA && */caption.toA + 1 <= to) {
-            // Delete the newline, merging the two captions:
-            let [nextCaption] = captions.splice(i + 1, 1);
-            caption.caption = textToCaption(captionToText(caption.caption) + captionToText(nextCaption.caption));
-            --to;
-          }
-
-          // Maybe delete part of the text: [caption.fromA, caption.toA)
-          // [curFrom, to) = [from, to) intersect [caption.fromA, caption.toA)
-          let curFrom = Math.max(from, caption.fromA);
-          if (curFrom < to) {
-            let text = captionToText(caption.caption);
-            text =
-              text.substring(0, curFrom - caption.fromA) +
-              text.substring(to - caption.fromA);
-            caption.caption = textToCaption(text);
-            to = curFrom;
-          }
-
-          // Maybe insert new text (TODO: parse):
-          if (from === to && insert !== '') {
-            let text = captionToText(caption.caption);
-            text =
-              text.substring(0, from - caption.fromA) +
-              insert +
-              text.substring(from - caption.fromA);
-            caption.caption = textToCaption(text);
-            insert = '';
-          }
+          affectedIndices.push(i);
         }
 
-        console.assert(from === to);
-        console.assert(insert === '');
+        let minAffectedIndex;  // affected captions offset
+        let fromA;  // affected chars offset
+        let affectedA;  // affected chars
+        if (affectedIndices.length > 0) {
+          // Add one more, just in case:
+          minAffectedIndex = affectedIndices[affectedIndices.length - 1];
+          if (minAffectedIndex > 0) {
+            // Add the previous caption:
+            // TODO: don't do this if we don't need it
+            affectedIndices.push(--minAffectedIndex);
+
+            affectedIndices.reverse();
+
+            // Get the new cues:
+            fromA = captions[affectedIndices[0]].fromA;
+            affectedA = affectedIndices.map(i => captions[i].text).join('\n');
+          } else {
+            // Add the prologue:
+            affectedIndices.reverse();
+
+            // Get the new cues:
+            fromA = 0;
+            affectedA = prologue + affectedIndices.map(i => captions[i].text).join('\n');
+          }
+        } else {
+          // Add the prologue:
+          minAffectedIndex = 0;
+          fromA = 0;
+          affectedA = prologue;
+        }
+
+        // console.log('updating affected range', {affectedA, fromA, affectedIndices, from, to, insert});
+
+        let affectedB =
+          affectedA.substring(0, from - fromA) +
+          insert +
+          affectedA.substring(to - fromA);
+        let newCues = textToCues(affectedB);
+
+        // Convert them back to captions, except without `raw`:
+        let newCaptions = newCues.map(({from, to, time, indent}) => {
+          return {
+            fromA: fromA + from,
+            toA: fromA + to,
+            text: affectedB.substring(from, to),
+            caption: {
+              time,
+              text: affectedB.substring(from + indent, to),
+              source: affectedB.substring(from, to),
+              // TODO: precompute raw here to avoid reparsing
+            },
+          };
+        });
+
+        assert(affectedA.endsWith(toText(
+          captions.slice(
+            minAffectedIndex,
+            minAffectedIndex + affectedIndices.length)
+          .map(c => c.caption))));
+        assert(affectedB.endsWith(toText(newCaptions.map(c => c.caption))));
+
+        // Put them back:
+        captions.splice.apply(captions, [
+          /*start=*/minAffectedIndex,
+          /*deleteCount=*/affectedIndices.length,
+        ].concat(newCaptions));
+        i = minAffectedIndex + affectedIndices.length - 1;
       }
 
       // Commit the captions:
-      this._rawCaptions = fromSrtCues(captions.map(c => c.caption));
-      this._editableCaptions = toSrtCues(this._rawCaptions);
+      this._editableCaptions = captions.map(c => c.caption);
+      this._rawCaptions = fromSrtCues(this._editableCaptions);
       this.video.captions = this._rawCaptions;
+
+      assert(update.state.doc.toString().endsWith(toText(this._editableCaptions)));
     }
 
     // Seek the video if needed:
