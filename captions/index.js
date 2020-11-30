@@ -52,7 +52,7 @@ function toHtml(deps, t, time) {
 
 /**
  * @params t Srt.raw Track.t
- * @returns {array<{time: ..., text: ...}>}
+ * @returns {array<{time: ..., text: ..., raw: ...}>}
  */
 function toSrtCues(t) {
   return srt.to_raw_cues(t);

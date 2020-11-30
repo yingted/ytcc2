@@ -30,6 +30,10 @@ import {oneDark} from "@codemirror/next/theme-one-dark";
 function captionToText({time, text}) {
   return encodeTimeSpace(time) + text.replace(/^(\d+:\d)/mg, " $1");
 }
+function textToCaption(textCaption) {
+  let {time, offset} = decodeTimeSpace(textCaption);
+  return {time, text: textCaption.substring(offset)};
+}
 function toText(captions) {
   return captions.map(captionToText).join('\n');
 }
@@ -369,9 +373,9 @@ export class CaptionsEditor {
       // {'raw Track.t} captions with style and karaoke, but no unknown tags
       // Used for rendering.
       this._rawCaptions = captions;
-      // {array<{time: ..., text: ...}>} captions with style, but no karaoke or unknown tags
+      // {array<{time: ..., text: ..., raw: ...}>} same as _rawCaptions, but as an array
       // Used for editing.
-      this._editableCaptions = toSrtCues(captions);
+      this._editableCaptions = toSrtCues(this._rawCaptions);
 
       this.video.captions = this._rawCaptions;
       this.view.dispatch(this.view.state.update({
@@ -388,22 +392,102 @@ export class CaptionsEditor {
   _onEditorUpdate(update) {
     if (this._inSetCaptions) return;
     if (this._inOnVideoUpdate) return;
-    {
-      if (update.docChanged) {
-        // TODO call this.setCaptions
-        console.log('update', update.changes);
-        update.changes.iterChanges(
-          ((fromA, toA, fromB, toB, inserted) =>
-            console.log([fromA, toA, fromB, toB, inserted.sliceString(0)])));
+
+    // Update the captions if needed:
+    if (update.docChanged) {
+      // Get the sorted changes:
+      // @type {{fromA: number, toA: number, textB: string}}
+      let changes = [];
+      update.changes.iterChanges((fromA, toA, fromB, toB, inserted) =>
+        changes.push({fromA, toA, textB: inserted.sliceString(0)}));
+      changes.sort((x, y) => (x.fromA > y.fromA) - (x.fromA < y.fromA));
+
+      // Get the captions (numbers do not include "\n"):
+      // @type {{fromA: number, toA: number, caption: {time: ..., text: ..., raw: ...}}}
+      let captions = [];
+      let offset = 0;
+      for (let caption of this._editableCaptions) {
+        // Get the range of this line
+        let endOffset = offset + captionToText(caption).length;
+        captions.push({fromA: offset, toA: endOffset, caption});
+        // Next offset comes after a newline, except for the last caption:
+        offset = endOffset + 1;
       }
-      if (update.selectionSet) {
-        let prevOffset = getOffset(update.prevState);
-        let offset = getOffset(update.state);
-        let prevTime = offsetToTime(this._editableCaptions, prevOffset);
-        let time = offsetToTime(this._editableCaptions, offset);
-        if (time !== prevTime) {
-          this.video.seekTo(time);
+
+      // Apply all of the sorted changes, in reverse order:
+      changes.reverse();
+      let i = captions.length - 1;
+      for (let change of changes) {
+        let {fromA: from, toA: to, textB: insert} = change;
+        // Delete [from, to), then add insert in the from position.
+
+        for (; i >= 0; --i) {
+          let caption = captions[i];
+
+          if (from === to && insert === '') break;
+
+          // `to` should not be past this caption + newline, since the rest are finalized.
+          console.assert(from <= to);
+          console.assert(to <= caption.toA + 1);
+          if (i === captions.length - 1) {
+            // No newline, so `to` should not be past this caption:
+            console.assert(to <= caption.toA);
+          }
+
+          // Restrict to captions that touch the change:
+          if (caption.fromA > to) continue;
+          if (caption.toA < from) break;
+
+          // Maybe delete the newline: [caption.toA, caption.toA + 1)
+          if (/*from <= caption.toA && */caption.toA + 1 <= to) {
+            // Delete the newline, merging the two captions:
+            let [nextCaption] = captions.splice(i + 1, 1);
+            caption.caption = textToCaption(captionToText(caption.caption) + captionToText(nextCaption.caption));
+            --to;
+          }
+
+          // Maybe delete part of the text: [caption.fromA, caption.toA)
+          // [curFrom, to) = [from, to) intersect [caption.fromA, caption.toA)
+          let curFrom = Math.max(from, caption.fromA);
+          if (curFrom < to) {
+            let text = captionToText(caption.caption);
+            text =
+              text.substring(0, curFrom - caption.fromA) +
+              text.substring(to - caption.fromA);
+            caption.caption = textToCaption(text);
+            to = curFrom;
+          }
+
+          // Maybe insert new text (TODO: parse):
+          if (from === to && insert !== '') {
+            let text = captionToText(caption.caption);
+            text =
+              text.substring(0, from - caption.fromA) +
+              insert +
+              text.substring(from - caption.fromA);
+            caption.caption = textToCaption(text);
+            insert = '';
+          }
         }
+
+        console.assert(from === to);
+        console.assert(insert === '');
+      }
+
+      // Commit the captions:
+      this._rawCaptions = fromSrtCues(captions.map(c => c.caption));
+      this._editableCaptions = toSrtCues(this._rawCaptions);
+      this.video.captions = this._rawCaptions;
+    }
+
+    // Seek the video if needed:
+    if (update.selectionSet) {
+      let prevOffset = getOffset(update.prevState);
+      let offset = getOffset(update.state);
+      let prevTime = offsetToTime(this._editableCaptions, prevOffset);
+      let time = offsetToTime(this._editableCaptions, offset);
+      if (time !== prevTime) {
+        this.video.seekTo(time);
       }
     }
   }

@@ -293,9 +293,10 @@ let text_codec = Parser.at_end text_parser
 let string_codec = Parser.at_end srt_parser
 let codec = Codec.stack Encoding.prefer_utf8 string_codec
 
-type raw_cue = {
-  time: Track.seconds;
-  text: string;
+type 'raw raw_cue = {
+  time : Track.seconds;
+  text : string;
+  raw : 'raw Track.cue option;
 }
 let to_raw_cues t =
   let cues =
@@ -305,13 +306,14 @@ let to_raw_cues t =
   in
   let raw_cues = [||] in
   for i = 0 to Array.length cues - 1 do
-    let ({ start; end_; text } : _ Track.cue) = cues.(i) in
+    let cue = cues.(i) in
+    let ({ start; end_; text } : _ Track.cue) = cue in
     let text = text |> Codec.encode text_codec in
-    let _ = Js.Array.push { time = start; text; } raw_cues in
+    let _ = Js.Array.push { time = start; text; raw = Some cue; } raw_cues in
     (* Skip clearing the window if we can: *)
     if i + 1 >= Array.length cues then () else
     if end_ = cues.(i + 1).start then () else
-    let _ = Js.Array.push { time = end_; text = ""; } raw_cues in
+    let _ = Js.Array.push { time = end_; text = ""; raw = None; } raw_cues in
     ()
   done;
   raw_cues
@@ -320,9 +322,19 @@ let max_cue_seconds = 366 * 24 * 3600 |> float_of_int
 let from_raw_cues (raw_cues : _) : 'raw Ytcc2Captions.Track.t =
   let cues = [||] in
   for i = 0 to Array.length raw_cues - 1 do
-    let { time; text; } = raw_cues.(i) in
+    let { time; text; raw; } = raw_cues.(i) in
+
     (* Empty captions are already translated into clears. *)
     if text = "" then () else
+
+    (* Raw cues are passed straight through: *)
+    match raw with
+    | Some cue ->
+        let _ = Js.Array.push cue cues in
+        ()
+    | None ->
+
+    (* Cue with implicit end time: *)
     let _ = Js.Array.push ({
       start = time;
       end_ =
