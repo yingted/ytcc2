@@ -20,12 +20,15 @@ const { html, renderToStream } = require('@popeindustries/lit-html-server');
 const app = express();
 app.use(express.static('static'));
 
-app.get('/', (req, res) => {
+app.get('/watch', (req, res) => {
+  let videoId = req.query.v;
   const params = {
-    video: req.query.video,
+    videoId,
+    // captions json3 or undefined
     captions:
+      // TODO: actually fetch it?
       require('fs').readFileSync(
-        process.env.HOME + '/Downloads/BbqPe-IceP4.en.json3',
+        `${process.env.HOME}/Downloads/${videoId}.en.json3`,
         {encoding: 'utf-8'}),
   };
   renderToStream(html`

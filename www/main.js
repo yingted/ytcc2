@@ -19,8 +19,7 @@ import {YouTubeVideo} from './youtube.js';
 import {CaptionsEditor} from './editor.js';
 import {decodeJson3, decodeSrt, stripRaw} from 'ytcc2-captions';
 
-// const video = new YouTubeVideo('gKqypLvwd70');
-const video = new YouTubeVideo('BbqPe-IceP4');
+const video = new YouTubeVideo(params.videoId);
 const editor = new CaptionsEditor(video, stripRaw(decodeJson3(params.captions)));
 
 // For debugging:
