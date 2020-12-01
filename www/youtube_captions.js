@@ -70,7 +70,7 @@ class Track {
  * @returns {Promise<Track>}
  */
 function listTracksYtinternal(videoId) {
-  return fetch('https://www.youtube-nocookie.com/api/timedtext?v=' + encodeURIComponent(videoId) + '&type=list')
+  return fetch('https://www.youtube-nocookie.com/api/timedtext?v=' + encodeURIComponent(videoId) + '&type=list&tlangs=1&asrs=1')
     .then(res => {
       if (!res.ok) {
         throw new Error('could not list captions through youtube.com/api');
