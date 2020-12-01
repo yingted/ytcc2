@@ -28,7 +28,7 @@ let guessEncoding: bytes -> string = [%raw {|
         latin1Chars.push(String.fromCharCode(c));
       }
       let latin1Decode = latin1Chars.join('');
-      let guess = jschardet.detect(b, latin1Decode);
+      let guess = jschardet.detect(latin1Decode);
       if (guess && guess.encoding) {
         return guess.encoding;
       }

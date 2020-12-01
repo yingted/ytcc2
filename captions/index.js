@@ -25,6 +25,9 @@ function decode(m, data) {
 function decodeJson3(data) {
   return decode(json3, data);
 }
+function encodeJson3(t) {
+  return codec.encode(json3.codec, t);
+}
 
 function stripRaw(t) {
   return track.strip_raw(t);
@@ -38,6 +41,9 @@ var empty = track.empty;
  */
 function decodeSrt(data) {
   return decode(srt, data);
+}
+function encodeSrt(t) {
+  return codec.encode(srt.codec, t);
 }
 
 /**
@@ -104,8 +110,10 @@ function encodeTimeSpace(time) {
 
 module.exports = {
   decodeJson3,
+  encodeJson3,
   stripRaw,
   decodeSrt,
+  encodeSrt,
   empty,
   toHtml,
   toSrtCues,

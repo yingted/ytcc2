@@ -20,7 +20,7 @@ import {defaultKeymap} from "@codemirror/next/commands";
 import {history, historyKeymap} from "@codemirror/next/history";
 import {render, html} from 'lit-html';
 import {StreamSyntax} from "@codemirror/next/stream-syntax";
-import {decodeJson3, stripRaw, srtTextToHtml, srtTextToSpans, toSrtCues, fromSrtCues, decodeTimeSpace, encodeTimeSpace} from 'ytcc2-captions';
+import {decodeJson3, encodeJson3, encodeSrt, stripRaw, srtTextToHtml, srtTextToSpans, toSrtCues, fromSrtCues, decodeTimeSpace, encodeTimeSpace} from 'ytcc2-captions';
 import {RangeSetBuilder} from '@codemirror/next/rangeset';
 import {StyleModule} from 'style-mod';
 import {homeEndKeymap} from './codemirror_indent_keymap';
@@ -390,15 +390,15 @@ export class CaptionsEditor {
     this.video.addUpdateListener(this._onVideoUpdate.bind(this));
 
     // Initialize the captions:
-    this.setCaptions(stripRaw(decodeJson3(params.captions)));
+    this.setCaptions(stripRaw(decodeJson3(params.captions)), /*addToHistory=*/false);
   }
 
   /**
    * Set the captions.
-   * This does not add the change to the history, so you should only call this once at the start.
    * @param {Srt.raw Track.t} captions
+   * @param {boolean} addToHistory
    */
-  setCaptions(captions) {
+  setCaptions(captions, addToHistory) {
     this._inSetCaptions = true;
     {
       // {'raw Track.t} captions with style and karaoke, but no unknown tags
@@ -416,11 +416,26 @@ export class CaptionsEditor {
           insert: toText(this._editableCaptions),
         },
         annotations: [
-          Transaction.addToHistory.of(false),
+          Transaction.addToHistory.of(addToHistory),
         ],
       }));
     }
     this._inSetCaptions = false;
+  }
+
+  /**
+   * Get the captions as SRT.
+   * @returns {ArrayBuffer}
+   */
+  getSrtCaptions() {
+    return encodeSrt(stripRaw(this._rawCaptions));
+  }
+  /**
+   * Get the captions as json3.
+   * @returns {ArrayBuffer}
+   */
+  getJson3Captions() {
+    return encodeJson3(stripRaw(this._rawCaptions));
   }
 
   _onEditorUpdate(update) {
