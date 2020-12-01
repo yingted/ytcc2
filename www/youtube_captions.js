@@ -38,7 +38,7 @@ class Track {
    * Get the captions
    */
   fetchJson3() {
-    fetch('https://www.youtube.com/api/timedtext?'
+    fetch('https://www.youtube-nocookie.com/api/timedtext?'
       'v=' + encodeURIComponent(this.videoId) + '&'
       'lang=' + encodeURIComponent(this.lang) + '&'
       'name=' + encodeURIComponent(this.name) + '&'
@@ -70,7 +70,7 @@ class Track {
  * @returns {Promise<Track>}
  */
 function listTracksYtinternal(videoId) {
-  return fetch('https://www.youtube.com/api/timedtext?v=' + encodeURIComponent(videoId) + '&type=list')
+  return fetch('https://www.youtube-nocookie.com/api/timedtext?v=' + encodeURIComponent(videoId) + '&type=list')
     .then(res => {
       if (!res.ok) {
         throw new Error('could not list captions through youtube.com/api');
