@@ -251,13 +251,12 @@ let text_parser: text Parser.t =
 
 let cue_parser: (int * cue) Parser.t =
   let remove_duplicate_newlines_on_encode: (string, string) Codec.t =
-    Codec.id in
-    (* Codec.pure *)
-    (*   ~encode:Util.id *)
-    (*   ~decode:(fun s -> *)
-    (*     String.split_on_char '\n' s *)
-    (*     (1* |> List.filter (fun s -> String.length s != 0) *1) *)
-    (*     |> String.concat "\n") in *)
+    Codec.pure
+      ~encode:Util.id
+      ~decode:(fun s ->
+        String.split_on_char '\n' s
+        |> List.filter (fun s -> String.length s != 0)
+        |> String.concat "\n") in
   Parser.(
     let ( * ) = pair in
     let term t x = first (x * t) in
@@ -268,7 +267,10 @@ let cue_parser: (int * cue) Parser.t =
     (* Rest of the lines: text *)
     postprocess
       (postprocess
-        (easy_re0 ".+" |> term any_newline_or_eof |> repeated |> term any_newline_or_eof |> serialized)
+        (easy_re0 ".+" * (any_newline * easy_re0 ".+" |> repeated)
+          |> serialized
+          |> term any_newline_or_eof
+          |> term any_newline_or_eof)
         remove_duplicate_newlines_on_encode)
       (Parser.at_end text_parser)
   )
