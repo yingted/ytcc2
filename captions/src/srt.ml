@@ -266,10 +266,10 @@ let text_parser: text Parser.t =
       |> List.flatten)
 
 let cue_parser: (int * cue) Parser.t =
-  let remove_duplicate_newlines_on_encode: (string, string) Codec.t =
+  let remove_empty_lines_on_encode: (string, string) Codec.t =
     Codec.pure
-      ~encode:Util.id
-      ~decode:(fun s ->
+      ~decode:Util.id
+      ~encode:(fun s ->
         String.split_on_char '\n' s
         |> List.filter (fun s -> String.length s != 0)
         |> String.concat "\n") in
@@ -278,17 +278,21 @@ let cue_parser: (int * cue) Parser.t =
     let term t x = first (x * t) in
     (* First line: sequence *)
     seq_parser *
+
     (* Second line: timestamps and position *)
     (((time_parser |> term (easy_expect_re ~re:"\\s*-->\\s*" ~default:" --> ")) * time_parser) |> term any_newline) *
+
     (* Rest of the lines: text *)
-    postprocess
-      (postprocess
-        (easy_re0 ".+" * (any_newline * easy_re0 ".+" |> repeated)
-          |> serialized
-          |> term any_newline_or_eof
-          |> term any_newline_or_eof)
-        remove_duplicate_newlines_on_encode)
-      (Parser.at_end text_parser)
+    ((* First, join the lines together: *)
+    easy_re0 ".+"
+    |> separated ~sep:any_newline
+    |> serialized
+    |> (Util.flip postprocess) remove_empty_lines_on_encode
+    (* Then, parse the text through text_parser: *)
+    |> (Util.flip postprocess) (Parser.at_end text_parser)
+    (* Finally, add terminators and join the cues together: *)
+    |> term any_newline_or_eof
+    |> term any_newline_or_eof : raw Track.text Parser.t)
   )
   |> Parser.Ocaml.map
     ~decode:(fun ((index, (start, end_)), text) ->
@@ -302,7 +306,7 @@ let cue_parser: (int * cue) Parser.t =
 
 let srt_parser: cue list Parser.t =
   Parser.postprocess
-    (Parser.repeated (cue_parser))
+    (Parser.repeated cue_parser)
     (Codec.pure
       ~decode:(List.map (fun (_i, cue) -> cue))
       ~encode:(List.mapi (fun i cue -> (i + 1, cue))))

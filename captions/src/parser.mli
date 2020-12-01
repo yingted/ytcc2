@@ -54,6 +54,17 @@ val serialized: 'a t -> string t
 (* Decode with the first if possible. Encode with the first. *)
 val fallback: 'a t -> 'a t -> 'a t
 
+(* Like repeated, but with a separator. *)
+(* t is responsible for stopping before the separator. *)
+(* Only the first match must succeed. *)
+(* On encode, an empty list encodes to the empty string. *)
+(* repeated t = separated ~sep:empty t *)
+val separated: 'a t -> sep:(unit t) -> 'a list t
+(* Match t followed by a delimiter. *)
+(* t is responsible for stopping before the separator. *)
+(* t = delimited ~sep:empty t *)
+(* val delimited: 'a t -> sep:(unit t) -> 'a t *)
+
 (* Easy version that turns "my_regex" into /^(?:my_regex)/g *)
 val easy_re0: string -> string t
 val easy_expect_re: re:string -> default:string -> unit t

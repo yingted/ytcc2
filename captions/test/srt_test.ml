@@ -64,6 +64,15 @@ describe "decodes" (fun () ->
     expect(Codec.try_decode Srt.string_codec text) |> toMatchSnapshot);
 );
 
+describe "encodes" (fun () ->
+  test "cues with newlines" (fun () ->
+    expect(Codec.encode Srt.string_codec [
+      { start = 0.0; end_ = 1.0; text = [Track.Append "\na\n\n\nb\n", None]; };
+      { start = 1.0; end_ = 2.0; text = [Track.Append "\nc\n\n\nd\n", None]; };
+    ])
+    |> toEqual "1\n00:00:00,000 --> 00:00:01,000\na\nb\n\n2\n00:00:01,000 --> 00:00:02,000\nc\nd\n\n");
+);
+
 describe "roundtrips" (fun () ->
   test "nested HTML tags" (fun () ->
     let text = "a<font color=\"#00ff00\">b<b>c</b>d</font>e" in
@@ -85,6 +94,11 @@ describe "roundtrips" (fun () ->
   test "special chars" (fun () ->
     expect(roundtrip Srt.text_codec "\\n\\N\\h")
     |> toEqual (Ok "\\n\\N\\h"));
+
+  test "cues with newlines" (fun () ->
+    let text = "1\n00:00:00,000 --> 00:00:01,000\na\nb\n\n2\n00:00:01,000 --> 00:00:02,000\nc\nd\n\n" in
+    expect(roundtrip Srt.string_codec text)
+    |> toEqual (Ok text));
 
   (* test "font color" (fun () -> *)
   (*   expect(roundtrip Srt.text_codec "x{\\c&HABCDEF&}y{\\1c&H123456&}z") *)

@@ -199,6 +199,21 @@ let any_newline: unit t =
 let any_newline_or_eof: unit t =
   easy_expect_re ~re:"\\r\\n?|\\n|$" ~default:"\n"
 
+let separated t ~sep =
+  let head_tail_parser = pair t (repeated (pair sep t |> second)) in
+  Codec.make
+    ~try_decode:(fun s ->
+      match Codec.try_decode head_tail_parser s with
+      | Ok ((head, tail), rest) -> Ok ((head :: tail), rest)
+      | Error err -> Error err)
+    ~encode:(fun (items, rest) ->
+      match items with
+      | [] -> rest
+      | head :: tail ->
+          Codec.encode head_tail_parser ((head, tail), rest))
+(* let delimited t ~sep = *)
+(*   failwith "delimited not implemented" *)
+
 module Text = struct
   let i = text_int
   let f = text_float
