@@ -65,75 +65,97 @@ render(html`
   <hr>
   <div style="width: 640px;" class="toolbar">
     <style>
+      .toolbar > ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0 0 0 -1em;
+      }
+      .toolbar > ul > li {
+        display: inline-block;
+        margin: 0 0 0 1em;
+      }
       .open-icon::before {
         content: "📂";
       }
       .save-icon::before {
         content: "💾";
       }
+      .link-icon::before {
+        content: "🔗";
+      }
     </style>
 
     <!-- Open file -->
-    <label>
-      <input type="file"
-        style="display: none;"
-        accept=".srt,text/srt,.json,application/json"
-        @change=${function(e) {
-          let files = this.files;
-          if (files.length !== 1) return;
-          let [file] = files;
-          file.arrayBuffer().then(buffer => {
-            let captions = null;
+    <ul>
+      <li>
+        <label>
+          <input type="file"
+            style="display: none;"
+            accept=".srt,text/srt,.json,application/json"
+            @change=${function(e) {
+              let files = this.files;
+              if (files.length !== 1) return;
+              let [file] = files;
+              file.arrayBuffer().then(buffer => {
+                let captions = null;
 
-            if (file.name.toLowerCase().endsWith('.srt')) {
-              try {
-                captions = decodeSrt(buffer);
-              } catch (e) {
-                console.error(e);
-                alert('Error importing SRT file: ' + file.name);
-              }
-            } else if (file.name.toLowerCase().endsWith('.json')) {
-              try {
-                captions = stripRaw(decodeJson3(buffer));
-              } catch (e) {
-                console.error(e);
-                alert('Error importing json3 file: ' + file.name);
-              }
-            } else {
-              alert('File name must end with .srt or .json: ' + file.name);
-            }
+                if (file.name.toLowerCase().endsWith('.srt')) {
+                  try {
+                    captions = decodeSrt(buffer);
+                  } catch (e) {
+                    console.error(e);
+                    alert('Error importing SRT file: ' + file.name);
+                  }
+                } else if (file.name.toLowerCase().endsWith('.json')) {
+                  try {
+                    captions = stripRaw(decodeJson3(buffer));
+                  } catch (e) {
+                    console.error(e);
+                    alert('Error importing json3 file: ' + file.name);
+                  }
+                } else {
+                  alert('File name must end with .srt or .json: ' + file.name);
+                }
 
-            if (captions !== null) {
-              editor.setCaptions(captions, /*addToHistory=*/true);
-            }
+                if (captions !== null) {
+                  editor.setCaptions(captions, /*addToHistory=*/true);
+                }
 
-            if (this.files === files) {
-              this.value = null;
-            }
-          });
-        }}>
-      <button @click=${function(e) {
-        this.parentNode.querySelector('input').click();
-      }}><span class="open-icon"></span>Open SRT/json3</button>
-    </label>
+                if (this.files === files) {
+                  this.value = null;
+                }
+              });
+            }}>
+          <button @click=${function(e) {
+            this.parentNode.querySelector('input').click();
+          }}><span class="open-icon"></span>Open SRT/json3</button>
+        </label>
+      </li>
 
-    <span>
-      <span class="save-icon"></span>Download
-      <a href="#" download="subtitles.srt"
-        @mousedown=${updateSrt}
-        @click=${updateSrt}
-        @focus=${updateSrt}
-        @mouseover=${updateSrt}
-        @contextmenu=${updateSrt}
-      >SRT</a>/<a
-        href="#" download="subtitles.json3.json"
-        @mousedown=${updateJson3}
-        @click=${updateJson3}
-        @focus=${updateJson3}
-        @mouseover=${updateJson3}
-        @contextmenu=${updateJson3}
-      >json3</a>
-    </span>
+      <li>
+        <span>
+          <span class="save-icon"></span>Download
+          <a href="#" download="subtitles.srt"
+            @mousedown=${updateSrt}
+            @click=${updateSrt}
+            @focus=${updateSrt}
+            @mouseover=${updateSrt}
+            @contextmenu=${updateSrt}
+          >SRT</a>/<a
+            href="#" download="subtitles.json3.json"
+            @mousedown=${updateJson3}
+            @click=${updateJson3}
+            @focus=${updateJson3}
+            @mouseover=${updateJson3}
+            @contextmenu=${updateJson3}
+          >json3</a>
+        </span>
+      </li>
+
+      <li>
+        <a href="https://studio.youtube.com/video/${params.videoId}/translations" target="_blank"><span class="link-icon"></span>Video subtitles in YouTube Studio</a>
+      </li>
+    </ul>
   </div>
   ${editor.render()}
 `, document.body);
