@@ -20,7 +20,7 @@ import {defaultKeymap} from "@codemirror/next/commands";
 import {history, historyKeymap} from "@codemirror/next/history";
 import {render, html} from 'lit-html';
 import {StreamSyntax} from "@codemirror/next/stream-syntax";
-import {decodeJson3, encodeJson3, encodeSrt, stripRaw, srtTextToHtml, srtTextToSpans, toSrtCues, fromSrtCues, decodeTimeSpace, encodeTimeSpace} from 'ytcc2-captions';
+import {empty, encodeJson3, encodeSrt, stripRaw, srtTextToHtml, srtTextToSpans, toSrtCues, fromSrtCues, decodeTimeSpace, encodeTimeSpace} from 'ytcc2-captions';
 import {RangeSetBuilder} from '@codemirror/next/rangeset';
 import {StyleModule} from 'style-mod';
 import {homeEndKeymap} from './codemirror_indent_keymap';
@@ -354,8 +354,9 @@ export class CaptionsEditor {
   /**
    * Create a captions editor for a video.
    * @param {YouTubeVideo} video 
+   * @param {Srt.raw Track.t option} captions the initial captions, or undefined for empty
    */
-  constructor(video) {
+  constructor(video, captions) {
     // Widgets:
     this.video = video;
     this.view = new EditorView({
@@ -390,7 +391,10 @@ export class CaptionsEditor {
     this.video.addUpdateListener(this._onVideoUpdate.bind(this));
 
     // Initialize the captions:
-    this.setCaptions(stripRaw(decodeJson3(params.captions)), /*addToHistory=*/false);
+    if (captions === undefined) {
+      captions = empty;
+    }
+    this.setCaptions(captions, /*addToHistory=*/false);
   }
 
   /**

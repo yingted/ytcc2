@@ -21,7 +21,7 @@ import {decodeJson3, decodeSrt, stripRaw} from 'ytcc2-captions';
 
 // const video = new YouTubeVideo('gKqypLvwd70');
 const video = new YouTubeVideo('BbqPe-IceP4');
-const editor = new CaptionsEditor(video);
+const editor = new CaptionsEditor(video, stripRaw(decodeJson3(params.captions)));
 
 // For debugging:
 window.video = video;
