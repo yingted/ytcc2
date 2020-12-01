@@ -38,6 +38,16 @@ describe "stabilizes" (fun () ->
       |> toEqual (None, Result.ok data1)));
 );
 
+describe "decodes" (fun () ->
+  test "a<b>b</b>c" (fun () ->
+    let text = "a<b>b</b>c" in
+    expect(Codec.try_decode Srt.text_codec text) |> toMatchSnapshot);
+
+  test "a single cue" (fun () ->
+    let text = "1\n00:00:00,000 --> 00:00:01,234\ntest" in
+    expect(Codec.try_decode Srt.string_codec text) |> toMatchSnapshot);
+);
+
 describe "roundtrips" (fun () ->
   test "nested HTML tags" (fun () ->
     let text = "a<font color=\"#00ff00\">b<b>c</b>d</font>e" in

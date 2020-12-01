@@ -1,0 +1,113 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`decodes a single cue 1`] = `
+Object {
+  "TAG": 0,
+  "_0": Object {
+    "hd": Object {
+      "end_": 1.234,
+      "start": 0,
+      "text": Object {
+        "hd": Array [
+          Object {
+            "TAG": 0,
+            "_0": "t",
+          },
+          "t",
+        ],
+        "tl": Object {
+          "hd": Array [
+            Object {
+              "TAG": 0,
+              "_0": "e",
+            },
+            "e",
+          ],
+          "tl": Object {
+            "hd": Array [
+              Object {
+                "TAG": 0,
+                "_0": "s",
+              },
+              "s",
+            ],
+            "tl": Object {
+              "hd": Array [
+                Object {
+                  "TAG": 0,
+                  "_0": "t",
+                },
+                "t",
+              ],
+              "tl": 0,
+            },
+          },
+        },
+      },
+    },
+    "tl": 0,
+  },
+}
+`;
+
+exports[`decodes a<b>b</b>c 1`] = `
+Object {
+  "TAG": 0,
+  "_0": Object {
+    "hd": Array [
+      Object {
+        "TAG": 0,
+        "_0": "a",
+      },
+      "a",
+    ],
+    "tl": Object {
+      "hd": Array [
+        Object {
+          "TAG": 1,
+          "_0": Object {
+            "d": Object {
+              "_0": true,
+            },
+            "h": 1,
+            "l": 0,
+            "r": 0,
+            "v": Object {
+              "_0": 0,
+            },
+          },
+        },
+        "<b>",
+      ],
+      "tl": Object {
+        "hd": Array [
+          Object {
+            "TAG": 0,
+            "_0": "b",
+          },
+          "b",
+        ],
+        "tl": Object {
+          "hd": Array [
+            Object {
+              "TAG": 1,
+              "_0": 0,
+            },
+            "</b>",
+          ],
+          "tl": Object {
+            "hd": Array [
+              Object {
+                "TAG": 0,
+                "_0": "c",
+              },
+              "c",
+            ],
+            "tl": 0,
+          },
+        },
+      },
+    },
+  },
+}
+`;
