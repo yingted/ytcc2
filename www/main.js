@@ -100,113 +100,139 @@ let updateJson3 = updateDownload('json3');
 async function renderEditorAndToolbar() {
   let editor = await asyncEditor;
   return html`
-    <div style="width: 640px;" class="toolbar">
-      <style>
-        .toolbar > ul {
-          list-style-type: none;
-          padding: 0;
-          margin: 0 0 0 -1em;
-        }
-        .toolbar > ul > li {
-          display: inline-block;
-          margin: 0 0 0 1em;
-        }
-        .open-icon::before {
-          content: "📂";
-        }
-        .save-icon::before {
-          content: "💾";
-        }
-        .link-icon::before {
-          content: "🔗";
-        }
-        .sanitize-icon::before {
-          content: "🧼";
-        }
-      </style>
+    <style>
+      ul.toolbar {
+        width: 640px;
+        list-style-type: none;
+        padding: 0;
+        margin: 0 0 0 -1em;
+      }
+      ul.toolbar > li {
+        display: inline-block;
+        margin: 0 0 0 1em;
+      }
+      .open-icon::before {
+        content: "📂";
+      }
+      .save-icon::before {
+        content: "💾";
+      }
+      .link-icon::before {
+        content: "🔗";
+      }
+      .sanitize-icon::before {
+        content: "🧼";
+      }
+    </style>
+    <!-- Open file -->
+    <ul class="toolbar">
+      <li>
+        <label>
+          <input type="file"
+            style="display: none;"
+            accept=".srt,text/srt,.json,application/json"
+            @change=${function(e) {
+              let files = this.files;
+              if (files.length !== 1) return;
+              let [file] = files;
+              file.arrayBuffer().then(buffer => {
+                let captions = null;
 
-      <!-- Open file -->
-      <ul>
-        <li>
-          <label>
-            <input type="file"
-              style="display: none;"
-              accept=".srt,text/srt,.json,application/json"
-              @change=${function(e) {
-                let files = this.files;
-                if (files.length !== 1) return;
-                let [file] = files;
-                file.arrayBuffer().then(buffer => {
-                  let captions = null;
-
-                  if (file.name.toLowerCase().endsWith('.srt')) {
-                    try {
-                      captions = decodeSrt(buffer);
-                    } catch (e) {
-                      console.error(e);
-                      alert('Error importing SRT file: ' + file.name);
-                    }
-                  } else if (file.name.toLowerCase().endsWith('.json')) {
-                    try {
-                      captions = stripRaw(decodeJson3(buffer));
-                    } catch (e) {
-                      console.error(e);
-                      alert('Error importing json3 file: ' + file.name);
-                    }
-                  } else {
-                    alert('File name must end with .srt or .json: ' + file.name);
+                if (file.name.toLowerCase().endsWith('.srt')) {
+                  try {
+                    captions = decodeSrt(buffer);
+                  } catch (e) {
+                    console.error(e);
+                    alert('Error importing SRT file: ' + file.name);
                   }
-
-                  if (captions !== null) {
-                    editor.setCaptions(captions, /*addToHistory=*/true);
+                } else if (file.name.toLowerCase().endsWith('.json')) {
+                  try {
+                    captions = stripRaw(decodeJson3(buffer));
+                  } catch (e) {
+                    console.error(e);
+                    alert('Error importing json3 file: ' + file.name);
                   }
+                } else {
+                  alert('File name must end with .srt or .json: ' + file.name);
+                }
 
-                  if (this.files === files) {
-                    this.value = null;
-                  }
-                });
-              }}>
-            <button @click=${function(e) {
-              this.parentNode.querySelector('input').click();
-            }}><span class="open-icon"></span>Open SRT/json3</button>
-          </label>
-        </li>
+                if (captions !== null) {
+                  editor.setCaptions(captions, /*addToHistory=*/true);
+                }
 
-        <li>
-          <span>
-            <span class="save-icon"></span>Download
-            <a download="subtitles.srt"
-              @mousedown=${updateSrt}
-              @click=${updateSrt}
-              @focus=${updateSrt}
-              @mouseover=${updateSrt}
-              @contextmenu=${updateSrt}
-              @render=${onRender(updateSrt)}
-            >SRT</a>/<a download="subtitles.json3.json"
-              @mousedown=${updateJson3}
-              @click=${updateJson3}
-              @focus=${updateJson3}
-              @mouseover=${updateJson3}
-              @contextmenu=${updateJson3}
-              @render=${onRender(updateJson3)}
-            >json3</a>
-          </span>
-        </li>
+                if (this.files === files) {
+                  this.value = null;
+                }
+              });
+            }}>
+          <button @click=${function(e) {
+            this.parentNode.querySelector('input').click();
+          }}><span class="open-icon"></span>Open SRT/json3</button>
+        </label>
+      </li>
 
-        <li>
-          <button @click=${e => editor.normalize()}><span class="sanitize-icon"></span>Sanitize</button>
-        </li>
+      <li>
+        <span>
+          <span class="save-icon"></span>Download
+          <a download="subtitles.srt"
+            @mousedown=${updateSrt}
+            @click=${updateSrt}
+            @focus=${updateSrt}
+            @mouseover=${updateSrt}
+            @contextmenu=${updateSrt}
+            @render=${onRender(updateSrt)}
+          >SRT</a>/<a download="subtitles.json3.json"
+            @mousedown=${updateJson3}
+            @click=${updateJson3}
+            @focus=${updateJson3}
+            @mouseover=${updateJson3}
+            @contextmenu=${updateJson3}
+            @render=${onRender(updateJson3)}
+          >json3</a>
+        </span>
+      </li>
 
-        <li>
-          <a href="https://studio.youtube.com/video/${params.videoId}/translations" target="_blank"><span class="link-icon"></span>Open in YouTube Studio</a>
-        </li>
-      </ul>
-    </div>
+      <li>
+        <button @click=${e => editor.normalize()}><span class="sanitize-icon"></span>Sanitize</button>
+      </li>
+    </ul>
     ${editor.render()}
   `;
 }
 
 render(html`
+  <h1>Captions editor: <code>${params.videoId}</code></h1>
+  <style>
+    ul.navbar {
+      width: 640px;
+      list-style-type: none;
+      padding: 0;
+      margin: 0 0 0 -1em;
+    }
+    ul.navbar > li {
+      display: inline-block;
+      margin: 0 0 0 1em;
+    }
+    .open-icon::before {
+      content: "📂";
+    }
+    .save-icon::before {
+      content: "💾";
+    }
+    .link-icon::before {
+      content: "🔗";
+    }
+    .sanitize-icon::before {
+      content: "🧼";
+    }
+  </style>
+  <nav>
+    <ul class="navbar">
+      <li>
+        <a href="https://studio.youtube.com/video/${params.videoId}/translations" target="_blank"><span class="link-icon"></span>YouTube Studio</a>
+      </li>
+    </ul>
+  </nav>
   ${video.render()}
   <hr>
   ${until(renderEditorAndToolbar(), html`Loading...`)}
