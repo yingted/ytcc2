@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-const google = require('./google.js');
-
-class JSON3Track {
-  constructor(json3) {
-    // TODO
-  }
-}
+import {getGapi} from './google.js';
 
 class Track {
   /**
@@ -38,27 +32,25 @@ class Track {
    * Get the captions
    */
   fetchJson3() {
-    fetch('https://www.youtube-nocookie.com/api/timedtext?'
-      'v=' + encodeURIComponent(this.videoId) + '&'
-      'lang=' + encodeURIComponent(this.lang) + '&'
-      'name=' + encodeURIComponent(this.name) + '&'
+    return fetch('https://www.youtube-nocookie.com/api/timedtext?' +
+      'v=' + encodeURIComponent(this.videoId) + '&' +
+      'lang=' + encodeURIComponent(this.lang) + '&' +
+      'name=' + encodeURIComponent(this.name) + '&' +
       'fmt=json3')
     .then(res => {
       if (!res.ok) {
         throw new Error('could not get captions through youtube.com/api');
       }
       return res.json();
-    }).then(json3 => {
-      return new JSON3Track(json3);
     });
   }
 
   fetchJson3Ytdata() {
     if (!this.ytdataId) throw new Error('not from YT data API');
-    getYoutubeApi().then(youtube => {
+    return getYoutubeApi().then(youtube => {
       return youtube.captions.download({id: this.ytdataId, tfmt: 'json3', tlang: this.lang})
         .then(data => {
-          return new JSON3Track(JSON.parse(data));
+          return JSON.parse(data);
         });
     });
   }
@@ -69,7 +61,7 @@ class Track {
  * @param {string} videoId
  * @returns {Promise<Track>}
  */
-function listTracksYtinternal(videoId) {
+export function listTracksYtinternal(videoId) {
   return fetch('https://www.youtube-nocookie.com/api/timedtext?v=' + encodeURIComponent(videoId) + '&type=list&tlangs=1&asrs=1')
     .then(res => {
       if (!res.ok) {
@@ -92,7 +84,7 @@ function listTracksYtinternal(videoId) {
 }
 
 function getYoutubeApi() {
-  let ytapi = google.gapi().then(gapi => {
+  let ytapi = getGapi().then(gapi => {
     return gapi.client.load("https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest")
       .then(() => {
         return gapi.client.youtube;
@@ -126,7 +118,7 @@ function listTracks(videoId) {
   return listTracksYtinternal(videoId)
     .catch(err => {
       if (!window.confirm(
-        'Couldn\'t get captions list through YouTube\'s internal API. '
+        'Couldn\'t get captions list through YouTube\'s internal API. ' +
         'Try YouTube\'s official API? (requires sending your identity)')) {
         throw err;
       }

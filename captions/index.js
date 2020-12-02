@@ -41,6 +41,13 @@ function decode(m, data) {
 function decodeJson3(data) {
   return decode(json3, data);
 }
+/**
+ * @param json {object}
+ * @returns Json3.raw Track.t
+ */
+function decodeJson3FromJson(json) {
+  return codec.decode_exn(json3.json_codec, json);
+}
 function encodeJson3(t) {
   return codec.encode(json3.codec, t);
 }
@@ -126,6 +133,7 @@ function encodeTimeSpace(time) {
 
 module.exports = {
   decodeJson3,
+  decodeJson3FromJson,
   encodeJson3,
   stripRaw,
   decodeSrt,

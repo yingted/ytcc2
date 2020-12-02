@@ -15,16 +15,46 @@
  */
 
 import {html, render} from 'lit-html';
+import {until} from 'lit-html/directives/until.js';
 import {YouTubeVideo} from './youtube.js';
 import {CaptionsEditor} from './editor.js';
-import {decodeJson3, decodeSrt, stripRaw} from 'ytcc2-captions';
+import {decodeJson3FromJson, decodeJson3, decodeSrt, stripRaw} from 'ytcc2-captions';
+import {listTracksYtinternal} from './youtube_captions.js';
+import {onRender} from './util.js';
 
 const video = new YouTubeVideo(params.videoId);
-const editor = new CaptionsEditor(video, stripRaw(decodeJson3(params.captions)));
+/**
+ * Get the default track based on navigator.language.
+ * @param {array<Track>} tracks
+ * @returns {Track|null}
+ */
+function getDefaultTrack(tracks) {
+  let languages = [navigator.language];
+  if (/-/.test(navigator.language)) {
+    languages.push(navigator.language.replace(/-.*/, ''));
+  }
+  for (let language of languages) {
+    for (let track of tracks) {
+      if (track.lang === language) return track;
+    }
+  }
+  if (tracks.length > 0) return tracks[0];
+  return null;
+}
+const asyncEditor = (async function makeAsyncEditor() {
+  let track = getDefaultTrack(await listTracksYtinternal(params.videoId));
+  if (track === null) {
+    return new CaptionsEditor(video);
+  } else {
+    return new CaptionsEditor(video, stripRaw(decodeJson3FromJson(await track.fetchJson3())));
+  }
+})();
 
 // For debugging:
 window.video = video;
-window.editor = editor;
+window.editor = null;
+asyncEditor.then(editor =>
+  window.editor = editor);
 
 // Remove noscript:
 Array.from(document.getElementsByTagName('noscript')).forEach(noscript => {
@@ -47,7 +77,7 @@ function updateDownload(type) {
     }
 
     // Clear the href:
-    if (objectUrls.has(this.href)) {
+    if (this.href && objectUrls.has(this.href)) {
       URL.revokeObjectURL(this.href);
       objectUrls.delete(this.href);
     }
@@ -60,102 +90,110 @@ function updateDownload(type) {
 let updateSrt = updateDownload('srt');
 let updateJson3 = updateDownload('json3');
 
+async function renderEditorAndToolbar() {
+  let editor = await asyncEditor;
+  return html`
+    <div style="width: 640px;" class="toolbar">
+      <style>
+        .toolbar > ul {
+          list-style-type: none;
+          padding: 0;
+          margin: 0 0 0 -1em;
+        }
+        .toolbar > ul > li {
+          display: inline-block;
+          margin: 0 0 0 1em;
+        }
+        .open-icon::before {
+          content: "📂";
+        }
+        .save-icon::before {
+          content: "💾";
+        }
+        .link-icon::before {
+          content: "🔗";
+        }
+      </style>
+
+      <!-- Open file -->
+      <ul>
+        <li>
+          <label>
+            <input type="file"
+              style="display: none;"
+              accept=".srt,text/srt,.json,application/json"
+              @change=${function(e) {
+                let files = this.files;
+                if (files.length !== 1) return;
+                let [file] = files;
+                file.arrayBuffer().then(buffer => {
+                  let captions = null;
+
+                  if (file.name.toLowerCase().endsWith('.srt')) {
+                    try {
+                      captions = decodeSrt(buffer);
+                    } catch (e) {
+                      console.error(e);
+                      alert('Error importing SRT file: ' + file.name);
+                    }
+                  } else if (file.name.toLowerCase().endsWith('.json')) {
+                    try {
+                      captions = stripRaw(decodeJson3(buffer));
+                    } catch (e) {
+                      console.error(e);
+                      alert('Error importing json3 file: ' + file.name);
+                    }
+                  } else {
+                    alert('File name must end with .srt or .json: ' + file.name);
+                  }
+
+                  if (captions !== null) {
+                    editor.setCaptions(captions, /*addToHistory=*/true);
+                  }
+
+                  if (this.files === files) {
+                    this.value = null;
+                  }
+                });
+              }}>
+            <button @click=${function(e) {
+              this.parentNode.querySelector('input').click();
+            }}><span class="open-icon"></span>Open SRT/json3</button>
+          </label>
+        </li>
+
+        <li>
+          <span>
+            <span class="save-icon"></span>Download
+            <a download="subtitles.srt"
+              @mousedown=${updateSrt}
+              @click=${updateSrt}
+              @focus=${updateSrt}
+              @mouseover=${updateSrt}
+              @contextmenu=${updateSrt}
+              @render=${onRender(updateSrt)}
+            >SRT</a>/<a download="subtitles.json3.json"
+              @mousedown=${updateJson3}
+              @click=${updateJson3}
+              @focus=${updateJson3}
+              @mouseover=${updateJson3}
+              @contextmenu=${updateJson3}
+              @render=${onRender(updateJson3)}
+            >json3</a>
+          </span>
+        </li>
+
+        <li>
+          <a href="https://studio.youtube.com/video/${params.videoId}/translations" target="_blank"><span class="link-icon"></span>Video subtitles in YouTube Studio</a>
+        </li>
+      </ul>
+    </div>
+    ${editor.render()}
+  `;
+}
+
 render(html`
   ${video.render()}
   <hr>
-  <div style="width: 640px;" class="toolbar">
-    <style>
-      .toolbar > ul {
-        list-style-type: none;
-        padding: 0;
-        margin: 0 0 0 -1em;
-      }
-      .toolbar > ul > li {
-        display: inline-block;
-        margin: 0 0 0 1em;
-      }
-      .open-icon::before {
-        content: "📂";
-      }
-      .save-icon::before {
-        content: "💾";
-      }
-      .link-icon::before {
-        content: "🔗";
-      }
-    </style>
-
-    <!-- Open file -->
-    <ul>
-      <li>
-        <label>
-          <input type="file"
-            style="display: none;"
-            accept=".srt,text/srt,.json,application/json"
-            @change=${function(e) {
-              let files = this.files;
-              if (files.length !== 1) return;
-              let [file] = files;
-              file.arrayBuffer().then(buffer => {
-                let captions = null;
-
-                if (file.name.toLowerCase().endsWith('.srt')) {
-                  try {
-                    captions = decodeSrt(buffer);
-                  } catch (e) {
-                    console.error(e);
-                    alert('Error importing SRT file: ' + file.name);
-                  }
-                } else if (file.name.toLowerCase().endsWith('.json')) {
-                  try {
-                    captions = stripRaw(decodeJson3(buffer));
-                  } catch (e) {
-                    console.error(e);
-                    alert('Error importing json3 file: ' + file.name);
-                  }
-                } else {
-                  alert('File name must end with .srt or .json: ' + file.name);
-                }
-
-                if (captions !== null) {
-                  editor.setCaptions(captions, /*addToHistory=*/true);
-                }
-
-                if (this.files === files) {
-                  this.value = null;
-                }
-              });
-            }}>
-          <button @click=${function(e) {
-            this.parentNode.querySelector('input').click();
-          }}><span class="open-icon"></span>Open SRT/json3</button>
-        </label>
-      </li>
-
-      <li>
-        <span>
-          <span class="save-icon"></span>Download
-          <a href="#" download="subtitles.srt"
-            @mousedown=${updateSrt}
-            @click=${updateSrt}
-            @focus=${updateSrt}
-            @mouseover=${updateSrt}
-            @contextmenu=${updateSrt}
-          >SRT</a>/<a
-            href="#" download="subtitles.json3.json"
-            @mousedown=${updateJson3}
-            @click=${updateJson3}
-            @focus=${updateJson3}
-            @mouseover=${updateJson3}
-            @contextmenu=${updateJson3}
-          >json3</a>
-        </span>
-      </li>
-
-      <li>
-        <a href="https://studio.youtube.com/video/${params.videoId}/translations" target="_blank"><span class="link-icon"></span>Video subtitles in YouTube Studio</a>
-      </li>
-    </ul>
-  </div>
-  ${editor.render()}
+  ${until(renderEditorAndToolbar(), html`Loading...`)}
 `, document.body);

@@ -471,8 +471,9 @@ let codec' : (track, raw Track.t) Codec.t =
 let cast_json : (Js.Types.obj_val, track) Codec.t =
   Codec.pure ~decode:Obj.magic ~encode:Obj.magic
 
-let string_codec = codec'
+let json_codec = codec'
   |> Codec.stack cast_json
+let string_codec = json_codec
   |> Codec.stack Codec.json
 let codec = string_codec
   |> Codec.stack Encoding.prefer_utf8

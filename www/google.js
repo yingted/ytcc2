@@ -35,7 +35,7 @@ function waitForGapi() {
 /**
  * @returns Promise<gapi.constructor>
  */
-function getGapi() {
+export function getGapi() {
   return waitForGapi()
     .then(() => {
       // We can only have one API key, so put it here.

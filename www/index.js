@@ -24,12 +24,6 @@ app.get('/watch', (req, res) => {
   let videoId = req.query.v;
   const params = {
     videoId,
-    // captions json3 or undefined
-    captions:
-      // TODO: actually fetch it?
-      require('fs').readFileSync(
-        `${process.env.HOME}/Downloads/${videoId}.en.json3`,
-        {encoding: 'utf-8'}),
   };
   renderToStream(html`
     <!DOCTYPE html>
