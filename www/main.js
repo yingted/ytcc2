@@ -120,6 +120,9 @@ async function renderEditorAndToolbar() {
         .link-icon::before {
           content: "🔗";
         }
+        .sanitize-icon::before {
+          content: "🧼";
+        }
       </style>
 
       <!-- Open file -->
@@ -191,7 +194,11 @@ async function renderEditorAndToolbar() {
         </li>
 
         <li>
-          <a href="https://studio.youtube.com/video/${params.videoId}/translations" target="_blank"><span class="link-icon"></span>Video subtitles in YouTube Studio</a>
+          <button @click=${e => editor.normalize()}><span class="sanitize-icon"></span>Sanitize</button>
+        </li>
+
+        <li>
+          <a href="https://studio.youtube.com/video/${params.videoId}/translations" target="_blank"><span class="link-icon"></span>Open in YouTube Studio</a>
         </li>
       </ul>
     </div>

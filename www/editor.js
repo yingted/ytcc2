@@ -441,6 +441,19 @@ export class CaptionsEditor {
   getJson3Captions() {
     return encodeJson3(stripRaw(this._rawCaptions));
   }
+  /**
+   * Reformat syntax and remove any hidden formatting.
+   * This closes unclosed tags, converts ASS tags to HTML,
+   * removes karaoke, and removes text before the first cue.
+   */
+  normalize() {
+    // Remove raw anything:
+    this.setCaptions(
+      fromSrtCues(
+        this._editableCaptions.map(({time, text}) =>
+          textToCaption(captionToText({time, text})))),
+      /*addToHistory=*/true);
+  }
 
   _onEditorUpdate(update) {
     if (this._inSetCaptions) return;
@@ -465,7 +478,7 @@ export class CaptionsEditor {
       // Length of text before first caption:
       let prologueLength = docText.length - captionsText.length;
       let prologue = docText.substring(0, prologueLength);
-      if (prologue !== '') {
+      if (prologue !== '' && captionsText.length > 0) {
         assert(prologue[prologue.length - 1] === '\n');
         prologue = prologue.substring(0, prologue.length - 1);
       }
