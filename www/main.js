@@ -21,6 +21,7 @@ import {CaptionsEditor} from './editor.js';
 import {decodeJson3FromJson, decodeJson3, decodeSrt, stripRaw} from 'ytcc2-captions';
 import {listTracksYtinternal} from './youtube_captions.js';
 import {onRender} from './util.js';
+import dialogPolyfill from 'dialog-polyfill';
 
 const video = new YouTubeVideo(params.videoId);
 /**
@@ -154,8 +155,14 @@ async function renderEditorAndToolbar() {
       .sanitize-icon::before {
         content: "🧼";
       }
+      .publish-icon::before {
+        content: "🌐";
+      }
+      .cancel-icon::before {
+        content: "❌";
+      }
     </style>
-    <!-- Open file -->
+
     <ul class="toolbar">
       <li>
         <label>
@@ -193,10 +200,116 @@ async function renderEditorAndToolbar() {
       <li>
         <button @click=${e => editor.normalize()}><span class="sanitize-icon"></span>Sanitize</button>
       </li>
+
+      <li>
+        <dialog class="fixed" @render=${registerDialog} style="max-width: 600px;">
+          <h2><span class="publish-icon"></span>Publish sanitized</h2>
+
+          <form action="/publish" method="post" target="_blank" @submit=${function(e) {
+            this.closest('dialog').close();
+          }}>
+            <input name="videoId" type="hidden" value=${params.videoId}>
+            <style>
+              .publish-input-group {
+                padding: 0.2em 0;
+              }
+            </style>
+
+            <fieldset>
+              <legend>Language</legend>
+              <label>
+                What language are these captions?
+                <select name="language">
+                  <option value="en">English</option>
+                  <option value="en-US">English (United States)</option>
+                  TODO more languages
+                </select>
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <legend><span class="sanitize-icon"></span>Sanitization</legend>
+              Remove hidden data to protect reviewers.
+
+              <div>
+                <label>
+                  <input type="checkbox" checked required disabled>
+                  Remove karaoke (paint-on) animations.
+                </label>
+              </div>
+              <div>
+                <label>
+                  <input type="checkbox" checked required disabled>
+                  Remove text before the first timestamp.
+                </label>
+              </div>
+              <div>
+                <label>
+                  <input type="checkbox" checked required disabled>
+                  Prefer well-formed HTML tags.
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend>Receipt</legend>
+              Where would you like to save your receipt?<br>
+              You need your receipt to edit or delete your captions.<br>
+              You can change your mind later.
+
+              <details>
+                <summary>Preview file receipt</summary>
+                TODO render a simulated browser
+              </details>
+
+              <details>
+                <summary>Preview cookie receipt</summary>
+                TODO render a simulated browser
+              </details>
+
+              <div>
+                <label>
+                  <input type="radio" id="publish-receipt" name="receipt" value="file-and-cookie" required>
+                  File and cookie
+                </label>
+              </div>
+              <div>
+                <label>
+                  <input type="radio" id="publish-receipt" name="receipt" value="file" required>
+                  File only
+                </label>
+              </div>
+              <div>
+                <label>
+                  <input type="radio" id="publish-receipt" name="receipt" value="cookie" required>
+                  Cookies only
+                </label>
+              </div>
+            </fieldset>
+
+            <!-- Publish | Cancel -->
+            <div class="publish-input-group">
+              <button type="submit"><span class="publish-icon"></span>Publish</button>
+              <button @click=${function(e) {
+                this.closest('dialog').close();
+              }}><span class="cancel-icon"></span>Cancel</button>
+            </div>
+          </form>
+        </dialog>
+        <button @click=${function(e) {
+          let dialog = this.parentElement.querySelector('dialog');
+          // TODO: reset the dialog
+          dialog.showModal();
+        }}><span class="publish-icon"></span>Publish sanitized</button>
+      </li>
     </ul>
     ${editor.render()}
   `;
 }
+
+let registerDialog = onRender(function() {
+  dialogPolyfill.registerDialog(this);
+});
 
 render(html`
   <header>

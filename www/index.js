@@ -32,6 +32,7 @@ app.get('/watch', (req, res) => {
         <meta charset="UTF-8" />
         <title>Captions viewer</title>
         <meta name="viewport" content="width=640">
+        <link rel="stylesheet" type="text/css" href="dist/dialog-polyfill.css" />
       </head>
       <body style="margin: 0;">
         <noscript>You need JavaScript to view this page.</noscript>
@@ -42,6 +43,18 @@ app.get('/watch', (req, res) => {
       </body>
     </html>
   `).pipe(res);
+});
+
+
+app.use(express.urlencoded({
+  extended: true,
+}))
+app.post('/publish', (req, res) => {
+  // TODO
+  res.send(
+`Submission received:
+${JSON.stringify(req.body)}
+`);
 });
 
 const port = process.env.PORT || 8080;
