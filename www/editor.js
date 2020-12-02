@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-import {EditorState, EditorSelection, Transaction} from "@codemirror/next/state";
-import {EditorView, keymap, Decoration, ViewPlugin, WidgetType} from "@codemirror/next/view";
-import {defaultKeymap} from "@codemirror/next/commands";
-import {history, historyKeymap} from "@codemirror/next/history";
+import {EditorState, EditorSelection, Transaction} from '@codemirror/next/state';
+import {EditorView, keymap, Decoration, ViewPlugin, WidgetType} from '@codemirror/next/view';
+import {defaultKeymap} from '@codemirror/next/commands';
+import {history, historyKeymap} from '@codemirror/next/history';
 import {render, html} from 'lit-html';
-import {StreamSyntax} from "@codemirror/next/stream-syntax";
+import {StreamSyntax} from '@codemirror/next/stream-syntax';
 import {empty, encodeJson3, encodeSrt, stripRaw, srtTextToHtml, srtTextToSpans, toSrtCues, fromSrtCues, decodeTimeSpace, encodeTimeSpace} from 'ytcc2-captions';
 import {RangeSetBuilder} from '@codemirror/next/rangeset';
 import {StyleModule} from 'style-mod';
 import {homeEndKeymap} from './codemirror_indent_keymap';
-import {RangeSet} from "@codemirror/next/rangeset";
-import {oneDark} from "@codemirror/next/theme-one-dark";
+import {RangeSet} from '@codemirror/next/rangeset';
+import {oneDark} from '@codemirror/next/theme-one-dark';
+import {newUnsavedChanges} from './unsaved_changes.js';
 
 function assert(cond) {
   console.assert(cond);
@@ -389,20 +390,22 @@ export class CaptionsEditor {
     this._inSetCaptions = false;
     this._inOnVideoUpdate = false;
     this.video.addUpdateListener(this._onVideoUpdate.bind(this));
+    this._unsavedChanges = newUnsavedChanges();
 
     // Initialize the captions:
     if (captions === undefined) {
       captions = empty;
     }
-    this.setCaptions(captions, /*addToHistory=*/false);
+    this.setCaptions(captions, /*addToHistory=*/false, /*isSaved=*/true);
   }
 
   /**
    * Set the captions.
    * @param {Srt.raw Track.t} captions
    * @param {boolean} addToHistory
+   * @param {boolean} isSaved
    */
-  setCaptions(captions, addToHistory) {
+  setCaptions(captions, addToHistory, isSaved) {
     this._inSetCaptions = true;
     {
       // {'raw Track.t} captions with style and karaoke, but no unknown tags
@@ -425,6 +428,8 @@ export class CaptionsEditor {
       }));
     }
     this._inSetCaptions = false;
+
+    if (isSaved) this._unsavedChanges.clear();
   }
 
   /**
@@ -452,7 +457,7 @@ export class CaptionsEditor {
       fromSrtCues(
         this._editableCaptions.map(({time, text}) =>
           textToCaption(captionToText({time, text})))),
-      /*addToHistory=*/true);
+      /*addToHistory=*/true, /*isSaved=*/false);
   }
 
   _onEditorUpdate(update) {
@@ -461,6 +466,8 @@ export class CaptionsEditor {
 
     // Update the captions if needed:
     if (update.docChanged) {
+      this._unsavedChanges.set();
+
       // Get the sorted changes:
       // @type {{fromA: number, toA: number, textB: string}}
       let changes = [];

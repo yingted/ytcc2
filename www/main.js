@@ -117,9 +117,6 @@ async function renderEditorAndToolbar() {
       .save-icon::before {
         content: "💾";
       }
-      .link-icon::before {
-        content: "🔗";
-      }
       .sanitize-icon::before {
         content: "🧼";
       }
@@ -157,7 +154,7 @@ async function renderEditorAndToolbar() {
                 }
 
                 if (captions !== null) {
-                  editor.setCaptions(captions, /*addToHistory=*/true);
+                  editor.setCaptions(captions, /*addToHistory=*/true, /*isSaved=*/true);
                 }
 
                 if (this.files === files) {
@@ -201,39 +198,36 @@ async function renderEditorAndToolbar() {
 }
 
 render(html`
-  <h1>Captions editor: <code>${params.videoId}</code></h1>
-  <style>
-    ul.navbar {
-      width: 640px;
-      list-style-type: none;
-      padding: 0;
-      margin: 0 0 0 -1em;
-    }
-    ul.navbar > li {
-      display: inline-block;
-      margin: 0 0 0 1em;
-    }
-    .open-icon::before {
-      content: "📂";
-    }
-    .save-icon::before {
-      content: "💾";
-    }
-    .link-icon::before {
-      content: "🔗";
-    }
-    .sanitize-icon::before {
-      content: "🧼";
-    }
-  </style>
+  <header>
+    <h1>Captions editor</h1>
+  </header>
+
   <nav>
+    <style>
+      ul.navbar {
+        width: 640px;
+        list-style-type: none;
+        padding: 0;
+        margin: 0 0 0 -1em;
+      }
+      ul.navbar > li {
+        display: inline-block;
+        margin: 0 0 0 1em;
+      }
+      .link-icon::before {
+        content: "🔗";
+      }
+    </style>
     <ul class="navbar">
       <li>
         <a href="https://studio.youtube.com/video/${params.videoId}/translations" target="_blank"><span class="link-icon"></span>YouTube Studio</a>
       </li>
     </ul>
   </nav>
-  ${video.render()}
-  <hr>
-  ${until(renderEditorAndToolbar(), html`Loading...`)}
+
+  <main>
+    ${video.render()}
+    <hr>
+    ${until(renderEditorAndToolbar(), html`Loading captions...`)}
+  </main>
 `, document.body);
