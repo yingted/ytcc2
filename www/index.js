@@ -30,7 +30,7 @@ app.get('/watch', (req, res) => {
     <html lang="en">
       <head>
         <meta charset="UTF-8" />
-        <title>Captions editor</title>
+        <title>Captions viewer</title>
         <meta name="viewport" content="width=640">
       </head>
       <body style="margin: 0;">

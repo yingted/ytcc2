@@ -99,6 +99,40 @@ let updateJson3 = updateDownload('json3');
 
 async function renderEditorAndToolbar() {
   let editor = await asyncEditor;
+  let openFile = function openFile(e) {
+    let files = this.files;
+    if (files.length !== 1) return;
+    let [file] = files;
+    file.arrayBuffer().then(buffer => {
+      let captions = null;
+
+      if (file.name.toLowerCase().endsWith('.srt')) {
+        try {
+          captions = decodeSrt(buffer);
+        } catch (e) {
+          console.error(e);
+          alert('Error importing SRT file: ' + file.name);
+        }
+      } else if (file.name.toLowerCase().endsWith('.json')) {
+        try {
+          captions = stripRaw(decodeJson3(buffer));
+        } catch (e) {
+          console.error(e);
+          alert('Error importing json3 file: ' + file.name);
+        }
+      } else {
+        alert('File name must end with .srt or .json: ' + file.name);
+      }
+
+      if (captions !== null) {
+        editor.setCaptions(captions, /*addToHistory=*/true, /*isSaved=*/true);
+      }
+
+      if (this.files === files) {
+        this.value = null;
+      }
+    });
+  };
   return html`
     <style>
       ul.toolbar {
@@ -128,40 +162,7 @@ async function renderEditorAndToolbar() {
           <input type="file"
             style="display: none;"
             accept=".srt,text/srt,.json,application/json"
-            @change=${function(e) {
-              let files = this.files;
-              if (files.length !== 1) return;
-              let [file] = files;
-              file.arrayBuffer().then(buffer => {
-                let captions = null;
-
-                if (file.name.toLowerCase().endsWith('.srt')) {
-                  try {
-                    captions = decodeSrt(buffer);
-                  } catch (e) {
-                    console.error(e);
-                    alert('Error importing SRT file: ' + file.name);
-                  }
-                } else if (file.name.toLowerCase().endsWith('.json')) {
-                  try {
-                    captions = stripRaw(decodeJson3(buffer));
-                  } catch (e) {
-                    console.error(e);
-                    alert('Error importing json3 file: ' + file.name);
-                  }
-                } else {
-                  alert('File name must end with .srt or .json: ' + file.name);
-                }
-
-                if (captions !== null) {
-                  editor.setCaptions(captions, /*addToHistory=*/true, /*isSaved=*/true);
-                }
-
-                if (this.files === files) {
-                  this.value = null;
-                }
-              });
-            }}>
+            @change=${openFile}>
           <button @click=${function(e) {
             this.parentNode.querySelector('input').click();
           }}><span class="open-icon"></span>Open SRT/json3</button>
@@ -199,7 +200,7 @@ async function renderEditorAndToolbar() {
 
 render(html`
   <header>
-    <h1>Captions editor</h1>
+    <h1>Captions viewer</h1>
   </header>
 
   <nav>
@@ -214,13 +215,20 @@ render(html`
         display: inline-block;
         margin: 0 0 0 1em;
       }
-      .link-icon::before {
-        content: "🔗";
+      .pencil-icon::before {
+        content: "✏️";
+      }
+      .bug-icon::before {
+        content: "🐛";
       }
     </style>
     <ul class="navbar">
       <li>
-        <a href="https://studio.youtube.com/video/${params.videoId}/translations" target="_blank"><span class="link-icon"></span>YouTube Studio</a>
+        <a href="https://studio.youtube.com/video/${params.videoId}/translations" target="_blank"><span class="pencil-icon"></span>Edit captions in YouTube Studio</a>
+      </li>
+
+      <li>
+        <a href="https://github.com/yingted/ytcc2/issues/new" target="_blank"><span class="bug-icon"></span>File a bug on GitHub</a>
       </li>
     </ul>
   </nav>
