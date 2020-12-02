@@ -62,8 +62,15 @@ Array.from(document.getElementsByTagName('noscript')).forEach(noscript => {
 });
 
 let objectUrls = new Set();
+let lastUpdate = {};
 function updateDownload(type) {
   return function(e) {
+    let update = editor.video.captions;
+    if (lastUpdate[type] === update) {
+      return;
+    }
+    lastUpdate[type] = update;
+
     let {videoId} = editor.video;
     let filename, buffer;
     if (type === 'srt') {
