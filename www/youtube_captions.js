@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-import {getGapi} from './google.js';
+/**
+ * Wrapper around youtube.com/api/timedtext
+ * Usage:
+ * (await listTracks(videoId)).forEach(track =>
+ *     console.log(track, JSON.stringify(track.fetchJson3())));
+ */
 
 class Track {
   /**
@@ -44,16 +49,6 @@ class Track {
       return res.json();
     });
   }
-
-  fetchJson3Ytdata() {
-    if (!this.ytdataId) throw new Error('not from YT data API');
-    return getYoutubeApi().then(youtube => {
-      return youtube.captions.download({id: this.ytdataId, tfmt: 'json3', tlang: this.lang})
-        .then(data => {
-          return JSON.parse(data);
-        });
-    });
-  }
 }
 
 /**
@@ -61,7 +56,7 @@ class Track {
  * @param {string} videoId
  * @returns {Promise<Track>}
  */
-export function listTracksYtinternal(videoId) {
+export function listTracks(videoId) {
   return fetch('https://www.youtube-nocookie.com/api/timedtext?v=' + encodeURIComponent(videoId) + '&type=list&tlangs=1&asrs=1')
     .then(res => {
       if (!res.ok) {
@@ -80,74 +75,5 @@ export function listTracksYtinternal(videoId) {
         }));
       }
       return captions;
-    });
-}
-
-function getYoutubeApi() {
-  let ytapi = getGapi().then(gapi => {
-    return gapi.client.load("https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest")
-      .then(() => {
-        return gapi.client.youtube;
-      });
-  });
-  getYoutubeApi = () => ytapi;
-  return getYoutubeApi();
-}
-
-/**
- * List captions for a video.
- * Does not work for unlisted videos.
- */
-function listTracksYtdata(videoId) {
-  getYoutubeApi().then(youtube => {
-    return youtube.captions.list({videoId, part: ["id", "snippet"]})
-      .then(tracks => {
-        return tracks.items.map(track => {
-          return new Track({
-            videoId,
-            name: track.name,
-            lang: track.language,
-            ytdataId: track.id,
-          });
-        });
-      });
-  });
-}
-
-function listTracks(videoId) {
-  return listTracksYtinternal(videoId)
-    .catch(err => {
-      if (!window.confirm(
-        'Couldn\'t get captions list through YouTube\'s internal API. ' +
-        'Try YouTube\'s official API? (requires sending your identity)')) {
-        throw err;
-      }
-      return listTracksYtdata(videoId);
-    });
-}
-
-/**
- * @returns {Promise<JSON3Track>}
- */
-function insertTrack(videoId, trackName, track) {
-  getYoutubeApi()
-    .then(youtube => {
-      youtube.captions.insert({
-        part: ['id'],
-        sync: false,
-      });
-    });
-}
-
-/**
- * @returns {Promise<JSON3Track>}
- */
-function updateTrack(videoId, trackName, track) {
-  getYoutubeApi()
-    .then(youtube => {
-      youtube.captions.update({
-        part: ['id'],
-        sync: false,
-      });
     });
 }

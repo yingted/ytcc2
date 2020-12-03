@@ -19,9 +19,10 @@ import {until} from 'lit-html/directives/until.js';
 import {YouTubeVideo} from './youtube.js';
 import {CaptionsEditor} from './editor.js';
 import {decodeJson3FromJson, decodeJson3, decodeSrt, stripRaw} from 'ytcc2-captions';
-import {listTracksYtinternal} from './youtube_captions.js';
+import {listTracks} from './youtube_captions.js';
 import {onRender} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
+import {youtubeLanguages} from './gen/youtube_languages.js';
 
 const video = new YouTubeVideo(params.videoId);
 /**
@@ -44,7 +45,7 @@ function getDefaultTrack(tracks) {
 }
 window.language = 'en';
 const asyncEditor = (async function makeAsyncEditor() {
-  let track = getDefaultTrack(await listTracksYtinternal(params.videoId));
+  let track = getDefaultTrack(await listTracks(params.videoId));
   if (track === null) {
     return new CaptionsEditor(video);
   } else {
@@ -216,6 +217,8 @@ async function renderEditorAndToolbar() {
       <li>
         <dialog class="fixed" @render=${registerDialog} style="max-width: 600px;">
           <h2><span class="publish-icon"></span>Publish</h2>
+          Publish your captions so anyone can see them.<br>
+          Making the video private or deleting it won't take the captions down.
 
           <form action="/publish" method="post" target="_blank" @submit=${function(e) {
             this.closest('dialog').close();
@@ -231,13 +234,10 @@ async function renderEditorAndToolbar() {
               <legend>Language</legend>
               <label>
                 What language are these captions?
-                <select name="language" @render=${onRender(function() {
-                  this.value = window.language;
-                })}>
-                  <option value="fr">French</option>
-                  <option value="en">English</option>
-                  <option value="en-US">English (United States)</option>
-                  TODO more languages
+                <select name="language">
+                  ${youtubeLanguages.map(({id, name}) => html`
+                    <option value=${id} ?selected=${id === window.language}>${name}</option>
+                  `)}
                 </select>
               </label>
             </fieldset>

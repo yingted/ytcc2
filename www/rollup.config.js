@@ -15,14 +15,32 @@
  */
 
 import resolve from '@rollup/plugin-node-resolve';
-import { terser } from 'rollup-plugin-terser';
+import {terser} from 'rollup-plugin-terser';
 import livereload from 'rollup-plugin-livereload';
 import commonjs from '@rollup/plugin-commonjs';
 import copy from 'rollup-plugin-copy';
+let {listLanguages} = require('./youtube_trusted.js');
 
 // `npm run build` -> `production` is true
 // `npm run dev` -> `production` is false
 const production = !process.env.ROLLUP_WATCH;
+
+/**
+ * rollup plugin to generate YouTube languages.
+ */
+function generateLanguages() {
+  return {
+    name: 'generate-languages',
+    async generateBundle() {
+      let languages = await listLanguages();
+      this.emitFile({
+        type: 'asset',
+        fileName: 'gen/youtube_languages.js',
+        source: `export const youtubeLanguages = ${JSON.stringify(languages)};`,
+      });
+    },
+  };
+}
 
 export default {
   input: 'main.js',
@@ -39,6 +57,7 @@ export default {
         { src: './node_modules/dialog-polyfill/dist/dialog-polyfill.css', dest: 'static/dialog-polyfill/' },
       ],
     }),
+    generateLanguages(),
     production && terser(), // minify, but only in production
     !production && livereload({ delay: 200 }),  // livereload, only in dev
   ]
