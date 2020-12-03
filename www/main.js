@@ -23,8 +23,10 @@ import {listTracks} from './youtube_captions.js';
 import {onRender} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
 import {youtubeLanguages} from './gen/youtube_languages.js';
+import {renderBrowser} from './preview_browser.js';
 
 const video = new YouTubeVideo(params.videoId);
+
 /**
  * Get the default track based on navigator.language.
  * @param {array<Track>} tracks
@@ -167,6 +169,9 @@ async function renderEditorAndToolbar() {
       .add-icon::before {
         content: "➕";
       }
+      .preview-icon::before {
+        content: "🔍";
+      }
     </style>
 
     <ul class="toolbar">
@@ -215,18 +220,23 @@ async function renderEditorAndToolbar() {
       </li>
 
       <li>
-        <dialog class="fixed" @render=${registerDialog} style="max-width: 600px;">
+        <dialog class="fixed" @render=${registerDialog} style="width: 400px;">
           <h2><span class="publish-icon"></span>Publish</h2>
           Publish your captions so anyone can see them.<br>
           Making the video private or deleting it won't take the captions down.
 
           <form action="/publish" method="post" target="_blank" @submit=${function(e) {
             this.closest('dialog').close();
-          }}>
+          }} class="publish-form">
             <input name="videoId" type="hidden" value=${params.videoId}>
             <style>
               .publish-input-group {
                 padding: 0.2em 0;
+              }
+              .publish-form > fieldset {
+                width: 100%;
+                min-width: 100%;
+                box-sizing: border-box;
               }
             </style>
 
@@ -234,11 +244,13 @@ async function renderEditorAndToolbar() {
               <legend>Language</legend>
               <label>
                 What language are these captions?
-                <select name="language">
-                  ${youtubeLanguages.map(({id, name}) => html`
-                    <option value=${id} ?selected=${id === window.language}>${name}</option>
-                  `)}
-                </select>
+                <div>
+                  <select name="language">
+                    ${youtubeLanguages.map(({id, name}) => html`
+                      <option value=${id} ?selected=${id === window.language}>${name}</option>
+                    `)}
+                  </select>
+                </div>
               </label>
             </fieldset>
 
@@ -273,13 +285,17 @@ async function renderEditorAndToolbar() {
               You can change your mind later.
 
               <details>
-                <summary>Preview file receipt</summary>
-                TODO render a simulated browser
+                <summary><span class="preview-icon"></span>Preview file receipt</summary>
+                ${renderBrowser(html, `file:///receipt-${params.videoId}.html`, html`
+                  file receipt
+                `, {title: 'TODO'})}
               </details>
 
               <details>
-                <summary>Preview cookie receipt</summary>
-                TODO render a simulated browser
+                <summary><span class="preview-icon"></span>Preview cookie receipt</summary>
+                ${renderBrowser(html, `${location.origin}/receipts?v=${params.videoId}`, html`
+                  cookie receipt
+                `, {title: 'TODO'})}
               </details>
 
               <div>
@@ -313,7 +329,6 @@ async function renderEditorAndToolbar() {
         </dialog>
         <button @click=${function(e) {
           let dialog = this.parentElement.querySelector('dialog');
-          // TODO: reset the dialog
           dialog.showModal();
         }}><span class="publish-icon"></span>Publish</button>
       </li>
