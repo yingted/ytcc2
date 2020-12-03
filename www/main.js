@@ -42,11 +42,13 @@ function getDefaultTrack(tracks) {
   if (tracks.length > 0) return tracks[0];
   return null;
 }
+window.language = 'en';
 const asyncEditor = (async function makeAsyncEditor() {
   let track = getDefaultTrack(await listTracksYtinternal(params.videoId));
   if (track === null) {
     return new CaptionsEditor(video);
   } else {
+    window.language = track.lang;
     return new CaptionsEditor(video, stripRaw(decodeJson3FromJson(await track.fetchJson3())));
   }
 })();
@@ -229,7 +231,10 @@ async function renderEditorAndToolbar() {
               <legend>Language</legend>
               <label>
                 What language are these captions?
-                <select name="language">
+                <select name="language" @render=${onRender(function() {
+                  this.value = window.language;
+                })}>
+                  <option value="fr">French</option>
                   <option value="en">English</option>
                   <option value="en-US">English (United States)</option>
                   TODO more languages
