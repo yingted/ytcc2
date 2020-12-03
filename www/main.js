@@ -291,6 +291,14 @@ function renderReceipt(videoId, language, captionId, password, isFile) {
   `;
 }
 
+function arrayBufferToBase64(buffer) {
+  let latin1 = [];
+  for (let c of new Uint8Array(buffer)) {
+    latin1.push(String.fromCharCode(c));
+  }
+  return window.btoa(latin1.join(''));
+}
+
 function renderPublishDialog() {
   return html`
     <dialog class="fixed" @render=${registerDialog} style="
@@ -306,6 +314,7 @@ function renderPublishDialog() {
         this.closest('dialog').close();
       }} class="publish-form">
         <input name="videoId" type="hidden" value=${params.videoId}>
+        <input name="srtBase64" type="hidden" value=${arrayBufferToBase64(editor.getNormalizedSrtCaptions())}>
         <style>
           .publish-input-group {
             padding: 0.2em 0;

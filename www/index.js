@@ -50,10 +50,16 @@ app.use(express.urlencoded({
   extended: true,
 }))
 app.post('/publish', (req, res) => {
+  let {videoId, srtBase64, language, receipt} = req.body;
+  /** @type {ArrayBuffer} */
+  let srt = new Uint8Array(Buffer.from(srtBase64, 'base64')).buffer;
   // TODO
-  res.send(
+  res.set({'content-type': 'text/plain'}).send(
 `Submission received:
-${JSON.stringify(req.body)}
+videoId: ${videoId}
+srt: ${srt.byteLength} bytes
+language: ${language}
+receipt: ${receipt}
 `);
 });
 

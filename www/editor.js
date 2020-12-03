@@ -468,10 +468,20 @@ export class CaptionsEditor {
   normalize() {
     // Remove raw anything:
     this.setCaptions(
-      fromSrtCues(
-        this._editableCaptions.map(({time, text}) =>
-          textToCaption(captionToText({time, text})))),
+      this._getNormalizedCaptions(),
       /*addToHistory=*/true, /*isSaved=*/false);
+  }
+  _getNormalizedCaptions() {
+    return fromSrtCues(
+      this._editableCaptions.map(({time, text}) =>
+        textToCaption(captionToText({time, text}))));
+  }
+  /**
+   * Get the normalized captions as SRT.
+   * @returns {ArrayBuffer}
+   */
+  getNormalizedSrtCaptions() {
+    return encodeSrt(this._getNormalizedCaptions());
   }
   /**
    * Add a new cue
