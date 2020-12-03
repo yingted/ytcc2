@@ -25,6 +25,23 @@ let {listLanguages} = require('./youtube_trusted.js');
 // `npm run dev` -> `production` is false
 const production = !process.env.ROLLUP_WATCH;
 
+async function setContents(path, data) {
+  let fs = require('fs').promises;
+
+  let oldData = null;
+  try {
+    oldData = await fs.readFile(path, {encoding: 'utf-8'});
+  } catch(e) {
+  }
+  if (data === oldData) return;
+
+  if (data === null) {
+    await fs.unlink(path);
+  } else {
+    await fs.writeFile(path, data);
+  }
+}
+
 /**
  * rollup plugin to generate YouTube languages.
  */
@@ -33,7 +50,7 @@ function generateLanguages() {
     name: 'generate-languages',
     async buildStart() {
       let languages = await listLanguages();
-      await require('fs').promises.writeFile(
+      await setContents(
         __dirname + '/gen/youtube_languages.js',
         `export const youtubeLanguages = ${JSON.stringify(languages)};`);
     },
