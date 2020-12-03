@@ -82,10 +82,10 @@ function getOffset(state) {
   return state.selection.asSingle().ranges[0].head;
 }
 
-// Find an offset <= this time.
-function timeToOffset(captions, time) {
-  let curOffset = 0;
-  let nextOffset = 0;
+// Find an offset <= this time, aligned to a cue.
+function timeToCueOffset(prologue, captions, time, next) {
+  let curOffset = prologue.length;
+  let nextOffset = prologue.length;
   // Find the last caption where caption.time <= time:
   for (let caption of captions) {
     let timeLength = captionToText({time: caption.time, text: ''}).length;
@@ -94,14 +94,28 @@ function timeToOffset(captions, time) {
     curOffset = nextOffset;
     nextOffset = curOffset + timeLength + caption.text.length + 1;
   }
-  return curOffset;
+  return next ? nextOffset : curOffset;
+}
+function timeToOffset(prologue, captions, time) {
+  return timeToCueOffset(prologue, captions, time);
+}
+function getPrologue(doc, editableCaptions) {
+  let docText = doc.toString();
+  let captionsText = toText(editableCaptions);
+  assert(docText.endsWith(captionsText));
+
+  // Get the captions (numbers do not include "\n"):
+  // Length of text before first caption:
+  let prologueLength = docText.length - captionsText.length;
+  let prologue = docText.substring(0, prologueLength);
+  return prologue;
 }
 
 // Find a time when this offset would be rendered.
 // We usually prefer earlier times, but for paused karaoke, we prefer later times.
 // For simplicity, just prefer earlier times, as it's easier to play forwards than back.
-function offsetToTime(captions, offset) {
-  let curOffset = 0;
+function offsetToTime(prologue, captions, offset) {
+  let curOffset = prologue.length;
   let curTime = 0;
   // Find the last time where curOffset <= offset:
   for (let caption of captions) {
@@ -459,6 +473,28 @@ export class CaptionsEditor {
           textToCaption(captionToText({time, text})))),
       /*addToHistory=*/true, /*isSaved=*/false);
   }
+  /**
+   * Add a new cue
+   * @param {number} time
+   * @param {string} text
+   */
+  addCue(time, text) {
+    let offset = timeToCueOffset(this._getPrologue(), this._editableCaptions, time, true);
+    let insert = captionToText({time, text}) + '\n';
+
+    this.view.dispatch(this.view.state.update({
+      changes: {
+        from: offset,
+        to: offset,
+        insert,
+      },
+      selection: EditorSelection.single(offset + insert.length - 1),
+      scrollIntoView: true,
+    }));
+  }
+  _getPrologue() {
+    return getPrologue(this.view.state.doc, this._editableCaptions);
+  }
 
   _onEditorUpdate(update) {
     if (this._inSetCaptions) return;
@@ -475,21 +511,15 @@ export class CaptionsEditor {
         changes.push({fromA, toA, textB: inserted.sliceString(0)}));
       changes.sort((x, y) => (x.fromA > y.fromA) - (x.fromA < y.fromA));
 
-      let docText = update.prevState.doc.toString();
-      let captionsText = toText(this._editableCaptions);
-      assert(docText.endsWith(captionsText));
-
       // Get the captions (numbers do not include "\n"):
       // @type {{fromA: number, toA: number, caption: {time: ..., text: ..., raw: ...}, text: string}}
       let captions = [];
-      // Length of text before first caption:
-      let prologueLength = docText.length - captionsText.length;
-      let prologue = docText.substring(0, prologueLength);
+      let prologue = getPrologue(update.prevState.doc, this._editableCaptions);
       if (prologue !== '' && captionsText.length > 0) {
         assert(prologue[prologue.length - 1] === '\n');
         prologue = prologue.substring(0, prologue.length - 1);
       }
-      let offset = prologueLength;
+      let offset = prologue.length;
       for (let caption of this._editableCaptions) {
         // Get the range of this line
         let text = captionToText(caption);
@@ -599,8 +629,8 @@ export class CaptionsEditor {
     if (update.selectionSet) {
       let prevOffset = getOffset(update.prevState);
       let offset = getOffset(update.state);
-      let prevTime = offsetToTime(this._editableCaptions, prevOffset);
-      let time = offsetToTime(this._editableCaptions, offset);
+      let prevTime = offsetToTime(this._getPrologue(), this._editableCaptions, prevOffset);
+      let time = offsetToTime(this._getPrologue(), this._editableCaptions, offset);
       if (time !== prevTime) {
         this.video.seekTo(time);
       }
@@ -614,7 +644,7 @@ export class CaptionsEditor {
     this._inOnVideoUpdate = true;
     {
       let prevOffset = getOffset(this.view.state);
-      let offset = timeToOffset(this._editableCaptions, time);
+      let offset = timeToOffset(this._getPrologue(), this._editableCaptions, time);
       if (offset !== prevOffset) {
         // Scroll the current position into view:
         this.view.dispatch(this.view.state.update({

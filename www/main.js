@@ -161,6 +161,9 @@ async function renderEditorAndToolbar() {
       .cancel-icon::before {
         content: "❌";
       }
+      .add-icon::before {
+        content: "➕";
+      }
     </style>
 
     <ul class="toolbar">
@@ -198,12 +201,19 @@ async function renderEditorAndToolbar() {
       </li>
 
       <li>
+        <button @click=${e => {
+          editor.addCue(video.getCurrentTime(), '');
+          editor.view.focus();
+        }}><span class="add-icon"></span>Add cue</button>
+      </li>
+
+      <li>
         <button @click=${e => editor.normalize()}><span class="sanitize-icon"></span>Sanitize</button>
       </li>
 
       <li>
         <dialog class="fixed" @render=${registerDialog} style="max-width: 600px;">
-          <h2><span class="publish-icon"></span>Publish sanitized</h2>
+          <h2><span class="publish-icon"></span>Publish</h2>
 
           <form action="/publish" method="post" target="_blank" @submit=${function(e) {
             this.closest('dialog').close();
@@ -300,7 +310,7 @@ async function renderEditorAndToolbar() {
           let dialog = this.parentElement.querySelector('dialog');
           // TODO: reset the dialog
           dialog.showModal();
-        }}><span class="publish-icon"></span>Publish sanitized</button>
+        }}><span class="publish-icon"></span>Publish</button>
       </li>
     </ul>
     ${editor.render()}
@@ -338,6 +348,10 @@ render(html`
     <ul class="navbar">
       <li>
         <a href="https://studio.youtube.com/video/${params.videoId}/translations" target="_blank"><span class="pencil-icon"></span>Edit captions in YouTube Studio</a>
+      </li>
+
+      <li>
+        <a href="https://youtubexternalcc.netlify.app/video-player.html?videoID=${params.videoId}" target="_blank"><span class="pencil-icon"></span>Edit captions in youtubexternalcc</a>
       </li>
 
       <li>
