@@ -32,7 +32,7 @@ app.get('/watch', (req, res) => {
         <meta charset="UTF-8" />
         <title>Captions viewer</title>
         <meta name="viewport" content="width=640">
-        <link rel="stylesheet" type="text/css" href="/static/dialog-polyfill/dialog-polyfill.css" />
+        <link rel="stylesheet" type="text/css" href="/dialog-polyfill/dialog-polyfill.css" />
       </head>
       <body style="margin: 0;">
         <noscript>You need JavaScript to view this page.</noscript>

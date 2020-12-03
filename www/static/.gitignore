@@ -1,3 +1,4 @@
+# This file is publicly visible.
 *.bundle.js
 *.bundle.js.map
 dialog-polyfill
