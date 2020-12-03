@@ -31,13 +31,11 @@ const production = !process.env.ROLLUP_WATCH;
 function generateLanguages() {
   return {
     name: 'generate-languages',
-    async generateBundle() {
+    async buildStart() {
       let languages = await listLanguages();
-      this.emitFile({
-        type: 'asset',
-        fileName: 'gen/youtube_languages.js',
-        source: `export const youtubeLanguages = ${JSON.stringify(languages)};`,
-      });
+      await require('fs').promises.writeFile(
+        __dirname + '/gen/youtube_languages.js',
+        `export const youtubeLanguages = ${JSON.stringify(languages)};`);
     },
   };
 }
@@ -50,6 +48,7 @@ export default {
     sourcemap: true
   },
   plugins: [
+    generateLanguages(),
     resolve(), // tells Rollup how to find node_modules
     commonjs(),
     copy({
@@ -57,7 +56,6 @@ export default {
         { src: './node_modules/dialog-polyfill/dist/dialog-polyfill.css', dest: 'static/dialog-polyfill/' },
       ],
     }),
-    generateLanguages(),
     production && terser(), // minify, but only in production
     !production && livereload({ delay: 200 }),  // livereload, only in dev
   ]
