@@ -220,113 +220,7 @@ async function renderEditorAndToolbar() {
       </li>
 
       <li>
-        <dialog class="fixed" @render=${registerDialog} style="width: 400px;">
-          <h2><span class="publish-icon"></span>Publish</h2>
-          Publish your captions so anyone can see them.<br>
-          Making the video private or deleting it won't take the captions down.
-
-          <form action="/publish" method="post" target="_blank" @submit=${function(e) {
-            this.closest('dialog').close();
-          }} class="publish-form">
-            <input name="videoId" type="hidden" value=${params.videoId}>
-            <style>
-              .publish-input-group {
-                padding: 0.2em 0;
-              }
-              .publish-form > fieldset {
-                width: 100%;
-                min-width: 100%;
-                box-sizing: border-box;
-              }
-            </style>
-
-            <fieldset>
-              <legend>Language</legend>
-              <label>
-                What language are these captions?
-                <div>
-                  <select name="language">
-                    ${youtubeLanguages.map(({id, name}) => html`
-                      <option value=${id} ?selected=${id === window.language}>${name}</option>
-                    `)}
-                  </select>
-                </div>
-              </label>
-            </fieldset>
-
-            <fieldset>
-              <legend><span class="sanitize-icon"></span>Sanitization</legend>
-              Remove hidden data to protect reviewers.
-
-              <div>
-                <label>
-                  <input type="checkbox" checked required disabled>
-                  Remove karaoke (paint-on) animations.
-                </label>
-              </div>
-              <div>
-                <label>
-                  <input type="checkbox" checked required disabled>
-                  Remove text before the first timestamp.
-                </label>
-              </div>
-              <div>
-                <label>
-                  <input type="checkbox" checked required disabled>
-                  Prefer well-formed HTML tags.
-                </label>
-              </div>
-            </fieldset>
-
-            <fieldset>
-              <legend>Receipt</legend>
-              Where would you like to save your receipt?<br>
-              You need your receipt to edit or delete your captions.<br>
-              You can change your mind later.
-
-              <details>
-                <summary><span class="preview-icon"></span>Preview file receipt</summary>
-                ${renderBrowser(html, `file:///receipt-${params.videoId}.html`, html`
-                  file receipt
-                `, {title: 'TODO'})}
-              </details>
-
-              <details>
-                <summary><span class="preview-icon"></span>Preview cookie receipt</summary>
-                ${renderBrowser(html, `${location.origin}/receipts?v=${params.videoId}`, html`
-                  cookie receipt
-                `, {title: 'TODO'})}
-              </details>
-
-              <div>
-                <label>
-                  <input type="radio" id="publish-receipt" name="receipt" value="file-and-cookie" required>
-                  File and cookie
-                </label>
-              </div>
-              <div>
-                <label>
-                  <input type="radio" id="publish-receipt" name="receipt" value="file" required>
-                  File only
-                </label>
-              </div>
-              <div>
-                <label>
-                  <input type="radio" id="publish-receipt" name="receipt" value="cookie" required>
-                  Cookies only
-                </label>
-              </div>
-            </fieldset>
-
-            <!-- Publish | Cancel -->
-            <div class="publish-input-group">
-              <button type="submit"><span class="publish-icon"></span>Publish</button>
-              <button @click=${function(e) {
-                this.closest('dialog').close();
-              }}><span class="cancel-icon"></span>Cancel</button>
-            </div>
-          </form>
-        </dialog>
+        ${renderPublishDialog()}
         <button @click=${function(e) {
           let dialog = this.parentElement.querySelector('dialog');
           dialog.showModal();
@@ -340,6 +234,183 @@ async function renderEditorAndToolbar() {
 let registerDialog = onRender(function() {
   dialogPolyfill.registerDialog(this);
 });
+
+function renderReceipt(videoId, language, captionId, password, isFile) {
+  return html`
+    <style>
+      .edit-icon::before {
+        content: "✏️";
+      }
+      .delete-icon::before {
+        content: "🗑️";
+      }
+      .cookie-icon::before {
+        content: "🍪";
+      }
+      .download-icon::before {
+        content: "📥";
+      }
+    </style>
+    <form>
+      Thanks for publishing captions.<br>
+      This is your receipt.<br>
+      You need it to edit/delete your captions.
+
+      <fieldset>
+        <legend>Submission information</legend>
+
+        <div><label>Video ID: <input name="v" value=${videoId} disabled></label></div>
+        <div><label>Language: <input name="lang" value=${language} disabled></label></div>
+        <div><label>Caption ID: <input name="id" value=${captionId} disabled></label></div>
+        <div><label>Tracking number: <input name="password" value=${password} disabled></label></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Actions</legend>
+
+        <div>
+          Captions:
+          <a href="#" @click=${e => e.preventDefault()}><span class="view-icon"></span>View</a>
+          <a href="#" @click=${e => e.preventDefault()}><span class="edit-icon"></span>Edit</a>
+          <a href="#" @click=${e => e.preventDefault()}><span class="delete-icon"></span>Delete</a>
+        </div>
+
+        <div>
+          Receipt:
+          ${isFile ?
+              html`
+                <a href="#" @click=${e => e.preventDefault()}><span class="cookie-icon"></span>Add to cookie</a>
+              ` :
+              html`
+                <a href="#" @click=${e => e.preventDefault()}><span class="download-icon"></span>Download</a>
+                <a href="#" @click=${e => e.preventDefault()}><span class="delete-icon"></span><span class="cookie-icon"></span>Delete</a>
+              `}
+        </div>
+      </fieldset>
+    </form>
+  `;
+}
+
+function renderPublishDialog() {
+  return html`
+    <dialog class="fixed" @render=${registerDialog} style="
+        width: 400px;
+        max-height: 100%;
+        box-sizing: border-box;
+        overflow-y: auto;">
+      <h2><span class="publish-icon"></span>Publish</h2>
+      Publish your captions so anyone can see them.<br>
+      Making the video private or deleting it won't take the captions down.
+
+      <form action="/publish" method="post" target="_blank" @submit=${function(e) {
+        this.closest('dialog').close();
+      }} class="publish-form">
+        <input name="videoId" type="hidden" value=${params.videoId}>
+        <style>
+          .publish-input-group {
+            padding: 0.2em 0;
+          }
+          .publish-form > fieldset {
+            width: 100%;
+            min-width: 100%;
+            box-sizing: border-box;
+          }
+        </style>
+
+        <fieldset>
+          <legend>Language</legend>
+          <label>
+            What language are these captions?
+            <div>
+              <select name="language">
+                ${youtubeLanguages.map(({id, name}) => html`
+                  <option value=${id} ?selected=${id === window.language}>${name}</option>
+                `)}
+              </select>
+            </div>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend><span class="sanitize-icon"></span>Sanitization</legend>
+          Remove hidden data to protect reviewers.
+
+          <div>
+            <label>
+              <input type="checkbox" checked required disabled>
+              Remove karaoke (paint-on) animations.
+            </label>
+          </div>
+          <div>
+            <label>
+              <input type="checkbox" checked required disabled>
+              Remove text before the first timestamp.
+            </label>
+          </div>
+          <div>
+            <label>
+              <input type="checkbox" checked required disabled>
+              Prefer well-formed HTML tags.
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Receipt</legend>
+          Where would you like to save your receipt?<br>
+          You need your receipt to edit or delete your captions.<br>
+          You can change your mind later.
+
+          <details>
+            <summary><span class="preview-icon"></span>Preview file receipt</summary>
+            ${renderBrowser(html, `file:///receipt-${params.videoId}.html`,
+              renderReceipt(params.videoId, '??', '###', '#############', true),
+              {title: `Captions receipt: ${params.videoId} ###`})}
+          </details>
+
+          <details>
+            <summary><span class="preview-icon"></span>Preview cookie receipt</summary>
+            ${renderBrowser(html, `${location.origin}/receipts?v=${params.videoId}`,
+              html`
+                Your receipts:<br>
+                <div style="border: 1px solid black;">
+                  ${renderReceipt(params.videoId, '??', '###', '#############', false)}
+                </div>
+              `,
+              {title: `Captions receipt: ${params.videoId}`})}
+          </details>
+
+          <div>
+            <label>
+              <input type="radio" id="publish-receipt" name="receipt" value="file-and-cookie" required>
+              File and cookie
+            </label>
+          </div>
+          <div>
+            <label>
+              <input type="radio" id="publish-receipt" name="receipt" value="file" required>
+              File only
+            </label>
+          </div>
+          <div>
+            <label>
+              <input type="radio" id="publish-receipt" name="receipt" value="cookie" required>
+              Cookies only
+            </label>
+          </div>
+        </fieldset>
+
+        <!-- Publish | Cancel -->
+        <div class="publish-input-group">
+          <button type="submit"><span class="publish-icon"></span>Publish</button>
+          <button @click=${function(e) {
+            this.closest('dialog').close();
+          }}><span class="cancel-icon"></span>Cancel</button>
+        </div>
+      </form>
+    </dialog>
+  `;
+}
 
 render(html`
   <header>
