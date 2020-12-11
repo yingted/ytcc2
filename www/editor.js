@@ -18,8 +18,8 @@ import {EditorState, EditorSelection, Transaction} from '@codemirror/next/state'
 import {EditorView, keymap, Decoration, ViewPlugin, WidgetType} from '@codemirror/next/view';
 import {defaultKeymap} from '@codemirror/next/commands';
 import {history, historyKeymap} from '@codemirror/next/history';
+import {indentService} from '@codemirror/next/language';
 import {render, html} from 'lit-html';
-import {StreamSyntax} from '@codemirror/next/stream-syntax';
 import {empty, encodeJson3, encodeSrt, stripRaw, srtTextToHtml, srtTextToSpans, toSrtCues, fromSrtCues, decodeTimeSpace, encodeTimeSpace} from 'ytcc2-captions';
 import {RangeSetBuilder} from '@codemirror/next/rangeset';
 import {StyleModule} from 'style-mod';
@@ -386,7 +386,7 @@ export class CaptionsEditor {
           ]),
           captionsHighlighterExtension,
           EditorView.updateListener.of(this._onEditorUpdate.bind(this)),
-          EditorState.indentation.of((context, pos) => {
+          indentService.of((context, pos) => {
             let line = context.doc.lineAt(pos);
             let timeOffset = decodeTimeSpace(line.content);
             if (timeOffset === null) {
