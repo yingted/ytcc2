@@ -412,7 +412,7 @@ function renderPublishDialog() {
         <!-- Publish | Cancel -->
         <div class="publish-input-group">
           <button type="submit"><span class="publish-icon"></span>Publish</button>
-          <button @click=${function(e) {
+          <button type="button" @click=${function(e) {
             this.closest('dialog').close();
           }}><span class="cancel-icon"></span>Cancel</button>
         </div>
