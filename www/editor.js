@@ -391,7 +391,7 @@ export class CaptionsEditor {
           captionsHighlighterExtension,
           EditorView.updateListener.of(this._onEditorUpdate.bind(this)),
           indentService.of((context, pos) => {
-            let line = context.doc.lineAt(pos);
+            let line = context.state.doc.lineAt(pos);
             let timeOffset = decodeTimeSpace(line.content);
             if (timeOffset === null) {
               return 0;
@@ -536,7 +536,8 @@ export class CaptionsEditor {
       // @type {{fromA: number, toA: number, caption: {time: ..., text: ..., raw: ...}, text: string}}
       let captions = [];
       let prologue = getPrologue(update.prevState.doc, this._editableCaptions);
-      if (prologue !== '' && captionsText.length > 0) {
+      if (prologue !== '' && prologue.length !== update.prevState.doc.length) {
+        // Prologue and captions are both nonempty, remove the separator:
         assert(prologue[prologue.length - 1] === '\n');
         prologue = prologue.substring(0, prologue.length - 1);
       }

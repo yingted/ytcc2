@@ -15,21 +15,8 @@
  */
 
 import {EditorState, EditorSelection, Transaction} from "@codemirror/next/state";
-
-/**
- * Get the indentation of a state.
- * This returns the first non-negative indentation, or 0 if none is found.
- * @param {EditorState} state
- * @param {number} from the line start position (line.from)
- * @returns {number} the indentation
- */
-function getIndentation(state, from) {
-  for (let getIndentation of state.facet(EditorState.indentation)) {
-    let indentation = getIndentation(state, from);
-    if (indentation >= 0) return indentation;
-  }
-  return 0;
-}
+import {getIndentation} from "@codemirror/next/language";
+import {insertNewline} from "@codemirror/next/commands";
 
 /**
  * Get the new cursor position for a Home/End command.
@@ -120,4 +107,5 @@ export const selectLineBoundaryBackward = view => extendRanges(view, range => mo
 export const homeEndKeymap = [
   {key: "Home", run: cursorLineBoundaryBackward, shift: selectLineBoundaryBackward},
   {key: "End", run: cursorLineBoundaryForward, shift: selectLineBoundaryForward},
+  {key: "Enter", run: insertNewline},
 ];
