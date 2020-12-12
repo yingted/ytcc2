@@ -37,36 +37,6 @@ function waitForYouTubeIframeAPI() {
   return waitForYouTubeIframeAPI();
 }
 
-class Timer {
-  constructor(callback) {
-    this.callback = callback;
-    // Last value from setOn
-    this.on = false;
-    // Whether _onRenderThis will be called soon.
-    this.scheduled = false;
-    this._onRenderThis = this._onRender.bind(this);
-  }
-
-  setOn(on) {
-    if (on === this.on) return;
-    this.on = on;
-    // Schedule it if needed:
-    if (on && !this.scheduled) {
-      this.scheduled = true;
-      window.requestAnimationFrame(this._onRenderThis);
-    }
-  }
-
-  _onRender() {
-    if (this.on) {
-      this.callback();
-      window.requestAnimationFrame(this._onRenderThis);
-    } else {
-      this.scheduled = false;
-    }
-  }
-}
-
 /**
  * Wrapper for the YouTube IFrame Player API.
  * You can't use more than one of these at once.
@@ -87,12 +57,21 @@ export class YouTubeVideo {
     this.width = options.width ?? 640;
     this.player = null;
     this.ready = false;
-    this.timer = new Timer(this._update.bind(this));
-    this.timer.setOn(true);
     this._handlers = [];
     this.captions = options.captions || empty;
     this.captionsRegion = null;
+    this._lastUpdateCaptions = null;
+    this._lastUpdateTime = null;
     this.html = null;
+
+    let updateThis = this._update.bind(this);
+    window.requestAnimationFrame(function onAnimationFrame() {
+      try {
+        updateThis();
+      } finally {
+        window.requestAnimationFrame(onAnimationFrame);
+      }
+    });
   }
 
   /**
@@ -222,10 +201,20 @@ export class YouTubeVideo {
 
   _update() {
     let t = this.getCurrentTime();
+
+    // Suppress duplicate updates:
+    if (this._lastUpdateCaptions === this.captions && this._lastUpdateTime === t) {
+      return;
+    }
+    this._lastUpdateCaptions = this.captions;
+    this._lastUpdateTime = t;
+
+    // Callbacks:
     for (let cb of this._handlers) {
       cb.call(this, t);
     }
 
+    // Render captions:
     if (this.captionsRegion !== null) {
       this.html = toHtml({html, styleMap}, this.captions, t);
       render(this.html, this.captionsRegion);
