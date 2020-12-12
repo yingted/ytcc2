@@ -142,7 +142,8 @@ async function renderEditorAndToolbar() {
   return html`
     <style>
       ul.toolbar {
-        width: 640px;
+        width: 100%;
+        min-width: 0;
         list-style-type: none;
         padding: 0;
         margin: 0 0 0 -1em;
@@ -429,7 +430,8 @@ render(html`
   <nav>
     <style>
       ul.navbar {
-        width: 640px;
+        width: 100%;
+        min-width: 0;
         list-style-type: none;
         padding: 0;
         margin: 0 0 0 -1em;

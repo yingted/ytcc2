@@ -684,7 +684,7 @@ export class CaptionsEditor {
       textbox.setAttribute('aria-label', 'Captions editor');
     }
     return html`
-      <div style="height: 25em; width: 640px; overflow: auto;">
+      <div style="height: 25em; width: 100%; overflow: auto;">
         ${this.view.dom}
       </div>
     `;

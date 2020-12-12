@@ -46,15 +46,11 @@ export class YouTubeVideo {
   /**
    * Construct a video player.
    * @param {string} videoId 
-   * @param {number} [options.height=390]
-   * @param {number} [options.width=640]
    * @param {object} [options.captions=empty]
    */
   constructor(videoId, options) {
     this.videoId = videoId;
     options = options || {};
-    this.height = options.height ?? 390;
-    this.width = options.width ?? 640;
     this.player = null;
     this.ready = false;
     this._handlers = [];
@@ -114,10 +110,11 @@ export class YouTubeVideo {
         }
       </style>
       <div class="player-container" style=${styleMap({
-        width: this.width + 'px',
-        height: this.height + 'px',
+        position: 'relative',
+        width: '100%',
+        'padding-bottom': 'calc(56.25% + 30px)',
       })}>
-        <iframe id=${id} width=${this.width} height=${this.height} frameborder="0" src=${src}
+        <iframe id=${id} width="100%" height="100%" style="position: absolute;" frameborder="0" src=${src}
           title="YouTube player"
           @render=${onRender(() => {
             waitForYouTubeIframeAPI().then(() => {
