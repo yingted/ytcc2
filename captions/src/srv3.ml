@@ -203,19 +203,25 @@ let srv3_to_json_exn : string -> Json3.json =
           let segs = [];
           event.segs = segs;
           for (let span of pw.childNodes) {
+            let seg;
             switch (span.nodeType) {
               case Node.TEXT_NODE:
-                segs.push({
+                seg = {
                   utf8: span.textContent,
-                });
+                };
                 break;
               case Node.ELEMENT_NODE:
-                segs.push({
+                seg = {
                   utf8: span.textContent,
                   tOffsetMs: decode_exn(int_value, span.getAttribute('t')),
                   pPenId: decode_exn(int_value, span.getAttribute('p')),
-                });
+                };
                 break;
+              default:
+                continue;
+            }
+            if (!(seg.tOffsetMs === undefined && seg.pPenId === undefined && seg.utf8 === '')) {
+              segs.push(seg);
             }
           }
           return event;
