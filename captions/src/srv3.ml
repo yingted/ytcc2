@@ -38,37 +38,48 @@ type attr = {
 }
 type schema = attr array
 
+(* Try to keep things in YouTube order: *)
 let pen_schema = [|
   { key = "pParentId"; attr = "p"; codec = int_value; };
+
   { key = "bAttr"; attr = "b"; codec = int_value; };
   { key = "iAttr"; attr = "i"; codec = int_value; };
   { key = "uAttr"; attr = "u"; codec = int_value; };
-  { key = "ofOffset"; attr = "of"; codec = int_value; };
-  { key = "szPenSize"; attr = "sz"; codec = int_value; };
-  { key = "etEdgeType"; attr = "et"; codec = int_value; };
-  { key = "ecEdgeColor"; attr = "ec"; codec = color_value; };
+
   { key = "fsFontStyle"; attr = "fs"; codec = int_value; };
   { key = "fcForeColor"; attr = "fc"; codec = color_value; };
   { key = "foForeAlpha"; attr = "fo"; codec = int_value; };
+
   { key = "bcBackColor"; attr = "bc"; codec = color_value; };
   { key = "boBackAlpha"; attr = "bo"; codec = int_value; };
+
+  { key = "ecEdgeColor"; attr = "ec"; codec = color_value; };
+  { key = "szPenSize"; attr = "sz"; codec = int_value; };
+  { key = "etEdgeType"; attr = "et"; codec = int_value; };
+
+  { key = "ofOffset"; attr = "of"; codec = int_value; };
+
   { key = "rbRuby"; attr = "rb"; codec = int_value; };
   { key = "hgHorizGroup"; attr = "hg"; codec = int_value; };
 |]
 let window_style_schema = [|
   { key = "wsParentId"; attr = "ws"; codec = int_value; };
+
   { key = "mhModeHint"; attr = "mh"; codec = int_value; };
   { key = "juJustifCode"; attr = "ju"; codec = int_value; };
-  { key = "sdScrollDir"; attr = "sd"; codec = int_value; };
   { key = "pdPrintDir"; attr = "pd"; codec = int_value; };
+  { key = "sdScrollDir"; attr = "sd"; codec = int_value; };
+
   { key = "wfcWinFillColor"; attr = "wfc"; codec = color_value; };
   { key = "wfoWinFillAlpha"; attr = "wfo"; codec = int_value; };
 |]
 let window_position_schema = [|
   { key = "wpParentId"; attr = "wp"; codec = int_value; };
+
   { key = "apPoint"; attr = "ap"; codec = int_value; };
   { key = "ahHorPos"; attr = "ah"; codec = int_value; };
   { key = "avVerPos"; attr = "av"; codec = int_value; };
+
   { key = "rcRows"; attr = "rc"; codec = int_value; };
   { key = "ccCols"; attr = "cc"; codec = int_value; };
 |]
@@ -233,9 +244,12 @@ let srv3_to_json_exn : string -> Json3.json =
     pens_codec window_styles_codec window_positions_codec window_codec cue_codec
 
 let srv3_newlines = true
+let empty_leading_span = true
 let json3_to_srv3 : Json3.json -> string =
   [%raw {|
-    (newlines, encode, pens_codec, window_styles_codec, window_positions_codec, window_codec, cue_codec) =>
+    (newlines, empty_leading_span,
+    encode,
+    pens_codec, window_styles_codec, window_positions_codec, window_codec, cue_codec) =>
     function json3_to_srv3(track) {
       let doc = new DOMParser().parseFromString(
 `<?xml version="1.0" encoding="utf-8" ?><timedtext format="3">
@@ -286,7 +300,7 @@ let json3_to_srv3 : Json3.json -> string =
             }
 
             // If the cue starts with a styled span, insert an empty span.
-            if (node.childNodes.length === 0) {
+            if (empty_leading_span && node.childNodes.length === 0) {
               node.appendChild(doc.createElement('s'));
             }
 
@@ -304,10 +318,10 @@ let json3_to_srv3 : Json3.json -> string =
         }
       }
 
-      return new XMLSerializer().serializeToString(doc);
+      return '<?xml version="1.0" encoding="utf-8" ?>' + new XMLSerializer().serializeToString(doc);
     }
   |}]
-    srv3_newlines
+    srv3_newlines empty_leading_span
     Codec.encode
     pens_codec window_styles_codec window_positions_codec window_codec cue_codec
 

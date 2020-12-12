@@ -1,32 +1,32 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`converts /home/ted/ytcc2/captions/test/data/YTSubConverter/il4cAeVzZwI.srv3.xml from json3 1`] = `
-"<timedtext format=\\"3\\">
+exports[`converts /home/ted/ytcc2/captions/test/data/YTSubConverter/il4cAeVzZwI.orig.srv3.xml from json3 1`] = `
+"<?xml version=\\"1.0\\" encoding=\\"utf-8\\" ?><timedtext format=\\"3\\">
 <head>
 <pen id=\\"0\\"/>
-<pen id=\\"1\\" et=\\"3\\" ec=\\"#000000\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"2\\" i=\\"1\\" et=\\"3\\" ec=\\"#000000\\" fc=\\"#C0C0C0\\" bo=\\"0\\"/>
-<pen id=\\"3\\" i=\\"1\\" et=\\"3\\" ec=\\"#FF74C3\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"0\\"/>
+<pen id=\\"1\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#000000\\" et=\\"3\\"/>
+<pen id=\\"2\\" i=\\"1\\" fc=\\"#C0C0C0\\" bo=\\"0\\" ec=\\"#000000\\" et=\\"3\\"/>
+<pen id=\\"3\\" i=\\"1\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"0\\" ec=\\"#FF74C3\\" et=\\"3\\"/>
 <pen id=\\"4\\" i=\\"1\\" fc=\\"#FEFEFE\\" fo=\\"0\\" bc=\\"#000000\\" bo=\\"0\\"/>
-<pen id=\\"5\\" i=\\"1\\" et=\\"3\\" ec=\\"#000000\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"0\\"/>
-<pen id=\\"6\\" i=\\"1\\" et=\\"3\\" ec=\\"#FF74C3\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"7\\" i=\\"1\\" et=\\"3\\" ec=\\"#B4FFFF\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"8\\" i=\\"1\\" et=\\"3\\" ec=\\"#B4FFFF\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"0\\"/>
-<pen id=\\"9\\" et=\\"3\\" ec=\\"#FEFADF\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"10\\" i=\\"1\\" et=\\"3\\" ec=\\"#B8FFFF\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"11\\" i=\\"1\\" et=\\"3\\" ec=\\"#B8FFFF\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"0\\"/>
-<pen id=\\"12\\" et=\\"3\\" ec=\\"#FFF6DA\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"13\\" i=\\"1\\" et=\\"3\\" ec=\\"#F3FFF5\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"14\\" i=\\"1\\" et=\\"3\\" ec=\\"#F3FFF5\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"0\\"/>
-<pen id=\\"15\\" et=\\"3\\" ec=\\"#F3FFF5\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"16\\" i=\\"1\\" et=\\"3\\" ec=\\"#F0F1E2\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"17\\" i=\\"1\\" et=\\"3\\" ec=\\"#F0F1E2\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"0\\"/>
-<pen id=\\"18\\" et=\\"3\\" ec=\\"#FBFAF1\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"19\\" i=\\"1\\" et=\\"3\\" ec=\\"#FBFAF1\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"20\\" i=\\"1\\" et=\\"3\\" ec=\\"#FBFAF1\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"0\\"/>
-<pen id=\\"21\\" et=\\"3\\" ec=\\"#F0F1E2\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"22\\" i=\\"1\\" et=\\"3\\" ec=\\"#F65036\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"23\\" et=\\"3\\" ec=\\"#F65036\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
+<pen id=\\"5\\" i=\\"1\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"0\\" ec=\\"#000000\\" et=\\"3\\"/>
+<pen id=\\"6\\" i=\\"1\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#FF74C3\\" et=\\"3\\"/>
+<pen id=\\"7\\" i=\\"1\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#B4FFFF\\" et=\\"3\\"/>
+<pen id=\\"8\\" i=\\"1\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"0\\" ec=\\"#B4FFFF\\" et=\\"3\\"/>
+<pen id=\\"9\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#FEFADF\\" et=\\"3\\"/>
+<pen id=\\"10\\" i=\\"1\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#B8FFFF\\" et=\\"3\\"/>
+<pen id=\\"11\\" i=\\"1\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"0\\" ec=\\"#B8FFFF\\" et=\\"3\\"/>
+<pen id=\\"12\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#FFF6DA\\" et=\\"3\\"/>
+<pen id=\\"13\\" i=\\"1\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#F3FFF5\\" et=\\"3\\"/>
+<pen id=\\"14\\" i=\\"1\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"0\\" ec=\\"#F3FFF5\\" et=\\"3\\"/>
+<pen id=\\"15\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#F3FFF5\\" et=\\"3\\"/>
+<pen id=\\"16\\" i=\\"1\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#F0F1E2\\" et=\\"3\\"/>
+<pen id=\\"17\\" i=\\"1\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"0\\" ec=\\"#F0F1E2\\" et=\\"3\\"/>
+<pen id=\\"18\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#FBFAF1\\" et=\\"3\\"/>
+<pen id=\\"19\\" i=\\"1\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#FBFAF1\\" et=\\"3\\"/>
+<pen id=\\"20\\" i=\\"1\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"0\\" ec=\\"#FBFAF1\\" et=\\"3\\"/>
+<pen id=\\"21\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#F0F1E2\\" et=\\"3\\"/>
+<pen id=\\"22\\" i=\\"1\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#F65036\\" et=\\"3\\"/>
+<pen id=\\"23\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#F65036\\" et=\\"3\\"/>
 <ws id=\\"0\\"/>
 <ws id=\\"1\\" ju=\\"0\\"/>
 <ws id=\\"2\\" ju=\\"1\\"/>
@@ -2642,8 +2642,8 @@ exports[`converts /home/ted/ytcc2/captions/test/data/YTSubConverter/il4cAeVzZwI.
 </timedtext>"
 `;
 
-exports[`converts /home/ted/ytcc2/captions/test/data/YTSubConverter/sc3-z_2aNX0.srv3.xml from json3 1`] = `
-"<timedtext format=\\"3\\">
+exports[`converts /home/ted/ytcc2/captions/test/data/YTSubConverter/sc3-z_2aNX0.orig.srv3.xml from json3 1`] = `
+"<?xml version=\\"1.0\\" encoding=\\"utf-8\\" ?><timedtext format=\\"3\\">
 <head>
 <pen id=\\"0\\"/>
 <pen id=\\"1\\" fc=\\"#E35792\\" bc=\\"#FFFFFF\\" bo=\\"254\\"/>
@@ -2652,27 +2652,27 @@ exports[`converts /home/ted/ytcc2/captions/test/data/YTSubConverter/sc3-z_2aNX0.
 <pen id=\\"4\\" fc=\\"#0C95C4\\" bc=\\"#000000\\" bo=\\"254\\"/>
 <pen id=\\"5\\" fc=\\"#E35792\\" bc=\\"#000000\\" bo=\\"254\\"/>
 <pen id=\\"6\\" b=\\"1\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"254\\"/>
-<pen id=\\"7\\" b=\\"1\\" sz=\\"500\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"254\\"/>
+<pen id=\\"7\\" b=\\"1\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"254\\" sz=\\"500\\"/>
 <pen id=\\"8\\" fc=\\"#0D94C0\\" bc=\\"#FFFFFF\\" bo=\\"254\\"/>
 <pen id=\\"9\\" fc=\\"#DD5891\\" bc=\\"#FFFFFF\\" bo=\\"254\\"/>
 <pen id=\\"10\\" b=\\"1\\" fc=\\"#C0C0C0\\" fo=\\"132\\" bo=\\"0\\"/>
-<pen id=\\"11\\" b=\\"1\\" et=\\"3\\" ec=\\"#D50072\\" fc=\\"#FEFEFE\\" bc=\\"#DA4371\\" bo=\\"195\\"/>
-<pen id=\\"12\\" b=\\"1\\" sz=\\"233\\" fc=\\"#2286D4\\" bc=\\"#FFFFFF\\" bo=\\"254\\"/>
-<pen id=\\"13\\" b=\\"1\\" sz=\\"233\\" fc=\\"#0C96BF\\" bc=\\"#FFFFFF\\" bo=\\"254\\"/>
-<pen id=\\"14\\" b=\\"1\\" sz=\\"500\\" fc=\\"#FEFEFE\\" bc=\\"#FF070E\\" bo=\\"254\\"/>
-<pen id=\\"15\\" b=\\"1\\" sz=\\"233\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"16\\" b=\\"1\\" sz=\\"233\\" fc=\\"#E41173\\" bc=\\"#FFFFFF\\" bo=\\"254\\"/>
-<pen id=\\"17\\" b=\\"1\\" sz=\\"340\\" fc=\\"#DF5892\\" bc=\\"#FFFFFF\\" bo=\\"254\\"/>
-<pen id=\\"18\\" b=\\"1\\" sz=\\"233\\" fc=\\"#FEFEFE\\" fo=\\"18\\" bo=\\"0\\"/>
-<pen id=\\"19\\" b=\\"1\\" sz=\\"233\\" fc=\\"#FEFEFE\\" fo=\\"54\\" bo=\\"0\\"/>
-<pen id=\\"20\\" b=\\"1\\" sz=\\"233\\" fc=\\"#FEFEFE\\" fo=\\"91\\" bo=\\"0\\"/>
-<pen id=\\"21\\" b=\\"1\\" sz=\\"233\\" fc=\\"#FEFEFE\\" fo=\\"127\\" bo=\\"0\\"/>
-<pen id=\\"22\\" b=\\"1\\" sz=\\"233\\" fc=\\"#FEFEFE\\" fo=\\"163\\" bo=\\"0\\"/>
-<pen id=\\"23\\" b=\\"1\\" sz=\\"233\\" fc=\\"#FEFEFE\\" fo=\\"200\\" bo=\\"0\\"/>
-<pen id=\\"24\\" b=\\"1\\" sz=\\"233\\" fc=\\"#FEFEFE\\" fo=\\"236\\" bo=\\"0\\"/>
-<pen id=\\"25\\" b=\\"1\\" sz=\\"180\\" fc=\\"#CF0000\\" bc=\\"#FFFFFF\\" bo=\\"254\\"/>
-<pen id=\\"26\\" b=\\"1\\" sz=\\"233\\" et=\\"3\\" ec=\\"#000000\\" fc=\\"#FEFEFE\\" bo=\\"0\\"/>
-<pen id=\\"27\\" b=\\"1\\" sz=\\"233\\" fc=\\"#FEFEFE\\" bc=\\"#396F72\\" bo=\\"254\\"/>
+<pen id=\\"11\\" b=\\"1\\" fc=\\"#FEFEFE\\" bc=\\"#DA4371\\" bo=\\"195\\" ec=\\"#D50072\\" et=\\"3\\"/>
+<pen id=\\"12\\" b=\\"1\\" fc=\\"#2286D4\\" bc=\\"#FFFFFF\\" bo=\\"254\\" sz=\\"233\\"/>
+<pen id=\\"13\\" b=\\"1\\" fc=\\"#0C96BF\\" bc=\\"#FFFFFF\\" bo=\\"254\\" sz=\\"233\\"/>
+<pen id=\\"14\\" b=\\"1\\" fc=\\"#FEFEFE\\" bc=\\"#FF070E\\" bo=\\"254\\" sz=\\"500\\"/>
+<pen id=\\"15\\" b=\\"1\\" fc=\\"#FEFEFE\\" bo=\\"0\\" sz=\\"233\\"/>
+<pen id=\\"16\\" b=\\"1\\" fc=\\"#E41173\\" bc=\\"#FFFFFF\\" bo=\\"254\\" sz=\\"233\\"/>
+<pen id=\\"17\\" b=\\"1\\" fc=\\"#DF5892\\" bc=\\"#FFFFFF\\" bo=\\"254\\" sz=\\"340\\"/>
+<pen id=\\"18\\" b=\\"1\\" fc=\\"#FEFEFE\\" fo=\\"18\\" bo=\\"0\\" sz=\\"233\\"/>
+<pen id=\\"19\\" b=\\"1\\" fc=\\"#FEFEFE\\" fo=\\"54\\" bo=\\"0\\" sz=\\"233\\"/>
+<pen id=\\"20\\" b=\\"1\\" fc=\\"#FEFEFE\\" fo=\\"91\\" bo=\\"0\\" sz=\\"233\\"/>
+<pen id=\\"21\\" b=\\"1\\" fc=\\"#FEFEFE\\" fo=\\"127\\" bo=\\"0\\" sz=\\"233\\"/>
+<pen id=\\"22\\" b=\\"1\\" fc=\\"#FEFEFE\\" fo=\\"163\\" bo=\\"0\\" sz=\\"233\\"/>
+<pen id=\\"23\\" b=\\"1\\" fc=\\"#FEFEFE\\" fo=\\"200\\" bo=\\"0\\" sz=\\"233\\"/>
+<pen id=\\"24\\" b=\\"1\\" fc=\\"#FEFEFE\\" fo=\\"236\\" bo=\\"0\\" sz=\\"233\\"/>
+<pen id=\\"25\\" b=\\"1\\" fc=\\"#CF0000\\" bc=\\"#FFFFFF\\" bo=\\"254\\" sz=\\"180\\"/>
+<pen id=\\"26\\" b=\\"1\\" fc=\\"#FEFEFE\\" bo=\\"0\\" ec=\\"#000000\\" sz=\\"233\\" et=\\"3\\"/>
+<pen id=\\"27\\" b=\\"1\\" fc=\\"#FEFEFE\\" bc=\\"#396F72\\" bo=\\"254\\" sz=\\"233\\"/>
 <pen id=\\"28\\" fc=\\"#E5659B\\" bc=\\"#FFFFFF\\" bo=\\"254\\"/>
 <pen id=\\"29\\" fc=\\"#E773A4\\" bc=\\"#FFFFFF\\" bo=\\"254\\"/>
 <pen id=\\"30\\" fc=\\"#EA81AD\\" bc=\\"#FFFFFF\\" bo=\\"254\\"/>
@@ -2697,16 +2697,16 @@ exports[`converts /home/ted/ytcc2/captions/test/data/YTSubConverter/sc3-z_2aNX0.
 <pen id=\\"49\\" fc=\\"#FEFEFE\\" bc=\\"#CCCCCC\\" bo=\\"254\\"/>
 <pen id=\\"50\\" fc=\\"#FEFEFE\\" bc=\\"#E0E0E0\\" bo=\\"254\\"/>
 <pen id=\\"51\\" fc=\\"#FEFEFE\\" bc=\\"#F4F4F4\\" bo=\\"254\\"/>
-<pen id=\\"52\\" sz=\\"0\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"95\\"/>
-<pen id=\\"53\\" sz=\\"0\\" fc=\\"#E35792\\" bc=\\"#000000\\" bo=\\"95\\"/>
-<pen id=\\"54\\" sz=\\"0\\" fc=\\"#0C95C4\\" bc=\\"#000000\\" bo=\\"95\\"/>
-<pen id=\\"55\\" et=\\"3\\" ec=\\"#000000\\" fc=\\"#FEFEFE\\" bc=\\"#9D040F\\" bo=\\"254\\"/>
+<pen id=\\"52\\" fc=\\"#FEFEFE\\" bc=\\"#000000\\" bo=\\"95\\" sz=\\"0\\"/>
+<pen id=\\"53\\" fc=\\"#E35792\\" bc=\\"#000000\\" bo=\\"95\\" sz=\\"0\\"/>
+<pen id=\\"54\\" fc=\\"#0C95C4\\" bc=\\"#000000\\" bo=\\"95\\" sz=\\"0\\"/>
+<pen id=\\"55\\" fc=\\"#FEFEFE\\" bc=\\"#9D040F\\" bo=\\"254\\" ec=\\"#000000\\" et=\\"3\\"/>
 <pen id=\\"56\\" i=\\"1\\" fc=\\"#000000\\" fo=\\"1\\" bo=\\"0\\"/>
 <ws id=\\"0\\"/>
-<ws id=\\"1\\" ju=\\"2\\" sd=\\"0\\" pd=\\"0\\"/>
-<ws id=\\"2\\" ju=\\"0\\" sd=\\"0\\" pd=\\"0\\"/>
-<ws id=\\"3\\" ju=\\"1\\" sd=\\"0\\" pd=\\"0\\"/>
-<ws id=\\"4\\" ju=\\"0\\" sd=\\"0\\" pd=\\"3\\"/>
+<ws id=\\"1\\" ju=\\"2\\" pd=\\"0\\" sd=\\"0\\"/>
+<ws id=\\"2\\" ju=\\"0\\" pd=\\"0\\" sd=\\"0\\"/>
+<ws id=\\"3\\" ju=\\"1\\" pd=\\"0\\" sd=\\"0\\"/>
+<ws id=\\"4\\" ju=\\"0\\" pd=\\"3\\" sd=\\"0\\"/>
 <wp id=\\"0\\"/>
 <wp id=\\"1\\" ap=\\"7\\" ah=\\"50\\" av=\\"100\\"/>
 <wp id=\\"2\\" ap=\\"4\\" ah=\\"50\\" av=\\"72\\"/>

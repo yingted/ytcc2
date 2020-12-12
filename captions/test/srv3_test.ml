@@ -34,15 +34,16 @@ let readFileUtf8: string -> string = [%raw {|
 
 let _ =
 describe "converts" (fun () ->
-  listFiles (([%raw "__dirname"]) ^ "/data/YTSubConverter/*.srv3.xml")
+  listFiles (([%raw "__dirname"]) ^ "/data/YTSubConverter/*.orig.srv3.xml")
   |> Js.Array.forEach (fun path ->
-    let json = lazy (
-      (String.sub path 0 (String.length path - String.length ".srv3.xml")
-      ^ ".json3.json")
+    let base_name = String.sub path 0 (String.length path - String.length ".orig.srv3.xml") in
+    let json = lazy (base_name ^ ".json3.json"
       |> readFileUtf8
       |> Js.Json.parseExn)
     in
     let srv3 = lazy (readFileUtf8 path) in
+    (* YouTube can't import it's own srv3 exports, we need to fix them: *)
+    let srv3_fixed = lazy (base_name ^ ".fixed.srv3.xml" |> readFileUtf8) in
 
     test (path ^ " to json3") (fun () ->
       Lazy.force srv3
@@ -61,7 +62,7 @@ describe "converts" (fun () ->
       |> Obj.magic
       |> Codec.encode Srv3.xml_codec
       |> expect
-      (* |> toEqual (Lazy.force srv3) *)
+      (* |> toEqual (Lazy.force srv3_fixed) *)
       |> toMatchSnapshot
       ));
 );
