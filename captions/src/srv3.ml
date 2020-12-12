@@ -60,7 +60,7 @@ let window_style_schema = [|
   { key = "mhModeHint"; attr = "mh"; codec = int_value; };
   { key = "juJustifCode"; attr = "ju"; codec = int_value; };
   { key = "sdScrollDir"; attr = "sd"; codec = int_value; };
-  { key = "pdPaintDir"; attr = "pd"; codec = int_value; };
+  { key = "pdPrintDir"; attr = "pd"; codec = int_value; };
   { key = "wfcWinFillColor"; attr = "wfc"; codec = color_value; };
   { key = "wfoWinFillAlpha"; attr = "wfo"; codec = int_value; };
 |]

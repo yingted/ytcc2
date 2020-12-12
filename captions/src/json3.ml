@@ -53,7 +53,7 @@ type win_style = {
   mhModeHint : int_enum option;
   juJustifCode : int_enum option;
   sdScrollDir : int_enum option;
-  pdPaintDir : int_enum option;
+  pdPrintDir : int_enum option;
   wfcWinFillColor : rgb option;
   wfoWinFillAlpha : alpha option;
 }
@@ -104,7 +104,7 @@ let empty_window = {
     mhModeHint = None;
     juJustifCode = None;
     sdScrollDir = None;
-    pdPaintDir = None;
+    pdPrintDir = None;
     wfcWinFillColor = None;
     wfoWinFillAlpha = None;
   };

@@ -35,7 +35,7 @@ let readFileUtf8: string -> string = [%raw {|
 let stripWhitespace : string -> string = [%raw {|
   function stripWhitespace(s) {
     // Remove all whitespace between tags, except if either tag is </?s>:
-    return s.replace(/(<\/?(?!s>)[a-z]+>)\s+(<\/?(?!s>)[a-z]+>)/ig, '><');
+    return s.replace(/(<\/?(?!s>)[a-z]+>)\s+(<\/?(?!s>)[a-z]+>)/ig, '$1$2');
   }
 |}]
 
