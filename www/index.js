@@ -31,7 +31,7 @@ app.get('/watch', (req, res) => {
       <head>
         <meta charset="UTF-8" />
         <title>Captions viewer</title>
-        <meta name="viewport" content="width=640">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" type="text/css" href="/dialog-polyfill/dialog-polyfill.css" />
       </head>
       <body style="margin: 0;">
