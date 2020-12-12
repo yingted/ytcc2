@@ -97,10 +97,10 @@ let base_event_schema = [|
   (* format *)
   { key = "pPenId"; attr = "p"; codec = int_value; };
 |]
-let cue_schema = Array.append base_event_schema [|
+let window_schema = Array.append base_event_schema [|
   { key = "id"; attr = "id"; codec = int_value; };
 |]
-let window_schema = Array.append base_event_schema [|
+let cue_schema = Array.append base_event_schema [|
   { key = "wWinId"; attr = "w"; codec = int_value; };
   { key = "aAppend"; attr = "a"; codec = int_value; };
 |]
