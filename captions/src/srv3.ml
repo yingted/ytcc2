@@ -279,6 +279,11 @@ let json3_to_srv3 : Json3.json -> string =
               continue;
             }
 
+            // If the cue starts with a styled span, insert an empty span.
+            if (node.childNodes.length === 0) {
+              node.appendChild(doc.createElement('s'));
+            }
+
             // Element node:
             let span = doc.createElement('s');
             let t = encode(int_value, tOffsetMs);
