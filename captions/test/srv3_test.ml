@@ -42,8 +42,6 @@ describe "converts" (fun () ->
       |> Js.Json.parseExn)
     in
     let srv3 = lazy (readFileUtf8 path) in
-    (* YouTube can't import it's own srv3 exports, we need to fix them: *)
-    let srv3_fixed = lazy (base_name ^ ".fixed.srv3.xml" |> readFileUtf8) in
 
     test (path ^ " to json3") (fun () ->
       Lazy.force srv3
@@ -62,7 +60,8 @@ describe "converts" (fun () ->
       |> Obj.magic
       |> Codec.encode Srv3.xml_codec
       |> expect
-      (* |> toEqual (Lazy.force srv3_fixed) *)
+      (* Testing: YouTube can't import it's own srv3 exports, we need to fix them. *)
+      (* |> toEqual (base_name ^ ".fixed.srv3.xml" |> readFileUtf8) *)
       |> toMatchSnapshot
       ));
 );

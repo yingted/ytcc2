@@ -254,12 +254,15 @@ let json3_to_srv3 : Json3.json -> string =
     pens_codec, window_styles_codec, window_positions_codec, window_codec, cue_codec) =>
     function json3_to_srv3(track) {
       let doc = new DOMParser().parseFromString(
-`<?xml version="1.0" encoding="utf-8" ?><timedtext format="3">
+// `<?xml version="1.0" encoding="utf-8" ?><timedtext format="3">
+`<timedtext format="3">
 <head>
 </head>
 <body>
 </body>
 </timedtext>`, 'application/xml');
+      // Workaround for this bug: https://github.com/jsdom/w3c-xmlserializer/issues/13
+      doc.insertBefore(doc.createProcessingInstruction('xml', 'version="1.0" encoding="utf-8" '), doc.firstChild);
 
       // Write the head:
       {
