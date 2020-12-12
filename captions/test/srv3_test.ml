@@ -32,23 +32,42 @@ let readFileUtf8: string -> string = [%raw {|
   }
 |}]
 
+let stripWhitespace : string -> string = [%raw {|
+  function stripWhitespace(s) {
+    // Remove all whitespace between tags, except if either tag is </?s>:
+    return s.replace(/(<\/?(?!s>)[a-z]+>)\s+(<\/?(?!s>)[a-z]+>)/ig, '><');
+  }
+|}]
+
 let _ =
 describe "converts" (fun () ->
   listFiles (([%raw "__dirname"]) ^ "/data/YTSubConverter/*.srv3.xml")
   |> Js.Array.forEach (fun path ->
-    test path (fun () ->
-      let json =
-        (String.sub path 0 (String.length path - String.length ".srv3.xml")
-        ^ ".json3.json")
-        |> readFileUtf8
-        |> Js.Json.parseExn
-      in
+    let json = lazy (
+      (String.sub path 0 (String.length path - String.length ".srv3.xml")
+      ^ ".json3.json")
+      |> readFileUtf8
+      |> Js.Json.parseExn)
+    in
+    let srv3 = lazy (readFileUtf8 path) in
 
-      readFileUtf8 path
+    test (path ^ " to json3") (fun () ->
+      Lazy.force srv3
       |> Codec.decode_exn Srv3.xml_codec
       |> Js.Json.stringifyAny
       |> Option.value_exn
       |> Js.Json.parseExn
       |> expect
-      |> toEqual json));
+      |> toEqual (Lazy.force json));
+
+    test (path ^ " from json3") (fun () ->
+      Lazy.force json
+      |> Js.Json.stringify
+      |> Codec.decode_exn Codec.json
+      (* Cast untrusted to trusted json3: *)
+      |> Obj.magic
+      |> Codec.encode Srv3.xml_codec
+      |> stripWhitespace
+      |> expect
+      |> toEqual (Lazy.force srv3 |> stripWhitespace)));
 );

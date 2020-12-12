@@ -43,7 +43,10 @@ function decodeJson3(data) {
   return decode(json3, data);
 }
 /**
- * @param json {object}
+ * Decode from a trusted json3 object.
+ * This code assumes the json3 is already validated.
+ * If it's not true, roundtrip it through json3 first.
+ * @param json {Json3.json}
  * @returns Json3.raw Track.t
  */
 function decodeJson3FromJson(json) {
