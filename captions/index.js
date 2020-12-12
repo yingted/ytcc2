@@ -15,6 +15,7 @@
  */
 
 const json3 = require('./src/json3.bs.js');
+const srv3 = require('./src/srv3.bs.js');
 const srt = require('./src/srt.bs.js');
 const codec = require('./src/codec.bs.js');
 const track = require('./src/track.bs.js');
@@ -50,6 +51,17 @@ function decodeJson3FromJson(json) {
 }
 function encodeJson3(t) {
   return codec.encode(json3.codec, t);
+}
+
+/**
+ * @param data {ArrayBuffer|string}
+ * @returns Srv3.raw Track.t
+ */
+function decodeSrv3(data) {
+  return decode(srv3, data);
+}
+function encodeSrv3(t) {
+  return codec.encode(srv3.codec, t);
 }
 
 function stripRaw(t) {

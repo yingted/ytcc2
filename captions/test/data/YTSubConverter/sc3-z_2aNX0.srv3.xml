@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8" ?><timedtext format="3">
+<head>
+<pen id="1" fc="#E35792" bc="#FFFFFF" bo="254"/>
+<pen id="2" fc="#0C95C4" bc="#FFFFFF" bo="254"/>
+<pen id="3" fc="#FEFEFE" bc="#000000" bo="254"/>
+<pen id="4" fc="#0C95C4" bc="#000000" bo="254"/>
+<pen id="5" fc="#E35792" bc="#000000" bo="254"/>
+<pen id="6" b="1" fc="#FEFEFE" bc="#000000" bo="254"/>
+<pen id="7" b="1" fc="#FEFEFE" bc="#000000" bo="254" sz="500"/>
+<pen id="8" fc="#0D94C0" bc="#FFFFFF" bo="254"/>
+<pen id="9" fc="#DD5891" bc="#FFFFFF" bo="254"/>
+<pen id="10" b="1" fc="#C0C0C0" fo="132" bo="0"/>
+<pen id="11" b="1" fc="#FEFEFE" bc="#DA4371" bo="195" ec="#D50072" et="3"/>
+<pen id="12" b="1" fc="#2286D4" bc="#FFFFFF" bo="254" sz="233"/>
+<pen id="13" b="1" fc="#0C96BF" bc="#FFFFFF" bo="254" sz="233"/>
+<pen id="14" b="1" fc="#FEFEFE" bc="#FF070E" bo="254" sz="500"/>
+<pen id="15" b="1" fc="#FEFEFE" bo="0" sz="233"/>
+<pen id="16" b="1" fc="#E41173" bc="#FFFFFF" bo="254" sz="233"/>
+<pen id="17" b="1" fc="#DF5892" bc="#FFFFFF" bo="254" sz="340"/>
+<pen id="18" b="1" fc="#FEFEFE" fo="18" bo="0" sz="233"/>
+<pen id="19" b="1" fc="#FEFEFE" fo="54" bo="0" sz="233"/>
+<pen id="20" b="1" fc="#FEFEFE" fo="91" bo="0" sz="233"/>
+<pen id="21" b="1" fc="#FEFEFE" fo="127" bo="0" sz="233"/>
+<pen id="22" b="1" fc="#FEFEFE" fo="163" bo="0" sz="233"/>
+<pen id="23" b="1" fc="#FEFEFE" fo="200" bo="0" sz="233"/>
+<pen id="24" b="1" fc="#FEFEFE" fo="236" bo="0" sz="233"/>
+<pen id="25" b="1" fc="#CF0000" bc="#FFFFFF" bo="254" sz="180"/>
+<pen id="26" b="1" fc="#FEFEFE" bo="0" ec="#000000" sz="233" et="3"/>
+<pen id="27" b="1" fc="#FEFEFE" bc="#396F72" bo="254" sz="233"/>
+<pen id="28" fc="#E5659B" bc="#FFFFFF" bo="254"/>
+<pen id="29" fc="#E773A4" bc="#FFFFFF" bo="254"/>
+<pen id="30" fc="#EA81AD" bc="#FFFFFF" bo="254"/>
+<pen id="31" fc="#EC8FB6" bc="#FFFFFF" bo="254"/>
+<pen id="32" fc="#EE9CBF" bc="#FFFFFF" bo="254"/>
+<pen id="33" fc="#F1ABC8" bc="#FFFFFF" bo="254"/>
+<pen id="34" fc="#F3B8D1" bc="#FFFFFF" bo="254"/>
+<pen id="35" fc="#F5C7DA" bc="#FFFFFF" bo="254"/>
+<pen id="36" fc="#F8D5E3" bc="#FFFFFF" bo="254"/>
+<pen id="37" fc="#FAE2EC" bc="#FFFFFF" bo="254"/>
+<pen id="38" fc="#FCF1F5" bc="#FFFFFF" bo="254"/>
+<pen id="39" fc="#FEFEFE" bc="#FFFFFF" bo="254"/>
+<pen id="40" fc="#FEFEFE" bc="#141414" bo="254"/>
+<pen id="41" fc="#FEFEFE" bc="#282828" bo="254"/>
+<pen id="42" fc="#FEFEFE" bc="#3D3D3D" bo="254"/>
+<pen id="43" fc="#FEFEFE" bc="#515151" bo="254"/>
+<pen id="44" fc="#FEFEFE" bc="#666666" bo="254"/>
+<pen id="45" fc="#FEFEFE" bc="#7A7A7A" bo="254"/>
+<pen id="46" fc="#FEFEFE" bc="#8E8E8E" bo="254"/>
+<pen id="47" fc="#FEFEFE" bc="#A3A3A3" bo="254"/>
+<pen id="48" fc="#FEFEFE" bc="#B7B7B7" bo="254"/>
+<pen id="49" fc="#FEFEFE" bc="#CCCCCC" bo="254"/>
+<pen id="50" fc="#FEFEFE" bc="#E0E0E0" bo="254"/>
+<pen id="51" fc="#FEFEFE" bc="#F4F4F4" bo="254"/>
+<pen id="52" fc="#FEFEFE" bc="#000000" bo="95" sz="0"/>
+<pen id="53" fc="#E35792" bc="#000000" bo="95" sz="0"/>
+<pen id="54" fc="#0C95C4" bc="#000000" bo="95" sz="0"/>
+<pen id="55" fc="#FEFEFE" bc="#9D040F" bo="254" ec="#000000" et="3"/>
+<pen id="56" i="1" fc="#000000" fo="1" bo="0"/>
+<ws id="0"/>
+<ws id="2" ju="0" pd="0" sd="0"/>
+<ws id="4" ju="0" pd="3" sd="0"/>
+<ws id="3" ju="1" pd="0" sd="0"/>
+<ws id="1" ju="2" pd="0" sd="0"/>
+<wp id="0"/>
+<wp id="42" ap="0" ah="11" av="29"/>
+<wp id="38" ap="1" ah="12" av="22"/>
+<wp id="33" ap="1" ah="14" av="26"/>
+<wp id="18" ap="1" ah="49" av="17"/>
+<wp id="31" ap="1" ah="50" av="0"/>
+<wp id="32" ap="1" ah="50" av="18"/>
+<wp id="36" ap="1" ah="50" av="94"/>
+<wp id="17" ap="1" ah="80" av="72"/>
+<wp id="34" ap="1" ah="85" av="26"/>
+<wp id="39" ap="1" ah="87" av="22"/>
+<wp id="44" ap="2" ah="100" av="0"/>
+<wp id="37" ap="4" ah="13" av="9"/>
+<wp id="43" ap="4" ah="50" av="14"/>
+<wp id="41" ap="4" ah="50" av="61"/>
+<wp id="2" ap="4" ah="50" av="72"/>
+<wp id="9" ap="6" ah="2" av="31"/>
+<wp id="12" ap="6" ah="2" av="34"/>
+<wp id="13" ap="6" ah="2" av="64"/>
+<wp id="10" ap="6" ah="2" av="65"/>
+<wp id="11" ap="6" ah="2" av="97"/>
+<wp id="6" ap="6" ah="5" av="32"/>
+<wp id="7" ap="6" ah="5" av="65"/>
+<wp id="8" ap="6" ah="5" av="98"/>
+<wp id="3" ap="6" ah="6" av="32"/>
+<wp id="4" ap="6" ah="6" av="64"/>
+<wp id="5" ap="6" ah="6" av="97"/>
+<wp id="22" ap="7" ah="15" av="18"/>
+<wp id="24" ap="7" ah="19" av="87"/>
+<wp id="25" ap="7" ah="24" av="17"/>
+<wp id="27" ap="7" ah="26" av="88"/>
+<wp id="1" ap="7" ah="50" av="100"/>
+<wp id="20" ap="7" ah="50" av="62"/>
+<wp id="40" ap="7" ah="50" av="67"/>
+<wp id="35" ap="7" ah="50" av="94"/>
+<wp id="23" ap="7" ah="62" av="58"/>
+<wp id="26" ap="7" ah="65" av="58"/>
+<wp id="19" ap="7" ah="73" av="18"/>
+<wp id="21" ap="7" ah="81" av="90"/>
+<wp id="45" ap="8" ah="0" av="0"/>
+<wp id="14" ap="8" ah="97" av="33"/>
+<wp id="15" ap="8" ah="97" av="65"/>
+<wp id="16" ap="8" ah="97" av="96"/>
+<wp id="28" ap="8" ah="98" av="32"/>
+<wp id="29" ap="8" ah="98" av="64"/>
+<wp id="30" ap="8" ah="98" av="97"/>
+</head>
+<body>
+<p t="207" d="1769" wp="1" ws="1"><s p="1">Haooo! HimeHina here!​
+​</s><s>​</s><s p="2">Haooo! HimeHina here!</s></p>
+<p t="1976" d="968" wp="1" ws="1" p="1">This time!</p>
+<p t="2944" d="3136" wp="1" ws="1" p="1">We’re going to answer the questions we got in our question box,</p>
+<p t="6080" d="767" wp="1" ws="1" p="1">except!</p>
+<p t="6847" d="768" wp="1" ws="1" p="2">Except?</p>
+<p t="7615" d="1301" wp="1" ws="1" p="1">We’ll answer in rap</p>
+<p t="8916" d="1168" wp="1" ws="1"><s p="1">Answering questions​
+​</s><s>​</s><s p="2">Answering questions</s></p>
+<p t="10084" d="2835" wp="1" ws="1"><s p="1">while rapping!​
+​</s><s>​</s><s p="2">while rapping!</s></p>
+<p t="13854" d="1400" wp="1" ws="1" p="1">Rapping!</p>
+<p t="16657" d="1635" wp="1" ws="1" p="2">This pumping beat</p>
+<p t="18292" d="1301" wp="1" ws="1" p="2">This swinging heart</p>
+<p t="19593" d="968" wp="1" ws="1" p="1">Heart, T, T...</p>
+<p t="20561" d="1068" wp="1" ws="1" p="1">Tick the boxes</p>
+<p t="21629" d="1700" wp="2" ws="1" p="3">Shiritori</p>
+<p t="27768" d="1936" wp="1" ws="1" p="4">I have some questions I want to ask you</p>
+<p t="29704" d="1935" wp="1" ws="1" p="4">Answer them while rapping as you should do</p>
+<p t="31639" d="2102" wp="1" ws="1" p="5">Ordinary rap can go far away</p>
+<p t="33741" d="1969" wp="1" ws="1" p="5">We’re doing giggle rap, HimeHina</p>
+<p t="35710" d="2002" wp="1" ws="1" p="4">One, two</p>
+<p t="37712" d="1901" wp="1" ws="1"><s p="5">Are you ready?​
+​</s><s>​</s><s p="4">Are you ready?</s></p>
+<p t="39613" d="2069" wp="1" ws="1" p="6">What is your favorite special day?</p>
+<p t="41682" d="2002" wp="3" ws="2" p="7">Let’s listen</p>
+<p t="42216" d="1468" wp="4" ws="2" p="7">to what Hime</p>
+<p t="42717" d="967" wp="5" ws="2" p="7">has to say!</p>
+<p t="43684" d="2036" wp="1" ws="1" p="1">Alright, leave it to me, this one’s easy</p>
+<p t="45720" d="1968" wp="1" ws="1" p="1">Goes without saying that it’s the Hinamatsuri!</p>
+<p t="47688" d="2002" wp="1" ws="1" p="1">Third day of third month, festival of peaches</p>
+<p t="49690" d="2036" wp="1" ws="1" p="1">Wishing for little girls’ health and fitness!</p>
+<p t="51726" d="2002" wp="6" ws="2" p="7">Nice one</p>
+<p t="52226" d="1502" wp="7" ws="2" p="7">Nice one</p>
+<p t="52693" d="1035" wp="8" ws="2" p="7">That’s a nice one</p>
+<p t="53728" d="1935" wp="1" ws="1" p="6">Now tell us how you like your ramen done!</p>
+<p t="55663" d="2035" wp="1" ws="1" p="1">Lots of types are going ‘round, so what ramen?</p>
+<p t="57698" d="1969" wp="1" ws="1" p="1">The one I like most would be tonkotsu, yeah</p>
+<p t="59667" d="2069" wp="1" ws="1" p="1">Pictures at midnight make me so hungry</p>
+<p t="61736" d="1968" wp="1" ws="1" p="1">Ramen, Tsukemen, Tanaka Himen!</p>
+<p t="63704" d="2002" wp="9" ws="2" p="7">This here</p>
+<p t="64238" d="1468" wp="10" ws="2" p="7">is the next</p>
+<p t="64705" d="1001" wp="11" ws="2" p="7">question I got for ya</p>
+<p t="65706" d="1969" wp="1" ws="1" p="6">What angle should a comaneci be performed at?</p>
+<p t="67675" d="1535" wp="1" ws="1" p="1">This is really important to me so listen close</p>
+<p t="69210" d="1535" wp="1" ws="1" p="1">I do a lotta cool comanecis in the Roki video,</p>
+<p t="70745" d="934" wp="1" ws="1" p="1">well that’s the ideal</p>
+<p t="71679" d="2035" wp="1" ws="1" p="1">The sign of V is 45° </p>
+<p t="73714" d="1969" wp="1" ws="1" p="1">Bring your hands up, move diagonally</p>
+<p t="75683" d="2035" wp="12" ws="2" p="7">About those</p>
+<p t="76217" d="1501" wp="13" ws="2" p="7">gigglebuns you</p>
+<p t="76717" d="1001" wp="11" ws="2" p="7">have on your head</p>
+<p t="77718" d="1935" wp="1" ws="1" p="6">Do you normally tie those up yourself?</p>
+<p t="79653" d="1936" wp="1" ws="1" p="1">Hina does that for me at morning</p>
+<p t="81589" d="901" wp="1" ws="1" p="1">Right? Hina</p>
+<p t="82490" d="1067" wp="1" ws="1" p="2">I do</p>
+<p t="83557" d="2136" wp="1" ws="1" p="2">I shake her awake in bed every time in the morning</p>
+<p t="85693" d="1967" wp="1" ws="1" p="2">and then tie her hair into neat gigglebuns</p>
+<p t="88596" d="1768" wp="1" ws="1" p="5">Now it’s your turn, Hina!</p>
+<p t="90364" d="1568" wp="1" ws="1" p="4">Mic check, one, okay</p>
+<p t="91932" d="700" wp="1" ws="1" p="4">It’s my turn</p>
+<p t="94902" d="1802" wp="14" ws="3" p="7">Let’s go then</p>
+<p t="95369" d="1335" wp="15" ws="3" p="7">Answer me</p>
+<p t="95836" d="868" wp="16" ws="3" p="7">this nice question over here</p>
+<p t="96704" d="1601" wp="1" ws="1" p="6">What is your English word of the year?</p>
+<p t="98305" d="2036" wp="1" ws="1" p="2">English is not in my zone, but anyway</p>
+<p t="100341" d="1334" wp="1" ws="1" p="2">If I had to pick, it be PSYCHO-PASS</p>
+<p t="101675" d="1902" wp="1" ws="1" p="2">Any place you go, get a free pass</p>
+<p t="102777" d="800" wp="17" ws="1" p="3">※ Just wanted to say it</p>
+<p t="103577" d="1669" wp="1" ws="1" p="2">Being VIP sounds amazing, right?</p>
+<p t="105246" d="1668" wp="1" ws="1" p="6">Suzuki Hina Hinna</p>
+<p t="106914" d="634" wp="1" ws="1" p="1">HinaHina</p>
+<p t="107548" d="934" wp="1" ws="1" p="1">Is this a question?</p>
+<p t="108482" d="1535" wp="1" ws="1" p="2">Is that from Golden Kamuy?</p>
+<p t="110017" d="1935" wp="1" ws="1" p="2">“Hinna” means “thanks a lot” in Ainu</p>
+<p t="111185" d="1935" wp="18" ws="1" p="3">“Hinna” expresses gratitude in the Ainu language</p>
+<p t="111952" d="1168" wp="1" ws="1" p="1">So Suzuki Thanks Thanks?</p>
+<p t="113120" d="2369" wp="1" ws="1" p="2">It’s closer to “thanks for the food”</p>
+<p t="115489" d="1769" wp="1" ws="1" p="6">Uho Uho Uhohoho</p>
+<p t="117258" d="801" wp="1" ws="1" p="6">KYAAI! KYAAI!</p>
+<p t="118059" d="900" wp="1" ws="1" p="6">AH AH AH</p>
+<p t="118959" d="1702" wp="19" ws="1" p="8">Uho</p>
+<p t="119427" d="1234" wp="20" ws="1" p="8">Uho</p>
+<p t="119894" d="767" wp="21" ws="1" p="8">Uhoho?</p>
+<p t="120661" d="1769" wp="22" ws="1" p="9">Uhho</p>
+<p t="121062" d="1368" wp="23" ws="1" p="9">Uhho</p>
+<p t="121595" d="835" wp="24" ws="1" p="9">Uhohoho</p>
+<p t="122430" d="1134" wp="25" ws="1" p="9">Uhho</p>
+<p t="122897" d="667" wp="26" ws="1" p="9">Uhho</p>
+<p t="123230" d="334" wp="27" ws="1" p="9">Uhohoho</p>
+<p t="123564" d="1702" wp="1" ws="1" p="2">I’m trying to rap here, please be quiet</p>
+<p t="125266" d="534" wp="1" ws="1" p="1">Sorry</p>
+<p t="125800" d="1735" wp="1" ws="1" p="6">“Hey, are you good at rapping?”, they ask</p>
+<p t="127535" d="1701" wp="28" ws="3" p="7">Go ahead and</p>
+<p t="127968" d="1268" wp="29" ws="3" p="7">show them</p>
+<p t="128436" d="800" wp="30" ws="3" p="7">Hina-chan</p>
+<p t="129236" d="1702" wp="1" ws="1" p="2">OK putting my soul in these lyrics here</p>
+<p t="130938" d="1702" wp="1" ws="1" p="2">Making them ring in my heart Division</p>
+<p t="132640" d="2502" wp="1" ws="1" p="2">I am rap-Taro, born from rap</p>
+<p t="135142" d="901" wp="1" ws="1" p="2">Simple rapping is</p>
+<p t="136043" d="633" wp="1" ws="1" p="4">good for wrapping</p>
+<p t="137378" d="2369" wp="31" ws="1" p="10">Meaning unclear</p>
+<p t="137378" d="2369" wp="1" ws="1" p="5">Syllable overflow</p>
+<p t="139747" d="1268" wp="1" ws="1"><s p="5">Good for wrapping​
+​</s><s>​</s><s p="4">That didn’t make much sense, did it</s></p>
+<p t="141015" d="1468" wp="1" ws="1" p="5">What’s simple rapping?</p>
+<p t="142483" d="1535" wp="1" ws="1" p="6">Compare each other to animals!</p>
+<p t="144018" d="1468" wp="1" ws="1" p="1">We’ll say the same thing, I’m sure</p>
+<p t="145486" d="767" wp="1" ws="1" p="1">One, two</p>
+<p t="146253" d="801" wp="1" ws="1"><s p="1">Bunny!​
+​</s><s>​</s><s p="2">Bunny!</s></p>
+<p t="147054" d="1435" wp="32" ws="1" p="11">Miracle</p>
+<p t="147688" d="801" wp="1" ws="1" p="2">Wow, we got the same</p>
+<p t="148489" d="1535" wp="1" ws="1" p="6">What’s your source of happiness?</p>
+<p t="150024" d="1134" wp="1" ws="1" p="2">Seeing that Jojimin are up and having fun</p>
+<p t="151158" d="334" wp="1" ws="1"><s p="1">Fun!​
+​</s><s>​</s><s p="2">Seeing that Jojimin are up and having fun</s></p>
+<p t="151492" d="1101" wp="1" ws="1" p="2">That’s what we get lots of our happiness from</p>
+<p t="152593" d="400" wp="1" ws="1"><s p="1">From!​
+​</s><s>​</s><s p="2">That’s what we get lots of our happiness from</s></p>
+<p t="152993" d="1535" wp="33" ws="1" p="12">Thank you</p>
+<p t="153327" d="1201" wp="34" ws="1" p="12">I’m so glad</p>
+<p t="153761" d="767" wp="1" ws="1" p="13">Hina-arare</p>
+<p t="154528" d="1502" wp="1" ws="1" p="6">Super sweet picture time!</p>
+<p t="156030" d="1501" wp="1" ws="1"><s p="2">Huh? What?​
+​</s><s>​</s><s p="1">Yes, just like that, cute</s></p>
+<p t="157531" d="399" wp="1" ws="1" p="1">Look at the camera!</p>
+<p t="158299" d="1001" wp="1" ws="1"><s p="2">Stop that~​
+​</s><s>​</s><s p="1">Excuse me, could you-</s></p>
+<p t="159300" d="1201" wp="1" ws="1" p="1">Yes, just like that!</p>
+<p t="160501" d="1468" wp="1" ws="1" p="6">What’s your favorite four-character expression?</p>
+<p t="161969" d="834" wp="35" ws="1" p="1">Sessatakuma!</p>
+<p t="161969" d="834" wp="36" ws="1" p="3">(※ Cultivating oneself through diligent study)</p>
+<p t="162803" d="734" wp="35" ws="1" p="2">Azabu-jūban!</p>
+<p t="162803" d="734" wp="36" ws="1" p="3">(※ District in Tokyo)</p>
+<p t="163537" d="1735" wp="1" ws="1" p="1">Just saying those sounds like you’re rapping, no?</p>
+<p t="165272" d="1234" wp="1" ws="1" p="2">Only sounds like it</p>
+<p t="167041" d="2335" wp="1" ws="1" p="6">How long can Hime stand still?</p>
+<p t="169376" d="1535" wp="1" ws="1" p="4">Let’s find out!</p>
+<p t="170911" d="1100" wp="1" ws="1" p="2">And start!</p>
+<p t="172179" d="3970" wp="37" ws="1" p="14">Testing</p>
+<p t="176450" d="601" wp="1" ws="1" p="2">You moved!</p>
+<p t="177051" d="934" wp="1" ws="1" p="2">5 seconds? That’s it?</p>
+<p t="177985" d="2870" wp="1" ws="1" p="4">Alright, we’re leaving the ballad behind, hitting that 200BPM!</p>
+<p t="180855" d="867" wp="1" ws="1" p="5">Ballad’s over!</p>
+<p t="181722" d="1235" wp="1" ws="1" p="15">How’s it going? How you doing?</p>
+<p t="182957" d="1301" wp="38" ws="1" p="16">Fairly</p>
+<p t="182957" d="1301" wp="39" ws="1" p="16">Nicely</p>
+<p t="182957" d="1301" wp="40" ws="1" p="17">Perfectly</p>
+<p t="184258" d="1134" wp="1" ws="1" p="1">All day and all year having fun YO!</p>
+<p t="185392" d="67" wp="41" ws="1" p="18">Who is that standing there behind you?</p>
+<p t="185459" d="67" wp="41" ws="1" p="19">Who is that standing there behind you?</p>
+<p t="185526" d="67" wp="41" ws="1" p="20">Who is that standing there behind you?</p>
+<p t="185593" d="66" wp="41" ws="1" p="21">Who is that standing there behind you?</p>
+<p t="185659" d="67" wp="41" ws="1" p="22">Who is that standing there behind you?</p>
+<p t="185726" d="67" wp="41" ws="1" p="23">Who is that standing there behind you?</p>
+<p t="185793" d="100" wp="41" ws="1" p="24">Who is that standing there behind you?</p>
+<p t="185893" d="699" wp="41" ws="1" p="15">Who is that standing there behind you?</p>
+<p t="187595" d="1368" wp="42" ws="4" p="25">Can’t take horror</p>
+<p t="186961" d="634" wp="1" ws="1" p="1">Nonono</p>
+<p t="187595" d="1368" wp="1" ws="1" p="1">Don’t say that, someone will actually show up!</p>
+<p t="188963" d="1168" wp="1" ws="1" p="26">Do the subscription dance at lightspeed</p>
+<p t="190131" d="1101" wp="1" ws="1"><s p="1">Tantaranta tantaranta subscribe!​
+​</s><s>​</s><s p="2">Tantaranta tantaranta subscribe!</s></p>
+<p t="191232" d="1301" wp="1" ws="1"><s p="1">Tanaka and Suzuki, subscribe YO!​
+​</s><s>​</s><s p="2">Tanaka and Suzuki, subscribe YO!</s></p>
+<p t="192533" d="1201" wp="1" ws="1" p="27">You’re going to die from laughing too much</p>
+<p t="193734" d="1101" wp="1" ws="1" p="2">We’ll laugh until our last breath!</p>
+<p t="194835" d="601" wp="1" ws="1" p="1">Always happy</p>
+<p t="195436" d="1400" wp="1" ws="1"><s p="1">HimeHina channel!​
+​</s><s>​</s><s p="2">HimeHina channel!</s></p>
+<p t="198472" d="1068" wp="1" ws="1" p="1">It’s over!</p>
+<p t="199540" d="2135" wp="1" ws="1" p="2">We did it!</p>
+<p t="201675" d="2335" wp="1" ws="1" p="1">Our rapping power (?) is higher than ever</p>
+<p t="206247" d="2502" wp="1" ws="1" p="1">Hey man</p>
+<p t="208749" d="67" wp="1" ws="1" p="28">Hey man</p>
+<p t="208816" d="67" wp="1" ws="1" p="29">Hey man</p>
+<p t="208883" d="66" wp="1" ws="1" p="30">Hey man</p>
+<p t="208949" d="67" wp="1" ws="1" p="31">Hey man</p>
+<p t="209016" d="67" wp="1" ws="1" p="32">Hey man</p>
+<p t="209083" d="67" wp="1" ws="1" p="33">Hey man</p>
+<p t="209150" d="66" wp="1" ws="1" p="34">Hey man</p>
+<p t="209216" d="67" wp="1" ws="1" p="35">Hey man</p>
+<p t="209283" d="67" wp="1" ws="1" p="36">Hey man</p>
+<p t="209350" d="66" wp="1" ws="1" p="37">Hey man</p>
+<p t="209416" d="67" wp="1" ws="1" p="38">Hey man</p>
+<p t="209483" d="66" wp="1" ws="1" p="39">Hey man</p>
+<p t="207214" d="1368" wp="43" ws="1" p="3">Filler phrase</p>
+<p t="208582" d="67" wp="43" ws="1" p="40">Filler phrase</p>
+<p t="208649" d="67" wp="43" ws="1" p="41">Filler phrase</p>
+<p t="208716" d="66" wp="43" ws="1" p="42">Filler phrase</p>
+<p t="208782" d="67" wp="43" ws="1" p="43">Filler phrase</p>
+<p t="208849" d="67" wp="43" ws="1" p="44">Filler phrase</p>
+<p t="208916" d="67" wp="43" ws="1" p="45">Filler phrase</p>
+<p t="208983" d="66" wp="43" ws="1" p="46">Filler phrase</p>
+<p t="209049" d="67" wp="43" ws="1" p="47">Filler phrase</p>
+<p t="209116" d="67" wp="43" ws="1" p="48">Filler phrase</p>
+<p t="209183" d="67" wp="43" ws="1" p="49">Filler phrase</p>
+<p t="209250" d="66" wp="43" ws="1" p="50">Filler phrase</p>
+<p t="209316" d="100" wp="43" ws="1" p="51">Filler phrase</p>
+<p t="212052" d="1368" wp="1" ws="1" p="1">So yes!</p>
+<p t="213420" d="2636" wp="1" ws="1" p="1">Thank you for your many questions!</p>
+<p t="216056" d="868" wp="1" ws="1" p="2">Thank you</p>
+<p t="216924" d="1635" wp="1" ws="1" p="2">We also got many that weren’t actually questions though</p>
+<p t="218559" d="867" wp="1" ws="1"><s p="1">Right?​
+​</s><s>​</s><s p="2">We also got many that weren’t actually questions though</s></p>
+<p t="219426" d="1435" wp="1" ws="1" p="1">Hinna Hinna</p>
+<p t="220861" d="1802" wp="1" ws="1" p="2">But they got us laughing, so it’s fine</p>
+<p t="222663" d="2769" wp="1" ws="1" p="1">We’ll do another question corner sometime,</p>
+<p t="225432" d="1836" wp="1" ws="1" p="1">so please send us many more then!</p>
+<p t="227268" d="1701" wp="1" ws="1"><s p="1">Thank you!​
+​</s><s>​</s><s p="2">Thank you~</s></p>
+<p t="228969" d="968" wp="1" ws="1" p="1">And now we say</p>
+<p t="229937" d="2936" wp="1" ws="1"><s p="1">Goodbye!​
+​</s><s>​</s><s p="2">Goodbye!</s></p>
+<p t="232873" d="16415" wp="44" ws="3"><s p="52">Join the unofficial </s><s>​</s><s p="53">Hime</s><s p="54">Hina</s><s p="52"> fanclub!​
+​https://discordapp.com/invite/yusTycR</s></p>
+<p t="232873" d="3537" wp="1" ws="1" p="55">Tantaranta tantaranta sub-scri-be!</p>
+<p t="236410" d="634" wp="1" ws="1" p="55">Pipii!</p>
+<p t="237044" d="1969" wp="1" ws="1" p="55">Tanaka and Suzuki</p>
+<p t="239013" d="2801" wp="1" ws="1" p="55">Sub-scri-be!</p>
+<p t="247555" d="1733" wp="1" ws="1" p="55">Aw yeah!</p>
+<p t="1" d="99" wp="45" ws="3" p="56">​</p>
+</body>
+</timedtext>
