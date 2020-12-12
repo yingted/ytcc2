@@ -150,6 +150,8 @@ module.exports = {
   decodeJson3,
   decodeJson3FromJson,
   encodeJson3,
+  encodeSrv3,
+  decodeSrv3,
   stripRaw,
   decodeSrt,
   encodeSrt,

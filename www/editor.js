@@ -20,7 +20,11 @@ import {defaultKeymap} from '@codemirror/next/commands';
 import {history, historyKeymap} from '@codemirror/next/history';
 import {indentService} from '@codemirror/next/language';
 import {render, html} from 'lit-html';
-import {empty, encodeJson3, encodeSrt, stripRaw, srtTextToHtml, srtTextToSpans, toSrtCues, fromSrtCues, decodeTimeSpace, encodeTimeSpace} from 'ytcc2-captions';
+import {
+  empty,
+  encodeJson3, encodeSrt, encodeSrv3, stripRaw,
+  srtTextToHtml, srtTextToSpans, toSrtCues, fromSrtCues, decodeTimeSpace, encodeTimeSpace,
+} from 'ytcc2-captions';
 import {RangeSetBuilder} from '@codemirror/next/rangeset';
 import {StyleModule} from 'style-mod';
 import {homeEndKeymap} from './codemirror_indent_keymap';
@@ -459,6 +463,13 @@ export class CaptionsEditor {
    */
   getJson3Captions() {
     return encodeJson3(stripRaw(this._rawCaptions));
+  }
+  /**
+   * Get the captions as srv3.
+   * @returns {ArrayBuffer}
+   */
+  getSrv3Captions() {
+    return encodeSrv3(stripRaw(this._rawCaptions));
   }
   /**
    * Reformat syntax and remove any hidden formatting.

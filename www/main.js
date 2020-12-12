@@ -18,7 +18,7 @@ import {html, render} from 'lit-html';
 import {until} from 'lit-html/directives/until.js';
 import {YouTubeVideo} from './youtube.js';
 import {CaptionsEditor} from './editor.js';
-import {decodeJson3FromJson, decodeJson3, decodeSrt, stripRaw} from 'ytcc2-captions';
+import {decodeJson3FromJson, decodeSrv3, decodeSrt, stripRaw} from 'ytcc2-captions';
 import {listTracks} from './youtube_captions.js';
 import {onRender} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
@@ -82,9 +82,9 @@ function updateDownload(type) {
     if (type === 'srt') {
       buffer = editor.getSrtCaptions();
       filename = `${videoId}.srt`;
-    } else if (type === 'json3') {
-      buffer = editor.getJson3Captions();
-      filename = `${videoId}.json3.json`;
+    } else if (type === 'srv3') {
+      buffer = editor.getSrv3Captions();
+      filename = `${videoId}.srv3.xml`;
     } else {
       return;
     }
@@ -101,7 +101,7 @@ function updateDownload(type) {
   };
 };
 let updateSrt = updateDownload('srt');
-let updateJson3 = updateDownload('json3');
+let updateSrv3 = updateDownload('srv3');
 
 async function renderEditorAndToolbar() {
   let editor = await asyncEditor;
@@ -119,15 +119,15 @@ async function renderEditorAndToolbar() {
           console.error(e);
           alert('Error importing SRT file: ' + file.name);
         }
-      } else if (file.name.toLowerCase().endsWith('.json')) {
+      } else if (file.name.toLowerCase().endsWith('.xml')) {
         try {
-          captions = stripRaw(decodeJson3(buffer));
+          captions = stripRaw(decodeSrv3(buffer));
         } catch (e) {
           console.error(e);
-          alert('Error importing json3 file: ' + file.name);
+          alert('Error importing srv3 file: ' + file.name);
         }
       } else {
-        alert('File name must end with .srt or .json: ' + file.name);
+        alert('File name must end with .srt or .xml: ' + file.name);
       }
 
       if (captions !== null) {
@@ -179,32 +179,32 @@ async function renderEditorAndToolbar() {
         <label>
           <input type="file"
             style="display: none;"
-            accept=".srt,text/srt,.json,application/json"
+            accept=".srt,text/srt,.xml,application/xml"
             @change=${openFile}>
           <button @click=${function(e) {
             this.parentNode.querySelector('input').click();
-          }}><span class="open-icon"></span>Open SRT/json3</button>
+          }}><span class="open-icon"></span>Open SRT/srv3</button>
         </label>
       </li>
 
       <li>
         <span>
           <span class="save-icon"></span>Download
-          <a download="subtitles.srt"
+          <a
             @mousedown=${updateSrt}
             @click=${updateSrt}
             @focus=${updateSrt}
             @mouseover=${updateSrt}
             @contextmenu=${updateSrt}
             @render=${onRender(updateSrt)}
-          >SRT</a>/<a download="subtitles.json3.json"
-            @mousedown=${updateJson3}
-            @click=${updateJson3}
-            @focus=${updateJson3}
-            @mouseover=${updateJson3}
-            @contextmenu=${updateJson3}
-            @render=${onRender(updateJson3)}
-          >json3</a>
+          >SRT</a>/<a
+            @mousedown=${updateSrv3}
+            @click=${updateSrv3}
+            @focus=${updateSrv3}
+            @mouseover=${updateSrv3}
+            @contextmenu=${updateSrv3}
+            @render=${onRender(updateSrv3)}
+          >srv3</a>
         </span>
       </li>
 

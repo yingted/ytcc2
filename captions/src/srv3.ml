@@ -320,7 +320,7 @@ let json3_to_srv3 : Json3.json -> string =
         }
       }
 
-      return '<?xml version="1.0" encoding="utf-8" ?>' + new XMLSerializer().serializeToString(doc);
+      return new XMLSerializer().serializeToString(doc);
     }
   |}]
     srv3_newlines empty_leading_span
