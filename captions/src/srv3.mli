@@ -14,9 +14,12 @@
    limitations under the License.
 *)
 
+(* srv3 is derived from the json3 format *)
+type raw = Json3.raw
+
 (* For testing: *)
 val xml_codec : (string, Json3.json) Codec.t
 
-val codec: (Encoding.bytes, Json3.raw Track.t) Codec.t
+val codec: (Encoding.bytes, raw Track.t) Codec.t
 (* For when everything is UTF-8: *)
-val string_codec: (string, Json3.raw Track.t) Codec.t
+val string_codec: (string, raw Track.t) Codec.t

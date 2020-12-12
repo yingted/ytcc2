@@ -1,3 +1,5 @@
+type raw = Json3.raw
+
 (* An attribute value: string | null *)
 (* All attributes are of the form x="1" (int) or y="#012ABC" (color) *)
 type attr_value = string Js.Null.t
