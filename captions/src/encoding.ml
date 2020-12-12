@@ -44,6 +44,9 @@ let guessEncoding: bytes -> string = [%raw {|
         latin1Chars.push(String.fromCharCode(c));
       }
       let latin1Decode = latin1Chars.join('');
+      if (/^<\?xml [^?]*\bencoding=(?:"[uU][tT][fF]-8"|'[uU][tT][fF]-8')[^?]*\?>/.test(latin1Decode)) {
+        return 'utf-8';
+      }
       let guess = jschardet.detect(latin1Decode);
       if (guess && guess.encoding) {
         return guess.encoding;
