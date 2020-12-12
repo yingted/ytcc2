@@ -226,9 +226,10 @@ let srv3_to_json_exn : string -> Json3.json =
     Codec.decode_exn
     pens_codec window_styles_codec window_positions_codec window_codec cue_codec
 
+let srv3_newlines = true
 let json3_to_srv3 : Json3.json -> string =
   [%raw {|
-    (encode, pens_codec, window_styles_codec, window_positions_codec, window_codec, cue_codec) =>
+    (newlines, encode, pens_codec, window_styles_codec, window_positions_codec, window_codec, cue_codec) =>
     function json3_to_srv3(track) {
       let doc = new DOMParser().parseFromString(
 `<?xml version="1.0" encoding="utf-8" ?><timedtext format="3">
@@ -243,12 +244,15 @@ let json3_to_srv3 : Json3.json -> string =
         let head = doc.querySelector('head');
         for (let pen of encode(pens_codec(doc), track.pens)) {
           head.appendChild(pen);
+          if (newlines) head.appendChild(doc.createTextNode('\n'));
         }
         for (let ws of encode(window_styles_codec(doc), track.wsWinStyles)) {
           head.appendChild(ws);
+          if (newlines) head.appendChild(doc.createTextNode('\n'));
         }
         for (let wp of encode(window_positions_codec(doc), track.wpWinPositions)) {
           head.appendChild(wp);
+          if (newlines) head.appendChild(doc.createTextNode('\n'));
         }
       }
 
@@ -260,6 +264,7 @@ let json3_to_srv3 : Json3.json -> string =
           if (event.id !== undefined) {
             // Encode window:
             body.appendChild(encode(window_codec(doc), {attrs: event}));
+            if (newlines) body.appendChild(doc.createTextNode('\n'));
             continue;
           }
 
@@ -270,7 +275,7 @@ let json3_to_srv3 : Json3.json -> string =
             // Encode span:
             if (pPenId === undefined && tOffsetMs === undefined) {
               // Text node:
-              node.appendChild(doc.createTextNode(utf8));
+              if (newlines) node.appendChild(doc.createTextNode(utf8));
               continue;
             }
 
@@ -280,15 +285,18 @@ let json3_to_srv3 : Json3.json -> string =
             if (t !== null) span.setAttribute('t', t);
             let p = encode(int_value, pPenId);
             if (p !== null) span.setAttribute('p', p);
+            span.textContent = utf8;
             node.appendChild(span);
           }
           body.appendChild(node);
+          if (newlines) body.appendChild(doc.createTextNode('\n'));
         }
       }
 
       return new XMLSerializer().serializeToString(doc);
     }
   |}]
+    srv3_newlines
     Codec.encode
     pens_codec window_styles_codec window_positions_codec window_codec cue_codec
 
