@@ -195,6 +195,7 @@ async function renderEditorAndToolbar() {
             @contextmenu=${updateSrv3}
             @render=${onRender(updateSrv3)}
             download="${params.videoId}.srv3.xml"
+            title="download SRV3"
           >.srv3.xml</a>/<a
             @mousedown=${updateSrt}
             @click=${updateSrt}
@@ -203,6 +204,7 @@ async function renderEditorAndToolbar() {
             @contextmenu=${updateSrt}
             @render=${onRender(updateSrt)}
             download="${params.videoId}.srt"
+            title="download SRT"
           >.srt</a>
         </span>
       </li>
@@ -310,7 +312,7 @@ function renderPublishDialog() {
       Publish your captions so anyone can see them.<br>
       Making the video private or deleting it won't take the captions down.
 
-      <form action="/publish" method="post" target="_blank" @submit=${function(e) {
+      <form action="/publish" method="post" @submit=${function(e) {
         this.closest('dialog').close();
       }} class="publish-form">
         <input name="videoId" type="hidden" value=${params.videoId}>
@@ -456,7 +458,7 @@ render(html`
     </style>
     <ul class="navbar">
       <li>
-        <a href="https://studio.youtube.com/video/${params.videoId}/translations" target="_blank">
+        <a href="https://studio.youtube.com/video/${params.videoId}/translations">
           <span class="pencil-icon"></span>
           <svg viewBox="0 4 24 16" style="height: 1em; display: inline; vertical-align: text-bottom;">
             <path fill="red" d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3-5.2 3z"></path>
@@ -466,11 +468,11 @@ render(html`
       </li>
 
       <li>
-        <a href="https://youtubexternalcc.netlify.app/video-player.html?videoID=${params.videoId}" target="_blank"><span class="pencil-icon"></span>youtubexternalcc</a>
+        <a href="https://youtubexternalcc.netlify.app/video-player.html?videoID=${params.videoId}"><span class="pencil-icon"></span>youtubexternalcc</a>
       </li>
 
       <li>
-        <a href="https://github.com/yingted/ytcc2/issues/new" target="_blank"><span class="bug-icon"></span>Report bug</a>
+        <a href="https://github.com/yingted/ytcc2/issues/new"><span class="bug-icon"></span>Report bug</a>
       </li>
     </ul>
   </nav>
