@@ -301,7 +301,8 @@ function arrayBufferToBase64(buffer) {
 function renderPublishDialog() {
   return html`
     <dialog class="fixed" @render=${registerDialog} style="
-        width: 400px;
+        width: 25em;
+        max-width: 100%;
         max-height: 100%;
         box-sizing: border-box;
         overflow-y: auto;">
