@@ -138,6 +138,19 @@ function decodeTimeSpace(srtTimeAndText) {
     offset: srtTimeAndText.length - tail.length,
   };
 }
+function decodeTimeSpaceFast(srtTimeAndText) {
+  let m = srtTimeAndText.match(/^(?:(\d+):)?(\d+):(\d+(?:\.\d*)?|\.\d+)( ?)/);
+  if (!m) return null;
+  let [prefix, hours, minutes, seconds, space] = m;
+  if (prefix.length === srtTimeAndText.length && hours === undefined && seconds.indexOf('.') === -1 && space.length === 0) {
+    // For consistency with decodeTimeSpace, ignore inputs like "1:02".
+    return null;
+  }
+  return {
+    time: (hours | 0) * 3600 + (minutes | 0) * 60 + (+seconds),
+    offset: prefix.length,
+  };
+}
 /**
  * @param time {number}
  * @returns string "0:12.34 "
@@ -162,5 +175,6 @@ module.exports = {
   srtTextToHtml,
   srtTextToSpans,
   decodeTimeSpace,
+  decodeTimeSpaceFast,
   encodeTimeSpace,
 };

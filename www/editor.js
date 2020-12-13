@@ -23,7 +23,8 @@ import {render, html} from 'lit-html';
 import {
   empty,
   encodeJson3, encodeSrt, encodeSrv3, stripRaw,
-  srtTextToHtml, srtTextToSpans, toSrtCues, fromSrtCues, decodeTimeSpace, encodeTimeSpace,
+  srtTextToHtml, srtTextToSpans, toSrtCues, fromSrtCues,
+  decodeTimeSpaceFast as decodeTimeSpace, encodeTimeSpace,
 } from 'ytcc2-captions';
 import {RangeSetBuilder} from '@codemirror/next/rangeset';
 import {StyleModule} from 'style-mod';
