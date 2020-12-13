@@ -24,7 +24,7 @@ import {onRender} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
 import {youtubeLanguages} from './gen/youtube_languages.js';
 import {renderBrowser} from './preview_browser.js';
-import {renderFileReceipt, renderCookieReceipt} from './receipt.js';
+import {myReceiptsText, myReceiptsLink, renderFileReceipt, renderCookieReceipts} from './receipt.js';
 
 const video = new YouTubeVideo(params.videoId);
 
@@ -247,28 +247,45 @@ function arrayBufferToBase64(buffer) {
 
 function renderPreview(receipt) {
   return html`
+    Receipt files let you track your receipts yourself.
     <details>
-      <summary><span class="preview-icon"></span>Preview file receipt</summary>
-      ${renderBrowser({html}, {
-        url: `file:///receipt-${params.videoId}.html`,
-        doc: renderFileReceipt({html}, receipt),
-      })}
+      <summary><span class="preview-icon"></span>Preview receipt file</summary>
+      <figure style="margin: 0;">
+        <figcaption>
+          Open the receipt file to see your receipt.
+        </figcaption>
+        ${renderBrowser({html}, {
+          url: `file:///receipt-${params.videoId}.html`,
+          doc: renderFileReceipt({html}, receipt),
+        })}
+      </figure>
     </details>
-
+    <br>
+    ${myReceiptsLink({html})} uses cookies to track your receipts automatically.
     <details>
-      <summary><span class="preview-icon"></span>Preview cookie receipt</summary>
-      ${renderBrowser({html}, {
-        url: `${location.origin}/receipts?v=${params.videoId}`,
-        doc: renderFileReceipt({html}, receipt),
-      })}
+      <summary><span class="preview-icon"></span>Preview ${myReceiptsText({html})}</summary>
+      <figure style="margin: 0;">
+        <figcaption>
+          Go to ${myReceiptsLink({html})} to see your receipt.
+        </figcaption>
+        ${renderBrowser({html}, {
+          url: `${location.origin}/receipts`,
+          doc: renderCookieReceipts({html}, [receipt]),
+        })}
+      </figure>
     </details>
   `;
-};
+}
+
+/**
+ * Render the publish modal.
+ * This is called only once, just after window.language is loaded.
+ */
 function renderPublishDialog() {
   let receipt = {
     videoId: params.videoId,
     language: window.language,
-    captionId: '#############',
+    captionId: '###',
     password: '#############',
   };
   let previewContainer = null;
@@ -280,8 +297,8 @@ function renderPublishDialog() {
         box-sizing: border-box;
         overflow-y: auto;">
       <h2><span class="publish-icon"></span>Publish</h2>
-      Publish your captions so anyone can see them.<br>
-      Making the video private or deleting it won't take the captions down.
+      Publish your captions so anyone can use or copy them.<br>
+      Making the video private or deleting it won't take your captions down.
 
       <form action="/publish" method="post" @submit=${function(e) {
         this.closest('dialog').close();
@@ -302,7 +319,7 @@ function renderPublishDialog() {
         <fieldset>
           <legend>Language</legend>
           <label>
-            What language are these captions?
+            Captions language:
             <div>
               <select name="language" @change=${function updateReceiptLanguage(e) {
                 receipt.language = this.value;
@@ -342,27 +359,28 @@ function renderPublishDialog() {
 
         <fieldset>
           <legend>Receipt</legend>
-          Where would you like to save your receipt?<br>
           You need your receipt to edit or delete your captions.<br>
-
+          You can save your receipt to a file or to ${myReceiptsLink({html})}.<br>
+          <br>
           <div @render=${onRender(function() { previewContainer = this; })}>${renderPreview(receipt)}</div>
-
+          <br>
+          Save receipt to:<br>
           <div>
             <label>
-              <input type="radio" id="publish-receipt" name="receipt" value="file-and-cookie" required>
-              File and cookie
+              <input type="radio" name="receipt" value="file-and-cookie" required>
+              Both a receipt file and ${myReceiptsText({html})}
             </label>
           </div>
           <div>
             <label>
-              <input type="radio" id="publish-receipt" name="receipt" value="file" required>
-              File only
+              <input type="radio" name="receipt" value="file" required>
+              Only a receipt file
             </label>
           </div>
           <div>
             <label>
-              <input type="radio" id="publish-receipt" name="receipt" value="cookie" required>
-              Cookies only
+              <input type="radio" name="receipt" value="cookie" required>
+              Only ${myReceiptsText({html})}
             </label>
           </div>
         </fieldset>
@@ -432,6 +450,10 @@ render(html`
       <li>
         <a href="https://github.com/yingted/ytcc2/issues/new"
             aria-label="Report bug on GitHub"><span class="bug-icon"></span>Report bug</a>
+      </li>
+
+      <li>
+        ${myReceiptsLink({html})}
       </li>
     </ul>
   </nav>

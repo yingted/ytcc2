@@ -1,3 +1,10 @@
+export function myReceiptsText({html}) {
+  return html`<style>.receipt-icon::before { content: "🧾"; }</style><span class="receipt-icon"></span>My receipts`;
+}
+export function myReceiptsLink({html}) {
+  return html`<a href="${location.origin}/receipts">${myReceiptsText({html})}</a>`;
+}
+
 /**
  * Render a receipt.
  * @param {function} html html literal
@@ -23,11 +30,14 @@ function renderReceipt({html}, {videoId, language, captionId, password, isFile})
       .download-icon::before {
         content: "📥";
       }
+      .receipt-icon::before {
+        content: "🧾";
+      }
     </style>
     <form>
       Thanks for publishing captions.<br>
       This is your receipt.<br>
-      You need it to edit/delete your captions.
+      You need it to edit or delete your captions.
 
       <fieldset>
         <legend>Submission information</legend>
@@ -52,11 +62,11 @@ function renderReceipt({html}, {videoId, language, captionId, password, isFile})
           Receipt:
           ${isFile ?
               html`
-                <a href="#" @click=${e => e.preventDefault()}><span class="cookie-icon"></span>Add to cookie</a>
+                <a href="#" @click=${e => e.preventDefault()}>Add to ${myReceiptsText({html})}</a>
               ` :
               html`
                 <a href="#" @click=${e => e.preventDefault()}><span class="download-icon"></span>Download</a>
-                <a href="#" @click=${e => e.preventDefault()}><span class="delete-icon"></span><span class="cookie-icon"></span>Delete</a>
+                <a href="#" @click=${e => e.preventDefault()}><span class="delete-icon"></span><span class="receipt-icon"></span>Delete</a>
               `}
         </div>
       </fieldset>
@@ -77,19 +87,20 @@ export function renderFileReceipt({html}, {videoId, language, captionId, passwor
   };
 }
 
-export function renderCookieReceipt({html}, {videoId, language, captionId, password}) {
+export function renderCookieReceipts({html}, receipts) {
   return {
-    title: `Captions receipt: ${videoId}`,
+    title: `My receipts`,
     body: html`
       Your receipts:<br>
       <div style="border: 1px solid black;">
-        ${renderReceipt({html}, {
-          videoId,
-          language,
-          captionId,
-          password,
-          isFile: false,
-        })}
+        ${receipts.map(({videoId, language, captionId, password}) =>
+          renderReceipt({html}, {
+            videoId,
+            language,
+            captionId,
+            password,
+            isFile: false,
+          }))}
       </div>
     `,
   };
