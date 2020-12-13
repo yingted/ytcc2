@@ -187,7 +187,7 @@ async function renderEditorAndToolbar() {
 
       <li>
         <span>
-          <span class="save-icon"></span><a
+          <span class="save-icon"></span>Save <a
             @mousedown=${updateSrv3}
             @click=${updateSrv3}
             @focus=${updateSrv3}
@@ -195,7 +195,7 @@ async function renderEditorAndToolbar() {
             @contextmenu=${updateSrv3}
             @render=${onRender(updateSrv3)}
             download="${params.videoId}.srv3.xml"
-          >${params.videoId}.srv3.xml</a>/<a
+          >.srv3.xml</a>/<a
             @mousedown=${updateSrt}
             @click=${updateSrt}
             @focus=${updateSrt}
