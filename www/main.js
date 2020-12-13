@@ -423,6 +423,14 @@ function renderPublishDialog() {
 
 render(html`
   <header>
+    <style>
+      h1 {
+        font-size: 1.5em;
+        font-weight: normal;
+        margin-block-start: 0.1em;
+        margin-block-end: 0.1em;
+      }
+    </style>
     <h1>View captions</h1>
   </header>
 
