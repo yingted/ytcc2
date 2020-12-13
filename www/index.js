@@ -34,7 +34,7 @@ app.get('/watch', (req, res) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" type="text/css" href="/dialog-polyfill/dialog-polyfill.css" />
       </head>
-      <body style="margin: 0;">
+      <body style="margin: 0 auto; max-width: 640px;">
         <noscript>You need JavaScript to view this page.</noscript>
         <script>
           const params = ${JSON.stringify(params)};
