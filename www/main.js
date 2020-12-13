@@ -24,6 +24,7 @@ import {onRender} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
 import {youtubeLanguages} from './gen/youtube_languages.js';
 import {renderBrowser} from './preview_browser.js';
+import {renderFileReceipt, renderCookieReceipt} from './receipt.js';
 
 const video = new YouTubeVideo(params.videoId);
 
@@ -236,62 +237,6 @@ let registerDialog = onRender(function() {
   dialogPolyfill.registerDialog(this);
 });
 
-function renderReceipt(videoId, language, captionId, password, isFile) {
-  return html`
-    <style>
-      .edit-icon::before {
-        content: "✏️";
-      }
-      .delete-icon::before {
-        content: "🗑️";
-      }
-      .cookie-icon::before {
-        content: "🍪";
-      }
-      .download-icon::before {
-        content: "📥";
-      }
-    </style>
-    <form>
-      Thanks for publishing captions.<br>
-      This is your receipt.<br>
-      You need it to edit/delete your captions.
-
-      <fieldset>
-        <legend>Submission information</legend>
-
-        <div><label>Video ID: <input name="v" value=${videoId} disabled></label></div>
-        <div><label>Language: <input name="lang" value=${language} disabled></label></div>
-        <div><label>Caption ID: <input name="id" value=${captionId} disabled></label></div>
-        <div><label>Tracking number: <input name="password" value=${password} disabled></label></div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Actions</legend>
-
-        <div>
-          Captions:
-          <a href="#" @click=${e => e.preventDefault()}><span class="view-icon"></span>View</a>
-          <a href="#" @click=${e => e.preventDefault()}><span class="edit-icon"></span>Edit</a>
-          <a href="#" @click=${e => e.preventDefault()}><span class="delete-icon"></span>Delete</a>
-        </div>
-
-        <div>
-          Receipt:
-          ${isFile ?
-              html`
-                <a href="#" @click=${e => e.preventDefault()}><span class="cookie-icon"></span>Add to cookie</a>
-              ` :
-              html`
-                <a href="#" @click=${e => e.preventDefault()}><span class="download-icon"></span>Download</a>
-                <a href="#" @click=${e => e.preventDefault()}><span class="delete-icon"></span><span class="cookie-icon"></span>Delete</a>
-              `}
-        </div>
-      </fieldset>
-    </form>
-  `;
-}
-
 function arrayBufferToBase64(buffer) {
   let latin1 = [];
   for (let c of new Uint8Array(buffer)) {
@@ -300,7 +245,33 @@ function arrayBufferToBase64(buffer) {
   return window.btoa(latin1.join(''));
 }
 
+function renderPreview(receipt) {
+  return html`
+    <details>
+      <summary><span class="preview-icon"></span>Preview file receipt</summary>
+      ${renderBrowser({html}, {
+        url: `file:///receipt-${params.videoId}.html`,
+        doc: renderFileReceipt({html}, receipt),
+      })}
+    </details>
+
+    <details>
+      <summary><span class="preview-icon"></span>Preview cookie receipt</summary>
+      ${renderBrowser({html}, {
+        url: `${location.origin}/receipts?v=${params.videoId}`,
+        doc: renderFileReceipt({html}, receipt),
+      })}
+    </details>
+  `;
+};
 function renderPublishDialog() {
+  let receipt = {
+    videoId: params.videoId,
+    language: window.language,
+    captionId: '#############',
+    password: '#############',
+  };
+  let previewContainer = null;
   return html`
     <dialog class="fixed" @render=${registerDialog} style="
         width: 25em;
@@ -333,9 +304,12 @@ function renderPublishDialog() {
           <label>
             What language are these captions?
             <div>
-              <select name="language">
+              <select name="language" @change=${function updateReceiptLanguage(e) {
+                receipt.language = this.value;
+                render(renderPreview(receipt), previewContainer);
+              }}>
                 ${youtubeLanguages.map(({id, name}) => html`
-                  <option value=${id} ?selected=${id === window.language}>${name}</option>
+                  <option value=${id} ?selected=${id === receipt.language}>${name}</option>
                 `)}
               </select>
             </div>
@@ -370,26 +344,8 @@ function renderPublishDialog() {
           <legend>Receipt</legend>
           Where would you like to save your receipt?<br>
           You need your receipt to edit or delete your captions.<br>
-          You can change your mind later.
 
-          <details>
-            <summary><span class="preview-icon"></span>Preview file receipt</summary>
-            ${renderBrowser(html, `file:///receipt-${params.videoId}.html`,
-              renderReceipt(params.videoId, '??', '###', '#############', true),
-              {title: `Captions receipt: ${params.videoId} ###`})}
-          </details>
-
-          <details>
-            <summary><span class="preview-icon"></span>Preview cookie receipt</summary>
-            ${renderBrowser(html, `${location.origin}/receipts?v=${params.videoId}`,
-              html`
-                Your receipts:<br>
-                <div style="border: 1px solid black;">
-                  ${renderReceipt(params.videoId, '??', '###', '#############', false)}
-                </div>
-              `,
-              {title: `Captions receipt: ${params.videoId}`})}
-          </details>
+          <div @render=${onRender(function() { previewContainer = this; })}>${renderPreview(receipt)}</div>
 
           <div>
             <label>

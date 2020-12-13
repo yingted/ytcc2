@@ -19,11 +19,11 @@
  * @param {function} html the html literal
  * @param {string} url the URL to show in the URL bar
  * @param {TemplateResult} body the document to render
- * @param {string|undefined} options.title the title
+ * @param {string|undefined} title the title
+ * @returns {TemplateResult} a div with the preview browser
  */
-export function renderBrowser(html, url, body, options) {
-  options = options || {};
-  let title = options.title ?? url;
+export function renderBrowser({html}, {url, doc: {body, title}}) {
+  title = title ?? url;
   return html`
     <div style="
         box-shadow: 0px 0px 5px 0;
@@ -64,4 +64,24 @@ export function renderBrowser(html, url, body, options) {
       </div>
     </div>
   `;
-};
+}
+
+/**
+ * Render a document.
+ * @param {function} html the html literal
+ * @param {TemplateResult} body the document to render
+ * @param {string|undefined} title the title
+ * @returns {TemplateResult} the HTML document
+ */
+export function renderDocument({html}, {body, title}) {
+  return html`
+  <html>
+    <head>
+      <title>${title}</title>
+    </head>
+    <body>
+      ${body}
+    </body>
+  </html>
+  `;
+}
