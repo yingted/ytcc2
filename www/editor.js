@@ -282,7 +282,7 @@ class CaptionsHighlighter /*extends PluginValue*/ {
     let doc = view.state.doc;
     for (let {from, to} of view.visibleRanges) {
       // Seek back to the nearest cue boundary:
-      while (decodeTimeSpace(doc.lineAt(from).content) === null) {
+      while (decodeTimeSpace(doc.lineAt(from).slice()) === null) {
         let prev = CaptionsHighlighter.prevLine(doc, from);
         if (prev === null) break;
         from = prev;
@@ -291,7 +291,7 @@ class CaptionsHighlighter /*extends PluginValue*/ {
       for (;;) {
         let next = CaptionsHighlighter.nextLine(doc, to);
         if (next === null) break;
-        if (decodeTimeSpace(doc.lineAt(next).content) !== null) break
+        if (decodeTimeSpace(doc.lineAt(next).slice()) !== null) break
         to = next;
       }
 
@@ -393,7 +393,7 @@ export class CaptionsEditor {
           EditorView.updateListener.of(this._onEditorUpdate.bind(this)),
           indentService.of((context, pos) => {
             let line = context.state.doc.lineAt(pos);
-            let timeOffset = decodeTimeSpace(line.content);
+            let timeOffset = decodeTimeSpace(line.slice());
             if (timeOffset === null) {
               return 0;
             }
