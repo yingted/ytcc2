@@ -68,23 +68,21 @@ Array.from(document.getElementsByTagName('noscript')).forEach(noscript => {
 });
 
 let objectUrls = new Set();
-let lastUpdate = {};
 function updateDownload(type) {
+  let lastUpdate = null;
   return function(e) {
     let update = editor.video.captions;
-    if (lastUpdate[type] === update) {
+    if (lastUpdate === update) {
       return;
     }
-    lastUpdate[type] = update;
+    lastUpdate = update;
 
     let {videoId} = editor.video;
-    let filename, buffer;
+    let buffer;
     if (type === 'srt') {
       buffer = editor.getSrtCaptions();
-      filename = `${videoId}.srt`;
     } else if (type === 'srv3') {
       buffer = editor.getSrv3Captions();
-      filename = `${videoId}.srv3.xml`;
     } else {
       return;
     }
@@ -97,7 +95,6 @@ function updateDownload(type) {
 
     this.href = URL.createObjectURL(new Blob([buffer]));
     objectUrls.add(this.href);
-    this.download = filename;
   };
 };
 let updateSrt = updateDownload('srt');
@@ -184,28 +181,29 @@ async function renderEditorAndToolbar() {
             @change=${openFile}>
           <button @click=${function(e) {
             this.parentNode.querySelector('input').click();
-          }}><span class="open-icon"></span>Open SRT/srv3</button>
+          }}><span class="open-icon"></span>Open</button>
         </label>
       </li>
 
       <li>
         <span>
-          <span class="save-icon"></span>Download
-          <a
-            @mousedown=${updateSrt}
-            @click=${updateSrt}
-            @focus=${updateSrt}
-            @mouseover=${updateSrt}
-            @contextmenu=${updateSrt}
-            @render=${onRender(updateSrt)}
-          >SRT</a>/<a
+          <span class="save-icon"></span><a
             @mousedown=${updateSrv3}
             @click=${updateSrv3}
             @focus=${updateSrv3}
             @mouseover=${updateSrv3}
             @contextmenu=${updateSrv3}
             @render=${onRender(updateSrv3)}
-          >srv3</a>
+            download="${params.videoId}.srv3.xml"
+          >${params.videoId}.srv3.xml</a>/<a
+            @mousedown=${updateSrt}
+            @click=${updateSrt}
+            @focus=${updateSrt}
+            @mouseover=${updateSrt}
+            @contextmenu=${updateSrt}
+            @render=${onRender(updateSrt)}
+            download="${params.videoId}.srt"
+          >.srt</a>
         </span>
       </li>
 
@@ -424,7 +422,7 @@ function renderPublishDialog() {
 
 render(html`
   <header>
-    <h1>Captions viewer</h1>
+    <h1>View captions</h1>
   </header>
 
   <nav>
@@ -449,15 +447,21 @@ render(html`
     </style>
     <ul class="navbar">
       <li>
-        <a href="https://studio.youtube.com/video/${params.videoId}/translations" target="_blank"><span class="pencil-icon"></span>Edit captions in YouTube Studio</a>
+        <a href="https://studio.youtube.com/video/${params.videoId}/translations" target="_blank">
+          <span class="pencil-icon"></span>
+          <svg viewBox="0 4 24 16" style="height: 1em; display: inline; vertical-align: text-bottom;">
+            <path fill="red" d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3-5.2 3z"></path>
+          </svg>
+          Studio
+        </a>
       </li>
 
       <li>
-        <a href="https://youtubexternalcc.netlify.app/video-player.html?videoID=${params.videoId}" target="_blank"><span class="pencil-icon"></span>Edit captions in youtubexternalcc</a>
+        <a href="https://youtubexternalcc.netlify.app/video-player.html?videoID=${params.videoId}" target="_blank"><span class="pencil-icon"></span>youtubexternalcc</a>
       </li>
 
       <li>
-        <a href="https://github.com/yingted/ytcc2/issues/new" target="_blank"><span class="bug-icon"></span>File a bug on GitHub</a>
+        <a href="https://github.com/yingted/ytcc2/issues/new" target="_blank"><span class="bug-icon"></span>Report bug</a>
       </li>
     </ul>
   </nav>
