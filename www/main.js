@@ -247,7 +247,6 @@ function arrayBufferToBase64(buffer) {
 
 function renderPreview(receipt) {
   return html`
-    Receipt files let you track your receipts yourself.
     <details>
       <summary><span class="preview-icon"></span>Preview receipt file</summary>
       <figure style="margin: 0;">
@@ -260,8 +259,7 @@ function renderPreview(receipt) {
         })}
       </figure>
     </details>
-    <br>
-    ${myReceiptsLink({html})} uses cookies to track your receipts automatically.
+
     <details>
       <summary><span class="preview-icon"></span>Preview ${myReceiptsText({html})}</summary>
       <figure style="margin: 0;">
@@ -285,7 +283,8 @@ function renderPublishDialog() {
   let receipt = {
     videoId: params.videoId,
     language: window.language,
-    captionId: '###',
+    captionId: 'preview',
+    // TODO: generate this value
     password: '#############',
   };
   let previewContainer = null;
@@ -360,8 +359,7 @@ function renderPublishDialog() {
         <fieldset>
           <legend>Receipt</legend>
           You need your receipt to edit or delete your captions.<br>
-          You can save your receipt to a file or to ${myReceiptsLink({html})}.<br>
-          <br>
+          You can save your receipt to a file, or to ${myReceiptsLink({html})}, which uses cookies to track your receipts.
           <div @render=${onRender(function() { previewContainer = this; })}>${renderPreview(receipt)}</div>
           <br>
           Save receipt to:<br>

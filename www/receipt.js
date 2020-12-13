@@ -2,7 +2,7 @@ export function myReceiptsText({html}) {
   return html`<style>.receipt-icon::before { content: "🧾"; }</style><span class="receipt-icon"></span>My receipts`;
 }
 export function myReceiptsLink({html}) {
-  return html`<a href="${location.origin}/receipts">${myReceiptsText({html})}</a>`;
+  return html`<a href="/receipts">${myReceiptsText({html})}</a>`;
 }
 
 /**
@@ -53,6 +53,7 @@ function renderReceipt({html}, {videoId, language, captionId, password, isFile})
 
         <div>
           Captions:
+          <!-- TODO: replace these with links or buttons that work -->
           <a href="#" @click=${e => e.preventDefault()}><span class="view-icon"></span>View</a>
           <a href="#" @click=${e => e.preventDefault()}><span class="edit-icon"></span>Edit</a>
           <a href="#" @click=${e => e.preventDefault()}><span class="delete-icon"></span>Delete</a>
