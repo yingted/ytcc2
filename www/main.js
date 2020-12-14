@@ -89,41 +89,6 @@ const editorView = editor.map(function renderEditorAndToolbar({editor, language}
   // let updateSrv3 = updateDownload(editor, 'srv3');
   let updateSrt = null;
   let updateSrv3 = null;
-
-  let openFile = function openFile(e) {
-    let files = this.files;
-    if (files.length !== 1) return;
-    let [file] = files;
-    file.arrayBuffer().then(buffer => {
-      let captions = null;
-
-      if (file.name.toLowerCase().endsWith('.srt')) {
-        try {
-          captions = decodeSrt(buffer);
-        } catch (e) {
-          console.error(e);
-          alert('Error importing SRT file: ' + file.name);
-        }
-      } else if (file.name.toLowerCase().endsWith('.xml')) {
-        try {
-          captions = stripRaw(decodeSrv3(buffer));
-        } catch (e) {
-          console.error(e);
-          alert('Error importing srv3 file: ' + file.name);
-        }
-      } else {
-        alert('File name must end with .srt or .xml: ' + file.name);
-      }
-
-      if (captions !== null) {
-        editor.setCaptions(captions, /*addToHistory=*/true, /*isSaved=*/true);
-      }
-
-      if (this.files === files) {
-        this.value = null;
-      }
-    });
-  };
   return html`
     <style>
       ul.toolbar {
@@ -138,9 +103,6 @@ const editorView = editor.map(function renderEditorAndToolbar({editor, language}
       }
       ul.toolbar > li > button {
         height: var(--touch-target-size);
-      }
-      .open-icon::before {
-        content: "📂";
       }
       .save-icon::before {
         content: "💾";
@@ -163,21 +125,6 @@ const editorView = editor.map(function renderEditorAndToolbar({editor, language}
     </style>
 
     <ul class="toolbar" aria-label="Toolbar">
-<!--
-TODO
-      <li>
-        <label>
-          <input type="file"
-            style="display: none;"
-            accept=".srt,text/srt,.xml,application/xml"
-            @change=${openFile}>
-          <button @click=${function(e) {
-            this.parentNode.querySelector('input').click();
-          }}><span class="open-icon"></span>Open</button>
-        </label>
-      </li>
--->
-
       <li>
         <button @click=${e => {
         }}><span class="save-icon"></span>Save as</button>
@@ -389,6 +336,9 @@ function renderPublishDialog(editor, language) {
   `;
 }
 
+if (false) {
+}
+
 class TrackPicker {
   constructor() {
     // Track picker model, representing programmatic changes:
@@ -396,11 +346,55 @@ class TrackPicker {
       tracks: [],  // YT tracks
       selectedTrack: null,
     });
+    // Signal for picking YouTube captions.
+    // Also allow picking null (synthetic only).
     /** @type {Signal<Track>} */
-    this.change = new Signal();
+    this.pick = new Signal();
+    // Signal for a captions file opened.
+    /** @type {Signal<Srt.raw Track.t>} */
+    this.openFile = new Signal();
     /** @type {AsyncRef<TemplateResult>} */
     this.view = this.model.map(({tracks, selectedTrack}) => {
       let thiz = this;
+      let filePicker;
+      let openFile = function openFile(e) {
+        let files = this.files;
+        if (files.length !== 1) return;
+        let [file] = files;
+        file.arrayBuffer().then(buffer => {
+          let captions = null;
+
+          if (file.name.toLowerCase().endsWith('.srt')) {
+            try {
+              captions = decodeSrt(buffer);
+            } catch (e) {
+              console.error(e);
+              alert('Error importing SRT file: ' + file.name);
+            }
+          } else if (file.name.toLowerCase().endsWith('.xml')) {
+            try {
+              captions = stripRaw(decodeSrv3(buffer));
+            } catch (e) {
+              console.error(e);
+              alert('Error importing srv3 file: ' + file.name);
+            }
+          } else {
+            alert('File name must end with .srt or .xml: ' + file.name);
+          }
+
+          if (captions !== null) {
+            // Set the track to null:
+            let {tracks, selectedTrack} = thiz.model.value;
+            selectedTrack = null;
+            thiz.model.value = {tracks, selectedTrack};
+            thiz.openFile.emit(captions);
+          }
+
+          if (this.files === files) {
+            this.value = null;
+          }
+        });
+      };
       return html`
         <style>
           h1 {
@@ -413,22 +407,38 @@ class TrackPicker {
           }
         </style>
         <h1>
+          <input type="file"
+            style="display: none;"
+            accept=".srt,text/srt,.xml,application/xml"
+            @render=${onRender(function() { filePicker = this; })}
+            @change=${openFile}>
           <label style="width: 100%; display: flex; align-items: center;">
             <span style="white-space: pre;">Captions: </span>
             <select style="flex-grow: 1; min-width: 0;" @change=${function() {
-              let value = thiz.model.value;
-              value.selectedTrack = null;
-              for (let track of value.tracks) {
+              let {tracks, selectedTrack} = thiz.model.value;
+
+              if (this.value === 'open-file') {
+                // Switch the picker back to the old value and show the dialog:
+                this.value =
+                  selectedTrack === null ? 'none' : 'youtube-' + selectedTrack.lang;
+                filePicker.click();
+                return;
+              }
+
+              selectedTrack = null;
+              for (let track of tracks) {
                 if ('youtube-' + track.lang === this.value) {
-                  value.selectedTrack = track;
+                  selectedTrack = track;
                   break;
                 }
               }
-              thiz.model.value = value;
-              thiz.change.emit(value.selectedTrack);
+
+              thiz.model.value = {tracks, selectedTrack};
+              thiz.pick.emit(selectedTrack);
             }}>
               <!-- null track, which users can't select -->
               ${selectedTrack === null ? html`<option value="none" selected></option>` : []}
+              <option value="open-file">Choose file</option>
               <optgroup label="YouTube">
                 ${tracks.map(track =>
                   html`<option value="youtube-${track.lang}" ?selected=${selectedTrack === track}>YouTube ${track.langOriginal}</option>`
@@ -445,10 +455,7 @@ class TrackPicker {
    */
   onLoaded(tracks, selectedTrack) {
     this.model.value = {tracks, selectedTrack};
-    this.change.emit(selectedTrack);
-  }
-  addChangeListener(cb) {
-    this.change.addListener(cb);
+    this.pick.emit(selectedTrack);
   }
   render() {
     return asyncReplace(this.view.observe());
@@ -549,7 +556,15 @@ function getDefaultTrack(tracks) {
 (async function main() {
   let tracks = await listTracks(params.videoId);
   let track = getDefaultTrack(tracks);
-  trackPicker.addChangeListener(async track => {
+  let setCaptions = function setCaptions(editor, captions) {
+    if (editor === null) {
+      editor = new CaptionsEditor(video, captions);
+    } else {
+      editor.setCaptions(captions, /*addToHistory=*/true, /*isSaved=*/true);
+    }
+    return editor;
+  };
+  trackPicker.pick.addListener(async track => {
     let {editor: editor_, language} = editor.value;
 
     // Load the data:
@@ -565,12 +580,13 @@ function getDefaultTrack(tracks) {
       return;
     }
 
-    if (editor_ === null) {
-      editor_ = new CaptionsEditor(video, captions);
-    } else {
-      editor_.setCaptions(captions, /*addToHistory=*/true, /*isSaved=*/true);
-    }
+    editor_ = setCaptions(editor_, captions);
 
+    editor.value = {editor: editor_, language};
+  });
+  trackPicker.openFile.addListener(captions => {
+    let {editor: editor_, language} = editor.value;
+    editor_ = setCaptions(editor_, captions);
     editor.value = {editor: editor_, language};
   });
   trackPicker.onLoaded(tracks, track);
