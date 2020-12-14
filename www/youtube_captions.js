@@ -27,6 +27,8 @@ class Track {
    * @param {string} options.videoId
    * @param {string} options.name track name, used to fetch the track
    * @param {string} options.lang language iso code
+   * @param {string} options.langOriginal language in the language
+   * @param {string} options.langTranslated language in our language
    * @param {?string} options.ytdataId ID for new YT data API
    */
   constructor(options) {
@@ -57,7 +59,7 @@ class Track {
  * @returns {Promise<Track>}
  */
 export function listTracks(videoId) {
-  return fetch('https://www.youtube-nocookie.com/api/timedtext?v=' + encodeURIComponent(videoId) + '&type=list&tlangs=1&asrs=1')
+  return fetch('https://www.youtube-nocookie.com/api/timedtext?v=' + encodeURIComponent(videoId) + '&type=list&asrs=1')
     .then(res => {
       if (!res.ok) {
         throw new Error('could not list captions through youtube.com/api');
@@ -71,6 +73,8 @@ export function listTracks(videoId) {
         captions.push(new Track({
           videoId,
           lang: track.getAttribute('lang_code'),
+          langOriginal: track.getAttribute('lang_original'),
+          langTranslated: track.getAttribute('lang_translated'),
           name: track.getAttribute('name'),
         }));
       }

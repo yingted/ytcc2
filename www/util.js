@@ -35,3 +35,102 @@ export function randomUuid() {
 export const onRender = directive(f => part => {
   f.call(part.element);
 });
+
+/**
+ * An AsyncRef<T> represents a mutable T.
+ * For example, AsyncRef<string> can represent document.querySelector('input').value.
+ *
+ * @template T
+ * @example
+ * r = new AsyncRef(x0);
+ * x1 = r.value;
+ * r.value = x2;
+ * for async (let xi of r.observe()) {
+ *   break;
+ * }
+ * template = html`${asyncReplace(r.observe())}`;
+ */
+export class AsyncRef {
+  constructor(value) {
+    this._value = value;
+    this._callbacks = [];
+  }
+  /**
+   * @returns {T}
+   */
+  get value() {
+    return this._value;
+  }
+  /**
+   * @param {T} x
+   */
+  set value(x) {
+    this._value = x;
+    let callbacks = this._callbacks;
+    this._callbacks = [];
+    for (let callback of callbacks) {
+      callback(x);
+    }
+  }
+  /**
+   * @returns {Promise<T>}
+   */
+  nextValue() {
+    return new Promise(resolve => {
+      this._callbacks.push(resolve);
+    });
+  }
+  /**
+   * @returns {AsyncIterator<T>}
+   */
+  async *observeFuture() {
+    let next = this.nextValue();
+    for (;;) {
+      let cur = await next;
+      next = this.nextValue();
+      yield cur;
+    }
+  }
+  /**
+   * @returns {AsyncIterator<T>}
+   */
+  async *observe() {
+    yield this._value;
+    yield* this.observeFuture();
+  }
+  /**
+   * Transform this AsyncRef with a synchronous function.
+   */
+  map(func) {
+    let ret = new AsyncRef(func(this._value));
+    let thiz = this;
+    (async function() {
+      for await (let x of thiz.observeFuture()) {
+        ret.value = func(x);
+      }
+    })();
+    return ret;
+  }
+}
+
+export class Signal {
+  constructor() {
+    this._handlers = [];
+  }
+  addListener(f) {
+    if (this._handlers.indexOf(f) === -1) {
+      this._handlers.push(f);
+    }
+  }
+  removeListener(f) {
+    let i = this._handlers.indexOf(f);
+    if (i !== -1) {
+      this._handlers.splice(i, 1);
+    }
+  }
+  emit(x) {
+    for (let cb of this._handlers) {
+      cb.call(this, x);
+    }
+  }
+}

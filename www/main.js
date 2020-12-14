@@ -16,6 +16,7 @@
 
 import {html, render} from 'lit-html';
 import {until} from 'lit-html/directives/until.js';
+import {asyncReplace} from 'lit-html/directives/async-replace.js';
 import {YouTubeVideo} from './youtube.js';
 import {CaptionsEditor} from './editor.js';
 import {decodeJson3FromJson, decodeSrv3, decodeSrt, stripRaw} from 'ytcc2-captions';
@@ -25,51 +26,24 @@ import dialogPolyfill from 'dialog-polyfill';
 import {youtubeLanguages} from './gen/youtube_languages.js';
 import {renderBrowser} from './preview_browser.js';
 import {myReceiptsText, myReceiptsLink, renderFileReceipt, renderCookieReceipts} from './receipt.js';
+import {AsyncRef, Signal} from './util.js';
 
-const video = new YouTubeVideo(params.videoId);
-
-/**
- * Get the default track based on navigator.language.
- * @param {array<Track>} tracks
- * @returns {Track|null}
- */
-function getDefaultTrack(tracks) {
-  let languages = [navigator.language];
-  if (/-/.test(navigator.language)) {
-    languages.push(navigator.language.replace(/-.*/, ''));
-  }
-  for (let language of languages) {
-    for (let track of tracks) {
-      if (track.lang === language) return track;
-    }
-  }
-  if (tracks.length > 0) return tracks[0];
-  return null;
-}
-window.language = 'en';
-const asyncEditor = (async function makeAsyncEditor() {
-  let track = getDefaultTrack(await listTracks(params.videoId));
-  if (track === null) {
-    return new CaptionsEditor(video);
-  } else {
-    window.language = track.lang;
-    return new CaptionsEditor(video, stripRaw(decodeJson3FromJson(await track.fetchJson3())));
-  }
-})();
-
-// For debugging:
-window.video = video;
-window.editor = null;
-asyncEditor.then(editor =>
-  window.editor = editor);
-
+// Browser workarounds:
 // Remove noscript:
 Array.from(document.getElementsByTagName('noscript')).forEach(noscript => {
   noscript.parentNode.removeChild(noscript);
 });
+// Dialogs need this as @render:
+let registerDialog = onRender(function() {
+  dialogPolyfill.registerDialog(this);
+});
 
-let objectUrls = new Set();
-function updateDownload(type) {
+// Video model/view:
+const video = new YouTubeVideo(params.videoId);
+window.video = video;
+
+function TODO_updateDownload(editor, type) {
+  let objectUrls = new Set();
   let lastUpdate = null;
   return function(e) {
     let update = editor.video.captions;
@@ -98,11 +72,24 @@ function updateDownload(type) {
     objectUrls.add(this.href);
   };
 };
-let updateSrt = updateDownload('srt');
-let updateSrv3 = updateDownload('srv3');
 
-async function renderEditorAndToolbar() {
-  let editor = await asyncEditor;
+// Editor model/view:
+const editor = window.editor = new AsyncRef({
+  // Start the editor as null to avoid drawing an empty editor.
+  /** @type {CaptionsEditor|null} */
+  editor: null,
+  /** @type {string|null} */
+  language: null,
+});
+const editorView = editor.map(function renderEditorAndToolbar({editor, language}) {
+  if (editor === null) {
+    return html`Loading captions...`;
+  }
+  // let updateSrt = updateDownload(editor, 'srt');
+  // let updateSrv3 = updateDownload(editor, 'srv3');
+  let updateSrt = null;
+  let updateSrv3 = null;
+
   let openFile = function openFile(e) {
     let files = this.files;
     if (files.length !== 1) return;
@@ -230,7 +217,7 @@ TODO
       </li>
 
       <li>
-        ${renderPublishDialog()}
+        ${renderPublishDialog(editor, language)}
         <button @click=${function(e) {
           let dialog = this.parentElement.querySelector('dialog');
           dialog.showModal();
@@ -239,10 +226,6 @@ TODO
     </ul>
     ${editor.render()}
   `;
-}
-
-let registerDialog = onRender(function() {
-  dialogPolyfill.registerDialog(this);
 });
 
 function arrayBufferToBase64(buffer) {
@@ -285,12 +268,11 @@ function renderPreview(receipt) {
 
 /**
  * Render the publish modal.
- * This is called only once, just after window.language is loaded.
  */
-function renderPublishDialog() {
+function renderPublishDialog(editor, language) {
   let receipt = {
     videoId: params.videoId,
-    language: window.language,
+    language: language ?? 'en',
     captionId: 'preview',
     // TODO: generate this value
     password: '#############',
@@ -320,6 +302,10 @@ function renderPublishDialog() {
             width: 100%;
             min-width: 100%;
             box-sizing: border-box;
+          }
+          .publish-form select,
+          .publish-input-group button {
+            height: var(--touch-target-size);
           }
         </style>
 
@@ -403,6 +389,74 @@ function renderPublishDialog() {
   `;
 }
 
+class TrackPicker {
+  constructor() {
+    // Track picker model, representing programmatic changes:
+    this.model = new AsyncRef({
+      tracks: [],  // YT tracks
+      selectedTrack: null,
+    });
+    /** @type {Signal<Track>} */
+    this.change = new Signal();
+    /** @type {AsyncRef<TemplateResult>} */
+    this.view = this.model.map(({tracks, selectedTrack}) => {
+      let thiz = this;
+      return html`
+        <style>
+          h1 {
+            font-size: 1.5em;
+            padding: 0;
+            margin: 0;
+          }
+          h1 select {
+            height: var(--touch-target-size);
+          }
+        </style>
+        <h1>
+          <label style="width: 100%; display: flex; align-items: center;">
+            <span style="white-space: pre;">Captions: </span>
+            <select style="flex-grow: 1; min-width: 0;" @change=${function() {
+              let value = thiz.model.value;
+              value.selectedTrack = null;
+              for (let track of value.tracks) {
+                if ('youtube-' + track.lang === this.value) {
+                  value.selectedTrack = track;
+                  break;
+                }
+              }
+              thiz.model.value = value;
+              thiz.change.emit(value.selectedTrack);
+            }}>
+              <!-- null track, which users can't select -->
+              ${selectedTrack === null ? html`<option value="none" selected></option>` : []}
+              <optgroup label="YouTube">
+                ${tracks.map(track =>
+                  html`<option value="youtube-${track.lang}" ?selected=${selectedTrack === track}>YouTube ${track.langOriginal}</option>`
+                )}
+              </optgroup>
+            </select>
+          </label>
+        </h1>
+      `;
+    });
+  }
+  /**
+   * Redraw this widget and fire a synthetic change event.
+   */
+  onLoaded(tracks, selectedTrack) {
+    this.model.value = {tracks, selectedTrack};
+    this.change.emit(selectedTrack);
+  }
+  addChangeListener(cb) {
+    this.change.addListener(cb);
+  }
+  render() {
+    return asyncReplace(this.view.observe());
+  }
+}
+const trackPicker = window.trackPicker = new TrackPicker();
+
+// Render the page once:
 render(html`
   <style>
     :root {
@@ -412,14 +466,6 @@ render(html`
 
   <nav>
     <style>
-      h1 {
-        font-size: 1.5em;
-        padding: 0;
-        margin: 0;
-      }
-      h1 select {
-        height: var(--touch-target-size);
-      }
       ul.navbar {
         width: 100%;
         min-width: 0;
@@ -442,22 +488,7 @@ render(html`
         content: "🐛";
       }
     </style>
-    <h1>
-      <label style="width: 100%; display: flex; align-items: center;">
-        <span style="white-space: pre;">Captions: </span>
-        <select style="flex-grow: 1; min-width: 0;">
-        <!-- TODO -->
-        <optgroup label="Swedish Cars">
-          <option value="volvo">Volvo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
-          <option value="saab">Saab</option>
-        </optgroup>
-        <optgroup label="German Cars">
-          <option value="mercedes">Mercedes</option>
-          <option value="audi">Audi</option>
-        </optgroup>
-        </select>
-      </label>
-    </h1>
+    ${trackPicker.render()}
 
     <ul class="navbar">
       <li>
@@ -490,6 +521,57 @@ render(html`
   <main>
     ${video.render()}
     <hr>
-    ${until(renderEditorAndToolbar(), html`Loading captions...`)}
+    ${asyncReplace(editorView.observe())}
   </main>
 `, document.body);
+
+// Controller:
+
+/**
+ * Get the default track based on navigator.language.
+ * @param {array<Track>} tracks
+ * @returns {Track|null}
+ */
+function getDefaultTrack(tracks) {
+  let languages = [navigator.language];
+  if (/-/.test(navigator.language)) {
+    languages.push(navigator.language.replace(/-.*/, ''));
+  }
+  for (let language of languages) {
+    for (let track of tracks) {
+      if (track.lang === language) return track;
+    }
+  }
+  if (tracks.length > 0) return tracks[0];
+  return null;
+}
+
+(async function main() {
+  let tracks = await listTracks(params.videoId);
+  let track = getDefaultTrack(tracks);
+  trackPicker.addChangeListener(async track => {
+    let {editor: editor_, language} = editor.value;
+
+    // Load the data:
+    let captions;
+    language = null;
+    if (track !== null) {
+      captions = stripRaw(decodeJson3FromJson(await track.fetchJson3()));
+      language = track.lang;
+    }
+
+    // If we've been cancelled, return:
+    if (track !== trackPicker.model.value.selectedTrack) {
+      return;
+    }
+
+    if (editor_ === null) {
+      editor_ = new CaptionsEditor(video, captions);
+    } else {
+      editor_.setCaptions(captions, /*addToHistory=*/true, /*isSaved=*/true);
+    }
+
+    editor.value = {editor: editor_, language};
+  });
+  trackPicker.onLoaded(tracks, track);
+})();

@@ -412,19 +412,19 @@ export class CaptionsEditor {
     this._unsavedChanges = newUnsavedChanges();
 
     // Initialize the captions:
-    if (captions === undefined) {
-      captions = empty;
-    }
     this.setCaptions(captions, /*addToHistory=*/false, /*isSaved=*/true);
   }
 
   /**
    * Set the captions.
-   * @param {Srt.raw Track.t} captions
+   * @param {Srt.raw Track.t option} captions
    * @param {boolean} addToHistory
    * @param {boolean} isSaved
    */
   setCaptions(captions, addToHistory, isSaved) {
+    if (captions === undefined) {
+      captions = empty;
+    }
     this._inSetCaptions = true;
     {
       // {'raw Track.t} captions with style and karaoke, but no unknown tags
