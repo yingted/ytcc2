@@ -380,6 +380,10 @@ function renderPublishDialog(editor, language) {
           .publish-input-group button {
             height: var(--touch-target-size);
           }
+          .publish-receipt-choice > label {
+            display: inline-block;
+            padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
+          }
         </style>
 
         <fieldset>
@@ -430,19 +434,19 @@ function renderPublishDialog(editor, language) {
           <div @render=${onRender(function() { previewContainer = this; })}>${renderPreview(receipt)}</div>
           <br>
           Save receipt to:<br>
-          <div>
+          <div class="publish-receipt-choice">
             <label>
               <input type="radio" name="receipt" value="file-and-cookie" required>
               Both a receipt file and ${myReceiptsText({html})}
             </label>
           </div>
-          <div>
+          <div class="publish-receipt-choice">
             <label>
               <input type="radio" name="receipt" value="file" required>
               Only a receipt file
             </label>
           </div>
-          <div>
+          <div class="publish-receipt-choice">
             <label>
               <input type="radio" name="receipt" value="cookie" required>
               Only ${myReceiptsText({html})}
