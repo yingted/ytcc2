@@ -16,6 +16,7 @@
 
 import {html, render} from 'lit-html';
 import {until} from 'lit-html/directives/until.js';
+import {live} from 'lit-html/directives/live.js';
 import {asyncReplace} from 'lit-html/directives/async-replace.js';
 import {YouTubeVideo} from './youtube.js';
 import {CaptionsEditor} from './editor.js';
@@ -42,36 +43,162 @@ let registerDialog = onRender(function() {
 const video = new YouTubeVideo(params.videoId);
 window.video = video;
 
-function TODO_updateDownload(editor, type) {
-  let objectUrls = new Set();
-  let lastUpdate = null;
-  return function(e) {
-    let update = editor.video.captions;
-    if (lastUpdate === update) {
-      return;
-    }
-    lastUpdate = update;
-
-    let {videoId} = editor.video;
-    let buffer;
-    if (type === 'srt') {
-      buffer = editor.getSrtCaptions();
-    } else if (type === 'srv3') {
-      buffer = editor.getSrv3Captions();
-    } else {
-      return;
+// Save as model/view:
+class ObjectUrl {
+  constructor() {
+    this._keySingleton = new WeakSet();
+    this._url = null;
+  }
+  create(key, makeBlob) {
+    // Dedupe calls:
+    if (this._keySingleton.has(key)) {
+      return this._url;
     }
 
-    // Clear the href:
-    if (this.href && objectUrls.has(this.href)) {
-      URL.revokeObjectURL(this.href);
-      objectUrls.delete(this.href);
+    // Free the previous URL:
+    this._keySingleton = new WeakSet();
+    if (this._url !== null) {
+      URL.revokeObjectURL(this._url);
     }
 
-    this.href = URL.createObjectURL(new Blob([buffer]));
-    objectUrls.add(this.href);
-  };
-};
+    // Make a new URL:
+    this._keySingleton.add(key);
+    this._url = URL.createObjectURL(makeBlob());
+    return this._url;
+  }
+}
+const srtUrl = new ObjectUrl();
+const srv3Url = new ObjectUrl();
+const BaseNameState = Object.freeze({
+  // Initially default value:
+  PREFILLED: Symbol('prefilled'),
+  // Logically default, but cleared to prevent filtering:
+  FOCUSED: Symbol('focused'),
+  // onchange fired:
+  MODIFIED: Symbol('modified'),
+});
+const saveAs = new AsyncRef({
+  /** @type {CaptionsEditor|null} */
+  editor: null,
+  /** @type {string} */
+  baseName: 'captions',
+  /** @type {string} */
+  videoIdBaseName: 'captions',
+  /** @type {string|null} */
+  titleBaseName: null,
+  baseNameState: BaseNameState.PREFILLED,
+  fileType: 'srv3',
+});
+const saveAsView = saveAs.map(state => {
+  let {editor, baseName, videoIdBaseName, titleBaseName, baseNameState, fileType} = state;
+  let fileName = baseName;
+  let blobUrl = '';
+  if (editor !== null) {
+    let captions = editor._rawCaptions;
+    switch (fileType) {
+      case 'srv3':
+        blobUrl = srv3Url.create(captions, () => new Blob([editor.getSrv3Captions()]));
+        fileName += '.srv3.xml';
+        break;
+      case 'srt':
+        blobUrl = srtUrl.create(captions, () => new Blob([editor.getSrtCaptions()]));
+        fileName += '.srt';
+        break;
+    }
+  }
+
+  return html`
+    <dialog class="fixed" @render=${registerDialog} style="
+        width: 25em;
+        max-width: 100%;
+        max-height: 100%;
+        box-sizing: border-box;
+        overflow-y: auto;">
+      <h2><span class="save-icon"></span>Save as</h2>
+
+      <form method="dialog" class="save-form">
+        <style>
+          .save-input-group {
+            padding: 0.2em 0;
+          }
+          .save-form > fieldset {
+            width: 100%;
+            min-width: 100%;
+            box-sizing: border-box;
+          }
+          .save-form select,
+          .save-form input,
+          .save-input-group button {
+            height: var(--touch-target-size);
+          }
+          .save-form a[href] {
+            display: inline-block;
+            padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
+          }
+        </style>
+
+        <div>
+          <label>
+            Name: 
+            <input list="save-basenames" name="basename" .value=${live(baseNameState === BaseNameState.FOCUSED ? '' : baseName)}
+                @click=${function(e) {
+                  if (baseNameState === BaseNameState.PREFILLED) {
+                    saveAs.value = Object.assign({}, state, {
+                      baseNameState: BaseNameState.FOCUSED,
+                    });
+                  }
+                }}
+                @focus=${function(e) {
+                  if (baseNameState === BaseNameState.PREFILLED) {
+                    saveAs.value = Object.assign({}, state, {
+                      baseNameState: BaseNameState.FOCUSED,
+                    });
+                  }
+                }}
+                @blur=${function(e) {
+                  if (baseNameState === BaseNameState.FOCUSED) {
+                    saveAs.value = Object.assign({}, state, {
+                      baseNameState: BaseNameState.PREFILLED,
+                    });
+                  }
+                }}
+                @change=${function(e) {
+                  saveAs.value = Object.assign({}, state, {
+                    baseName: this.value,
+                    baseNameState: BaseNameState.MODIFIED,
+                  });
+                }}>
+            <datalist id="save-basenames">
+              <!-- lit-html seems to need closing tags: -->
+              <option value=${videoIdBaseName}></option>
+              ${titleBaseName !== null ? html`<option value=${titleBaseName}></option>` : []}
+            </datalist>
+          </label>
+        </div>
+
+        <div>
+          <label>
+            File type:
+            <select name="filetype" @change=${function(e) {
+              saveAs.value = Object.assign({}, state, {
+                fileType: this.value,
+              });
+            }}>
+              <option value="srv3" selected>YouTube serving format 3 (.srv3.xml)</option>
+              <option value="srt">SubRip Text (.srt)</option>
+            </select>
+          </label>
+        </div>
+
+        Download link: <a href=${blobUrl} download=${fileName}>${fileName}</a>
+
+        <div class="save-input-group">
+          <button type="submit"><span class="cancel-icon"></span>Close</button>
+        </div>
+      </form>
+    </dialog>
+  `;
+});
 
 // Editor model/view:
 const editor = window.editor = new AsyncRef({
@@ -85,10 +212,6 @@ const editorView = editor.map(function renderEditorAndToolbar({editor, language}
   if (editor === null) {
     return html`Loading captions...`;
   }
-  // let updateSrt = updateDownload(editor, 'srt');
-  // let updateSrv3 = updateDownload(editor, 'srv3');
-  let updateSrt = null;
-  let updateSrv3 = null;
   return html`
     <style>
       ul.toolbar {
@@ -126,30 +249,32 @@ const editorView = editor.map(function renderEditorAndToolbar({editor, language}
 
     <ul class="toolbar" aria-label="Toolbar">
       <li>
-        <button @click=${e => {
+        ${asyncReplace(saveAsView.observe())}
+        <button @click=${function(e) {
+          // Safe base name:
+          let languageSuffix = language === null ? '' : '.' + language;
+          let videoIdBaseName = params.videoId + languageSuffix;
+
+          // Friendly base name:
+          let titleBaseName = null;
+          let title = null;
+          try {
+            title = video.player.getVideoData().title;
+          } catch (e) {}
+          if (typeof title === 'string') {
+            titleBaseName = title + languageSuffix;
+          }
+
+          saveAs.value = Object.assign({}, saveAs.value, {
+            editor,
+            videoIdBaseName,
+            titleBaseName,
+            baseName: videoIdBaseName,
+            baseNameState: BaseNameState.PREFILLED,
+          });
+          let dialog = this.parentElement.querySelector('dialog');
+          dialog.showModal();
         }}><span class="save-icon"></span>Save as</button>
-<!--
-TODO
-<a
-            @mousedown=${updateSrv3}
-            @click=${updateSrv3}
-            @focus=${updateSrv3}
-            @mouseover=${updateSrv3}
-            @contextmenu=${updateSrv3}
-            @render=${onRender(updateSrv3)}
-            download="${params.videoId}.srv3.xml"
-            aria-label="SRV3 file"
-          >.srv3.xml</a>/<a
-            @mousedown=${updateSrt}
-            @click=${updateSrt}
-            @focus=${updateSrt}
-            @mouseover=${updateSrt}
-            @contextmenu=${updateSrt}
-            @render=${onRender(updateSrt)}
-            download="${params.videoId}.srt"
-            aria-label="SRT file"
-          >.srt</a>
--->
       </li>
 
       <li>
@@ -175,6 +300,7 @@ TODO
   `;
 });
 
+// Publish:
 function arrayBufferToBase64(buffer) {
   let latin1 = [];
   for (let c of new Uint8Array(buffer)) {
@@ -334,9 +460,6 @@ function renderPublishDialog(editor, language) {
       </form>
     </dialog>
   `;
-}
-
-if (false) {
 }
 
 class TrackPicker {
@@ -532,7 +655,7 @@ render(html`
   </main>
 `, document.body);
 
-// Controller:
+// Main controller, binding everything together:
 
 /**
  * Get the default track based on navigator.language.
