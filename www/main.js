@@ -351,6 +351,7 @@ function renderPublishDialog(editor, language) {
     password: '#############',
   };
   let previewContainer = null;
+  // TODO: do not call editor.getNormalizedSrtCaptions until we need it
   return html`
     <dialog class="fixed" @render=${registerDialog} style="
         width: 25em;
@@ -359,8 +360,11 @@ function renderPublishDialog(editor, language) {
         box-sizing: border-box;
         overflow-y: auto;">
       <h2><span class="publish-icon"></span>Publish</h2>
-      Publish your captions so anyone can use or copy them.<br>
-      Making the video private or deleting it won't take your captions down.
+      Publish your captions <b>on this website</b> so anyone can use or copy them.<br>
+      Making the video private or deleting it won't take your captions down.<br>
+      <br>
+      To publish on ${youtubeLogo} YouTube instead, <span class="save-icon"></span>Save and upload the captions to
+      <a href="https://studio.youtube.com/video/${params.videoId}/translations" aria-label="YouTube Studio">${youtubeLogo} Studio</a>.
 
       <form action="/publish" method="post" @submit=${function(e) {
         this.closest('dialog').close();
@@ -590,6 +594,12 @@ class TrackPicker {
 }
 const trackPicker = window.trackPicker = new TrackPicker();
 
+const youtubeLogo = html`
+  <svg viewBox="0 4 24 16" style="height: 1em; display: inline; vertical-align: text-bottom;">
+    <path fill="red" d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3-5.2 3z"></path>
+  </svg>
+`;
+
 // Render the page once:
 render(html`
   <style>
@@ -628,11 +638,7 @@ render(html`
       <li>
         <a href="https://studio.youtube.com/video/${params.videoId}/translations"
             aria-label="Edit in YouTube Studio">
-          <span class="pencil-icon"></span>
-          <svg viewBox="0 4 24 16" style="height: 1em; display: inline; vertical-align: text-bottom;">
-            <path fill="red" d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3-5.2 3z"></path>
-          </svg>
-          Studio
+          <span class="pencil-icon"></span>${youtubeLogo} Studio
         </a>
       </li>
 
