@@ -54,11 +54,11 @@ export function renderBrowser({html}, {url, doc: {body, title}}) {
             <span class="maximize-icon"></span>${title}
         </div>
         
-        <button type="button" disabled><span class="minimize-icon"></span></button>
-        <button type="button" disabled><span class="maximize-icon"></span></button>
-        <button type="button" disabled><span class="cancellation-icon"></span></button>
+        <button type="button" disabled aria-hidden="true"><span class="minimize-icon"></span></button>
+        <button type="button" disabled aria-hidden="true"><span class="maximize-icon"></span></button>
+        <button type="button" disabled aria-hidden="true"><span class="cancellation-icon"></span></button>
       </div>
-      <input value=${url} disabled style="width: 100%; box-sizing: border-box;">
+      <input value=${url} disabled aria-label="Address" style="width: 100%; box-sizing: border-box;">
       <div>
         ${body}
       </div>

@@ -144,11 +144,13 @@ async function renderEditorAndToolbar() {
         min-width: 0;
         list-style-type: none;
         padding: 0;
-        margin: 0 0 0 -1em;
+        margin: 0;
       }
       ul.toolbar > li {
         display: inline-block;
-        margin: 0 0 0 1em;
+      }
+      ul.toolbar > li > button {
+        height: var(--touch-target-size);
       }
       .open-icon::before {
         content: "📂";
@@ -174,6 +176,8 @@ async function renderEditorAndToolbar() {
     </style>
 
     <ul class="toolbar" aria-label="Toolbar">
+<!--
+TODO
       <li>
         <label>
           <input type="file"
@@ -185,10 +189,14 @@ async function renderEditorAndToolbar() {
           }}><span class="open-icon"></span>Open</button>
         </label>
       </li>
+-->
 
       <li>
-        <span>
-          <span class="save-icon"></span>Save <a
+        <button @click=${e => {
+        }}><span class="save-icon"></span>Save as</button>
+<!--
+TODO
+<a
             @mousedown=${updateSrv3}
             @click=${updateSrv3}
             @focus=${updateSrv3}
@@ -207,7 +215,7 @@ async function renderEditorAndToolbar() {
             download="${params.videoId}.srt"
             aria-label="SRT file"
           >.srt</a>
-        </span>
+-->
       </li>
 
       <li>
@@ -396,30 +404,36 @@ function renderPublishDialog() {
 }
 
 render(html`
-  <header>
-    <style>
-      h1 {
-        font-size: 1.5em;
-        font-weight: normal;
-        margin-block-start: 0.1em;
-        margin-block-end: 0.1em;
-      }
-    </style>
-    <h1>View captions</h1>
-  </header>
+  <style>
+    :root {
+      --touch-target-size: 48px;
+    }
+  </style>
 
   <nav>
     <style>
+      h1 {
+        font-size: 1.5em;
+        padding: 0;
+        margin: 0;
+      }
+      h1 select {
+        height: var(--touch-target-size);
+      }
       ul.navbar {
         width: 100%;
         min-width: 0;
         list-style-type: none;
         padding: 0;
-        margin: 0 0 0 -1em;
+        margin: 0 -1em 0 0;
       }
       ul.navbar > li {
         display: inline-block;
-        margin: 0 0 0 1em;
+        margin: 0 1em 0 0;
+      }
+      ul.navbar > li > a[href] {
+        display: inline-block;
+        padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
       }
       .pencil-icon::before {
         content: "✏️";
@@ -428,6 +442,23 @@ render(html`
         content: "🐛";
       }
     </style>
+    <h1>
+      <label style="width: 100%; display: flex; align-items: center;">
+        <span style="white-space: pre;">Captions: </span>
+        <select style="flex-grow: 1; min-width: 0;">
+        <!-- TODO -->
+        <optgroup label="Swedish Cars">
+          <option value="volvo">Volvo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</option>
+          <option value="saab">Saab</option>
+        </optgroup>
+        <optgroup label="German Cars">
+          <option value="mercedes">Mercedes</option>
+          <option value="audi">Audi</option>
+        </optgroup>
+        </select>
+      </label>
+    </h1>
+
     <ul class="navbar">
       <li>
         <a href="https://studio.youtube.com/video/${params.videoId}/translations"
