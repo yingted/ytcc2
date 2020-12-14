@@ -39,6 +39,13 @@ let registerDialog = onRender(function() {
   dialogPolyfill.registerDialog(this);
 });
 
+// YT logo:
+const youtubeLogo = html`
+  <svg viewBox="0 4 24 16" style="height: 1em; display: inline; vertical-align: text-bottom;">
+    <path fill="red" d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3-5.2 3z"></path>
+  </svg>
+`;
+
 // Video model/view:
 const video = new YouTubeVideo(params.videoId);
 window.video = video;
@@ -289,9 +296,15 @@ const editorView = editor.map(function renderEditorAndToolbar({editor, language}
       </li>
 
       <li>
-        ${renderPublishDialog(editor, language)}
+        ${asyncReplace(publishView.observe())}
         <button @click=${function(e) {
           let dialog = this.parentElement.querySelector('dialog');
+          publish.value = Object.assign({}, publish.value, {
+            language: language ?? 'en',
+            // TODO generate this
+            password: '############',
+            srtBase64: arrayBufferToBase64(editor.getNormalizedSrtCaptions()),
+          });
           dialog.showModal();
         }}><span class="publish-icon"></span>Publish</button>
       </li>
@@ -339,19 +352,29 @@ function renderPreview(receipt) {
   `;
 }
 
-/**
- * Render the publish modal.
- */
-function renderPublishDialog(editor, language) {
+const publish = window.publish = new AsyncRef({
+  /** @type {string} */
+  language: 'en',
+  /** @type {string} */
+  password: '',
+  /** @type {string|null} */
+  receiptType: null,
+  /** @type {string} */
+  srtBase64: '',
+});
+const publishView = publish.map(value => {
+  let {language, password, receiptType, srtBase64} = value;
   let receipt = {
     videoId: params.videoId,
-    language: language ?? 'en',
+    language,
     captionId: 'preview',
-    // TODO: generate this value
-    password: '#############',
+    password,
   };
-  let previewContainer = null;
-  // TODO: do not call editor.getNormalizedSrtCaptions until we need it
+  let receiptTypeChange = function receiptTypeChange(e) {
+    publish.value = Object.assign({}, value, {
+      receiptType: this.value,
+    });
+  };
   return html`
     <dialog class="fixed" @render=${registerDialog} style="
         width: 25em;
@@ -370,7 +393,7 @@ function renderPublishDialog(editor, language) {
         this.closest('dialog').close();
       }} class="publish-form">
         <input name="videoId" type="hidden" value=${params.videoId}>
-        <input name="srtBase64" type="hidden" value=${arrayBufferToBase64(editor.getNormalizedSrtCaptions())}>
+        <input name="srtBase64" type="hidden" value=${srtBase64}>
         <style>
           .publish-input-group {
             padding: 0.2em 0;
@@ -396,9 +419,13 @@ function renderPublishDialog(editor, language) {
             Captions language:
             <div>
               <select name="language" @change=${function updateReceiptLanguage(e) {
-                receipt.language = this.value;
-                render(renderPreview(receipt), previewContainer);
+                publish.value = Object.assign({}, value, {
+                  language: this.value,
+                });
               }}>
+                ${youtubeLanguages.some(lang => lang.id === receipt.language) ? [] :
+                  html`<option value=${receipt.language} selected>Unknown language: ${receipt.language}</option>`
+                }
                 ${youtubeLanguages.map(({id, name}) => html`
                   <option value=${id} ?selected=${id === receipt.language}>${name}</option>
                 `)}
@@ -435,24 +462,24 @@ function renderPublishDialog(editor, language) {
           <legend>Receipt</legend>
           You need your receipt to edit or delete your captions.<br>
           You can save your receipt to a file, or to ${myReceiptsLink({html})}, which uses cookies to track your receipts.
-          <div @render=${onRender(function() { previewContainer = this; })}>${renderPreview(receipt)}</div>
+          ${renderPreview(receipt)}
           <br>
           Save receipt to:<br>
           <div class="publish-receipt-choice">
             <label>
-              <input type="radio" name="receipt" value="file-and-cookie" required>
+              <input type="radio" name="receipt" value="file-and-cookie" required ?checked=${receiptType === "file-and-cookie"} @change=${receiptTypeChange}>
               Both a receipt file and ${myReceiptsText({html})}
             </label>
           </div>
           <div class="publish-receipt-choice">
             <label>
-              <input type="radio" name="receipt" value="file" required>
+              <input type="radio" name="receipt" value="file" required ?checked=${receiptType === "file"} @change=${receiptTypeChange}>
               Only a receipt file
             </label>
           </div>
           <div class="publish-receipt-choice">
             <label>
-              <input type="radio" name="receipt" value="cookie" required>
+              <input type="radio" name="receipt" value="cookie" required ?checked=${receiptType === "cookie"} @change=${receiptTypeChange}>
               Only ${myReceiptsText({html})}
             </label>
           </div>
@@ -468,7 +495,7 @@ function renderPublishDialog(editor, language) {
       </form>
     </dialog>
   `;
-}
+});
 
 class TrackPicker {
   constructor() {
@@ -594,12 +621,6 @@ class TrackPicker {
 }
 const trackPicker = window.trackPicker = new TrackPicker();
 
-const youtubeLogo = html`
-  <svg viewBox="0 4 24 16" style="height: 1em; display: inline; vertical-align: text-bottom;">
-    <path fill="red" d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3-5.2 3z"></path>
-  </svg>
-`;
-
 // Render the page once:
 render(html`
   <style>
@@ -688,6 +709,7 @@ function getDefaultTrack(tracks) {
 
 (async function main() {
   let tracks = await listTracks(params.videoId);
+  window.tracks = tracks;
   let track = getDefaultTrack(tracks);
   let setCaptions = function setCaptions(editor, captions) {
     if (editor === null) {
