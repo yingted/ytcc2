@@ -140,15 +140,6 @@ export class YouTubeVideo {
   }
 
   /**
-   * Sets the current time.
-   * @param t {number} the video time in seconds
-   * @param allowSeekAhead {boolean} whether to request unbuffered video
-   */
-  seekTo(t, allowSeekAhead) {
-    this.player.seekTo(t, allowSeekAhead);
-  }
-
-  /**
    * Add a callback f.call(this, this.getCurrentTime()) for the update (per frame).
    * Duplicates are not added.
    */
@@ -172,9 +163,13 @@ export class YouTubeVideo {
     if (!this.ready) return 0;
     return this.player.getCurrentTime();
   }
+  /**
+   * Sets the current time.
+   * @param t {number} the video time in seconds
+   */
   seekTo(time) {
     if (!this.ready) return;
-    this.player.seekTo(time, true);
+    this.player.seekTo(time, /*allowSeekAhead=*/true);
   }
 
   _onReady(event) {

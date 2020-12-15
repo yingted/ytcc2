@@ -89,8 +89,8 @@ export default {
         { src: './node_modules/dialog-polyfill/dist/dialog-polyfill.css', dest: 'static/dialog-polyfill/' },
       ],
     }),
-    production && terser(), // minify, but only in production
-    production && execute('precompress static/main.bundle.js'),
+    production && terser(),
+    production ? execute('precompress static/main.bundle.js') : execute('rm -f static/main.bundle.js.{br,gz}'),
     !production && livereload({ delay: 200 }),  // livereload, only in dev
   ]
 };

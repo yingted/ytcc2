@@ -22,6 +22,7 @@ const app = express();
 app.use(expressStaticGzip('static', {
   enableBrotli: true,
   index: false,
+  orderPreference: ['br', 'gz'],
 }));
 
 app.get('/watch', (req, res) => {
