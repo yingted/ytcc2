@@ -18,7 +18,9 @@ import resolve from '@rollup/plugin-node-resolve';
 import {terser} from 'rollup-plugin-terser';
 import livereload from 'rollup-plugin-livereload';
 import commonjs from '@rollup/plugin-commonjs';
+import {babel} from '@rollup/plugin-babel';
 import copy from 'rollup-plugin-copy';
+import execute from 'rollup-plugin-execute';
 let {listLanguages} = require('./youtube_trusted.js');
 
 // `npm run build` -> `production` is true
@@ -66,14 +68,27 @@ export default {
   },
   plugins: [
     generateLanguages(),
-    resolve(), // tells Rollup how to find node_modules
+    resolve(),
     commonjs(),
+    babel({
+      babelHelpers: 'bundled',
+      presets: [
+        ['@babel/preset-env', {
+          targets: 'defaults',
+          exclude: ['transform-regenerator'],
+        }],
+      ],
+      plugins: [
+        '@babel/plugin-proposal-class-properties',
+      ],
+    }),
     copy({
       targets: [
         { src: './node_modules/dialog-polyfill/dist/dialog-polyfill.css', dest: 'static/dialog-polyfill/' },
       ],
     }),
     production && terser(), // minify, but only in production
+    production && execute('precompress static/main.bundle.js'),
     !production && livereload({ delay: 200 }),  // livereload, only in dev
   ]
 };

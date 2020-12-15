@@ -16,9 +16,13 @@
 
 const express = require('express');
 const { html, renderToStream } = require('@popeindustries/lit-html-server');
+const expressStaticGzip = require('express-static-gzip');
 
 const app = express();
-app.use(express.static('static'));
+app.use(expressStaticGzip('static', {
+  enableBrotli: true,
+  index: false,
+}));
 
 app.get('/watch', (req, res) => {
   let videoId = req.query.v;
