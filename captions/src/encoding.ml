@@ -18,7 +18,6 @@ type bytes = Js.TypedArray2.ArrayBuffer.t
 
 let decode: string -> bytes -> string = [%raw {|
   function decode(codec, buf) {
-    let {TextDecoder} = require('text-encoding');
     let decoder;
     try {
       decoder = new TextDecoder(codec);
@@ -30,7 +29,6 @@ let decode: string -> bytes -> string = [%raw {|
 |}]
 let encodeUtf8: string -> bytes = [%raw {|
   function encodeUtf8(s) {
-    let {TextEncoder} = require('text-encoding');
     return new TextEncoder().encode(s).buffer;
   }
 |}]

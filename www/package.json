@@ -5,14 +5,14 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "serve": "node index.js",
     "test": "mocha test/index.test.js --exit",
     "system-test": "NAME=Cloud test/runner.sh mocha test/system.test.js --timeout=30000",
     "lint": "eslint '**/*.js'",
     "fix": "eslint --fix '**/*.js'",
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "dev": "npm-run-all --parallel start watch"
+    "dev": "npm-run-all --parallel serve watch"
   },
   "author": "Google LLC",
   "license": "Apache-2.0",
@@ -34,7 +34,6 @@
   "devDependencies": {
     "@babel/core": "^7.12.10",
     "@babel/plugin-proposal-class-properties": "^7.12.1",
-    "@babel/plugin-transform-runtime": "^7.12.10",
     "@babel/preset-env": "^7.12.10",
     "@rollup/plugin-babel": "^5.2.1",
     "@rollup/plugin-commonjs": "^16.0.0",

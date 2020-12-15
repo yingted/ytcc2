@@ -72,9 +72,11 @@ export default {
     commonjs(),
     babel({
       babelHelpers: 'bundled',
+      exclude: [/node_modules/],
       presets: [
         ['@babel/preset-env', {
-          targets: 'defaults',
+          // IE11 already doesn't work with a bunch of stuff, so let's just remove it
+          targets: 'defaults, not ie 11',
           exclude: ['transform-regenerator'],
         }],
       ],

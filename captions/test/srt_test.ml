@@ -17,6 +17,11 @@
 open Jest
 open Expect
 
+[%%raw {|
+global.TextEncoder = require('util').TextEncoder;
+global.TextDecoder = require('util').TextDecoder;
+|}]
+
 let listFiles: string -> string Js.Array.t = [%raw {|
   function (pattern) {
     let files = require('glob').sync(pattern);
