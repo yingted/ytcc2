@@ -1,3 +1,7 @@
-- review/diff page
 - receipts: /receipts
 - publish: /publish
+- report abuse
+- virality prompt/rate limit:
+  "These captions are getting popular. They're not associated with the creator."
+  "Publish your captions for free in minutes."
+- review/diff page
