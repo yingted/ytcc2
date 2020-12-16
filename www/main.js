@@ -28,6 +28,8 @@ import {youtubeLanguages} from './gen/youtube_languages.js';
 import {renderBrowser} from './preview_browser.js';
 import {myReceiptsText, myReceiptsLink, renderFileReceipt, renderCookieReceipts} from './receipt.js';
 import {AsyncRef, Signal} from './util.js';
+import {sign} from 'tweetnacl/nacl.js';
+import {script} from './script_web.js';
 
 // Browser workarounds:
 // Remove noscript:
@@ -300,10 +302,9 @@ const editorView = editor.map(function renderEditorAndToolbar({editor, language}
         <button @click=${function(e) {
           let dialog = this.parentElement.querySelector('dialog');
           publish.value = Object.assign({}, publish.value, {
+            initialized: true,
             language: language ?? 'en',
-            // TODO generate this
-            password: '############',
-            srtBase64: arrayBufferToBase64(editor.getNormalizedSrtCaptions()),
+            srtBase64: uint8ArrayToBase64(new Uint8Array(editor.getNormalizedSrtCaptions())),
           });
           dialog.showModal();
         }}><span class="publish-icon"></span>Publish</button>
@@ -314,12 +315,8 @@ const editorView = editor.map(function renderEditorAndToolbar({editor, language}
 });
 
 // Publish:
-function arrayBufferToBase64(buffer) {
-  let latin1 = [];
-  for (let c of new Uint8Array(buffer)) {
-    latin1.push(String.fromCharCode(c));
-  }
-  return window.btoa(latin1.join(''));
+function uint8ArrayToBase64(buffer) {
+  return window.btoa(String.fromCharCode.apply(String, buffer));
 }
 
 function renderPreview(receipt) {
@@ -332,7 +329,7 @@ function renderPreview(receipt) {
         </figcaption>
         ${renderBrowser({html}, {
           url: `file:///receipt-${params.videoId}.html`,
-          doc: renderFileReceipt({html}, receipt),
+          doc: renderFileReceipt({html, script}, receipt),
         })}
       </figure>
     </details>
@@ -345,7 +342,7 @@ function renderPreview(receipt) {
         </figcaption>
         ${renderBrowser({html}, {
           url: `${location.origin}/receipts`,
-          doc: renderCookieReceipts({html}, [receipt]),
+          doc: renderCookieReceipts({html, script}, [receipt]),
         })}
       </figure>
     </details>
@@ -353,22 +350,34 @@ function renderPreview(receipt) {
 }
 
 const publish = window.publish = new AsyncRef({
+  initialized: false,
   /** @type {string} */
   language: 'en',
-  /** @type {string} */
-  password: '',
   /** @type {string|null} */
   receiptType: null,
   /** @type {string} */
   srtBase64: '',
 });
+let publishKeys = null;
 const publishView = publish.map(value => {
-  let {language, password, receiptType, srtBase64} = value;
+  let {initialized, language, receiptType, srtBase64} = value;
+
+  // Lazy init the receipt preview:
+  let publicKeyBase64 = '';
+  let secretKeyBase64 = '';
+  if (initialized && publishKeys === null) {
+    publishKeys = sign.keyPair();
+  }
+  if (publishKeys !== null) {
+    publicKeyBase64 = uint8ArrayToBase64(publishKeys.publicKey);
+    secretKeyBase64 = uint8ArrayToBase64(publishKeys.secretKey);
+  }
+
   let receipt = {
     videoId: params.videoId,
     language,
     captionId: 'preview',
-    password,
+    secretKeyBase64,
   };
   let receiptTypeChange = function receiptTypeChange(e) {
     publish.value = Object.assign({}, value, {
@@ -394,6 +403,7 @@ const publishView = publish.map(value => {
       }} class="publish-form">
         <input name="videoId" type="hidden" value=${params.videoId}>
         <input name="srtBase64" type="hidden" value=${srtBase64}>
+        <input name="publicKeyBase64" type="hidden" value=${publicKeyBase64}>
         <style>
           .publish-input-group {
             padding: 0.2em 0;
@@ -462,7 +472,7 @@ const publishView = publish.map(value => {
           <legend>Receipt</legend>
           You need your receipt to edit or delete your captions.<br>
           You can save your receipt to a file, or to ${myReceiptsLink({html})}, which uses cookies to track your receipts.
-          ${renderPreview(receipt)}
+          ${initialized ? renderPreview(receipt) : []}
           <br>
           Save receipt to:<br>
           <div class="publish-receipt-choice">

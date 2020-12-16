@@ -15,7 +15,7 @@
  */
 
 const express = require('express');
-const { html, renderToStream } = require('@popeindustries/lit-html-server');
+const {html, renderToStream} = require('@popeindustries/lit-html-server');
 const expressStaticGzip = require('express-static-gzip');
 const db = require('./db');
 
@@ -56,7 +56,7 @@ app.use(express.urlencoded({
   extended: true,
 }))
 app.post('/publish', (req, res) => {
-  let {videoId, srtBase64, language, receipt} = req.body;
+  let {videoId, srtBase64, publicKeyBase64, language, receipt} = req.body;
   /** @type {ArrayBuffer} */
   let srt = new Uint8Array(Buffer.from(srtBase64, 'base64')).buffer;
   // TODO
@@ -66,6 +66,7 @@ videoId: ${videoId}
 srt: ${srt.byteLength} bytes
 language: ${language}
 receipt: ${receipt}
+publicKeyBase64: ${publicKeyBase64}
 `);
 });
 
