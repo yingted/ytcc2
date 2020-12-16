@@ -1,3 +1,4 @@
 {
-  "google_api_key": "AIzaSyB0B_pl4rt1CFhSdtZFSrVBYjh9UL3zYv4"
+  "google_api_key": "AIzaSyB0B_pl4rt1CFhSdtZFSrVBYjh9UL3zYv4",
+  "postgres_connection_string": "postgresql://my-user:my-password@127.0.0.1/my-database"
 }

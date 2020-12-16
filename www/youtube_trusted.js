@@ -22,8 +22,7 @@
  * > languages = await youtube.i18nLanguages.list({part: ['snippet']})
  */
 
-let fs = require('fs');
-const config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
+let config = require('./config_trusted');
 var {google} = require('googleapis');
 
 /**

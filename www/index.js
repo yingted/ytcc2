@@ -17,6 +17,7 @@
 const express = require('express');
 const { html, renderToStream } = require('@popeindustries/lit-html-server');
 const expressStaticGzip = require('express-static-gzip');
+const db = require('./db');
 
 const app = express();
 app.use(expressStaticGzip('static', {
@@ -68,7 +69,11 @@ receipt: ${receipt}
 `);
 });
 
-const port = process.env.PORT || 8080;
-app.listen(port, () => {
-  console.log(`listening on port ${port}`);
-});
+(async function() {
+  await db.init();
+
+  const port = process.env.PORT || 8080;
+  app.listen(port, () => {
+    console.log(`listening on port ${port}`);
+  });
+})();
