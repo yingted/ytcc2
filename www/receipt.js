@@ -1,4 +1,5 @@
 import {receiptEmbeddedJavascript} from './gen/receipt_embedded_javascript.js';
+import {deleteReceipt} from './cookies.js';
 
 export function myReceiptsText({html}) {
   return html`<style>.receipt-icon::before { content: "🧾"; }</style><span class="receipt-icon"></span>My receipts`;
@@ -19,6 +20,13 @@ export function myReceiptsLink({html}) {
  * @returns {{title: string, body: TemplateResult}}
  */
 function renderReceipt({html, script}, {videoId, language, captionId, secretKeyBase64, isFile}) {
+  let receipt = {videoId, language, captionId, secretKeyBase64, isFile};
+  let blobUrl = '';
+  if (!isFile) {
+    let file = renderReceipt({html, script}, {videoId, language, captionId, secretKeyBase64, isFile: true});
+    // TODO: release
+    blobUrl = URL.createObjectURL(new Blob([file]));
+  }
   return html`
     <style>
       .edit-icon::before {
@@ -37,7 +45,7 @@ function renderReceipt({html, script}, {videoId, language, captionId, secretKeyB
         content: "🧾";
       }
     </style>
-    <form>
+    <form onsubmit="event.preventDefault()">
       Thanks for publishing captions.<br>
       This is your receipt.<br>
       You need it to edit or delete your captions.
@@ -45,10 +53,11 @@ function renderReceipt({html, script}, {videoId, language, captionId, secretKeyB
       <fieldset>
         <legend>Submission information</legend>
 
+        <div><label>Origin: <input name="origin" value=${location.origin} disabled></label></div>
         <div><label>Video ID: <input name="v" value=${videoId} disabled></label></div>
         <div><label>Language: <input name="lang" value=${language} disabled></label></div>
         <div><label>Caption ID: <input name="id" value=${captionId} disabled></label></div>
-        <div><label>Tracking number: <input name="secretKeyBase64" value=${secretKeyBase64} disabled></label></div>
+        <div><label>Password: <input name="secretKeyBase64" type="password" value=${secretKeyBase64} disabled></label></div>
       </fieldset>
 
       <fieldset>
@@ -56,21 +65,20 @@ function renderReceipt({html, script}, {videoId, language, captionId, secretKeyB
 
         <div>
           Captions:
-          <!-- TODO: replace these with links or buttons that work -->
-          <a href="#" onclick="event.preventDefault()"><span class="view-icon"></span>View</a>
-          <a href="#" onclick="event.preventDefault()"><span class="edit-icon"></span>Edit</a>
-          <a href="#" onclick="event.preventDefault()"><span class="delete-icon"></span>Delete</a>
+          <a href="${location.origin}/watch?v=${videoId}&id=${captionId}"><span class="view-icon"></span>View</a>
+          <a class="receipt-captions-edit-link" href="javascript:"><span class="edit-icon"></span>Edit</a>
+          <a class="receipt-captions-delete-link" href="javascript:"><span class="delete-icon"></span>Delete</a>
         </div>
 
         <div>
           Receipt:
           ${isFile ?
               html`
-                <a href="#" onclick="event.preventDefault()"</a>
+                <a class="receipt-cookie-import-link" href="javascript:">Add to ${myReceiptsText({html})}</a>
               ` :
               html`
-                <a href="#" onclick="event.preventDefault()"><span class="download-icon"></span>Download</a>
-                <a href="#" onclick="event.preventDefault()"><span class="delete-icon"></span><span class="receipt-icon"></span>Delete</a>
+                <a class="receipt-cookie-export-link" href=${blobUrl} download="receipt-${videoId}.html"><span class="download-icon"></span>Download</a>
+                <a class="receipt-cookie-delete-link" href="javascript:" @click=${e => deleteReceipt(receipt)}><span class="delete-icon"></span><span class="receipt-icon"></span>Delete</a>
               `}
         </div>
       </fieldset>

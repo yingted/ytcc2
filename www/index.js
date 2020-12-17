@@ -35,9 +35,10 @@ app.get('/watch', (req, res) => {
     <!DOCTYPE html>
     <html lang="en">
       <head>
-        <meta charset="UTF-8" />
-        <title>View captions</title>
+        <meta charset="UTF-8">
+        <meta name="referrer" content="no-referrer">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>View captions</title>
         <link rel="stylesheet" type="text/css" href="/dialog-polyfill/dialog-polyfill.css" />
       </head>
       <body style="margin: 0 auto; max-width: 640px;">

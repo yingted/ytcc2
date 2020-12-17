@@ -77,6 +77,8 @@ export function renderDocument({html}, {body, title}) {
   return html`
   <html>
     <head>
+      <meta charset="UTF-8">
+      <meta name="referrer" content="no-referrer">
       <title>${title}</title>
     </head>
     <body>

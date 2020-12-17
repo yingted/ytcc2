@@ -28,7 +28,7 @@ import {youtubeLanguages} from './gen/youtube_languages.js';
 import {renderBrowser} from './preview_browser.js';
 import {myReceiptsText, myReceiptsLink, renderFileReceipt, renderCookieReceipts} from './receipt.js';
 import {AsyncRef, Signal} from './util.js';
-import {sign} from 'tweetnacl/nacl.js';
+import {sign_keyPair} from 'tweetnacl-ts';
 import {script} from './script_web.js';
 
 // Browser workarounds:
@@ -366,7 +366,7 @@ const publishView = publish.map(value => {
   let publicKeyBase64 = '';
   let secretKeyBase64 = '';
   if (initialized && publishKeys === null) {
-    publishKeys = sign.keyPair();
+    publishKeys = sign_keyPair();
   }
   if (publishKeys !== null) {
     publicKeyBase64 = uint8ArrayToBase64(publishKeys.publicKey);
@@ -396,7 +396,8 @@ const publishView = publish.map(value => {
       Making the video private or deleting it won't take your captions down.<br>
       <br>
       To publish on ${youtubeLogo} YouTube instead, <span class="save-icon"></span>Save and upload the captions to
-      <a href="https://studio.youtube.com/video/${params.videoId}/translations" aria-label="YouTube Studio">${youtubeLogo} Studio</a>.
+      <a href="https://studio.youtube.com/video/${params.videoId}/translations"
+          aria-label="YouTube Studio">${youtubeLogo} Studio</a>.
 
       <form action="/publish" method="post" @submit=${function(e) {
         this.closest('dialog').close();

@@ -82,7 +82,9 @@ export default [{
     },
   },
   plugins: [
-    resolve(),
+    resolve({
+      browser: true,
+    }),
     commonjs(),
     babel({
       babelHelpers: 'bundled',
@@ -113,7 +115,9 @@ export default [{
   plugins: [
     generateLanguages(),
     generateReceiptEmbedded(),
-    resolve(),
+    resolve({
+      browser: true,
+    }),
     commonjs(),
     babel({
       babelHelpers: 'bundled',
