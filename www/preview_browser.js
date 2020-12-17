@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import {html as litHtml, render} from 'lit-html';
 
 /**
  * Render a preview browser.
@@ -73,17 +74,28 @@ export function renderBrowser({html}, {url, doc: {body, title}}) {
  * @param {string|undefined} title the title
  * @returns {TemplateResult} the HTML document
  */
-export function renderDocument({html}, {body, title}) {
-  return html`
+export function renderDocumentString({html}, {body, title}) {
+  // TODO: get rid of this hack
+  console.assert(html === litHtml);
+  let doc = new DOMParser().parseFromString(`
   <html>
     <head>
       <meta charset="UTF-8">
       <meta name="referrer" content="no-referrer">
-      <title>${title}</title>
+      <title></title>
     </head>
-    <body>
-      ${body}
-    </body>
+    <body></body>
   </html>
-  `;
+  `, 'text/html');
+  render(title, doc.querySelector('title'));
+  render(body, doc.querySelector('body'));
+  let clean = function clean(elt) {
+    if (elt.nodeType === Node.COMMENT_NODE) {
+      elt.remove();
+      return;
+    }
+    Array.from(elt.childNodes).forEach(clean);
+  };
+  clean(doc.documentElement);
+  return doc.documentElement.outerHTML;
 }

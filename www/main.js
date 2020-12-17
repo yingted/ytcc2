@@ -30,6 +30,7 @@ import {myReceiptsText, myReceiptsLink, renderFileReceipt, renderCookieReceipts}
 import {AsyncRef, Signal} from './util.js';
 import {sign_keyPair} from 'tweetnacl-ts';
 import {script} from './script_web.js';
+import {ObjectUrl} from './object_url.js';
 
 // Browser workarounds:
 // Remove noscript:
@@ -53,29 +54,6 @@ const video = new YouTubeVideo(params.videoId);
 window.video = video;
 
 // Save as model/view:
-class ObjectUrl {
-  constructor() {
-    this._keySingleton = new WeakSet();
-    this._url = null;
-  }
-  create(key, makeBlob) {
-    // Dedupe calls:
-    if (this._keySingleton.has(key)) {
-      return this._url;
-    }
-
-    // Free the previous URL:
-    this._keySingleton = new WeakSet();
-    if (this._url !== null) {
-      URL.revokeObjectURL(this._url);
-    }
-
-    // Make a new URL:
-    this._keySingleton.add(key);
-    this._url = URL.createObjectURL(makeBlob());
-    return this._url;
-  }
-}
 const srtUrl = new ObjectUrl();
 const srv3Url = new ObjectUrl();
 const BaseNameState = Object.freeze({
@@ -319,6 +297,7 @@ function uint8ArrayToBase64(buffer) {
   return window.btoa(String.fromCharCode.apply(String, buffer));
 }
 
+const previewObjectUrl = new ObjectUrl();
 function renderPreview(receipt) {
   return html`
     <details>
@@ -342,7 +321,7 @@ function renderPreview(receipt) {
         </figcaption>
         ${renderBrowser({html}, {
           url: `${location.origin}/receipts`,
-          doc: renderCookieReceipts({html, script}, [receipt]),
+          doc: renderCookieReceipts({html, script}, [receipt], previewObjectUrl),
         })}
       </figure>
     </details>

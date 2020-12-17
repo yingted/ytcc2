@@ -1,4 +1,5 @@
 import {receiptEmbeddedJavascript} from './gen/receipt_embedded_javascript.js';
+import {renderDocumentString} from './preview_browser.js';
 import {deleteReceipt} from './cookies.js';
 
 export function myReceiptsText({html}) {
@@ -17,15 +18,20 @@ export function myReceiptsLink({html}) {
  * @param {string} captionId
  * @param {string} secretKeyBase64
  * @param {boolean} isFile
+ * @param {ObjectUrl} objectUrl
  * @returns {{title: string, body: TemplateResult}}
  */
-function renderReceipt({html, script}, {videoId, language, captionId, secretKeyBase64, isFile}) {
+function renderReceipt({html, script}, {videoId, language, captionId, secretKeyBase64, isFile, objectUrl}) {
   let receipt = {videoId, language, captionId, secretKeyBase64, isFile};
   let blobUrl = '';
   if (!isFile) {
-    let file = renderReceipt({html, script}, {videoId, language, captionId, secretKeyBase64, isFile: true});
-    // TODO: release
-    blobUrl = URL.createObjectURL(new Blob([file]));
+    let file =
+      renderDocumentString(
+        {html},
+        renderFileReceipt(
+          {html, script},
+          {videoId, language, captionId, secretKeyBase64}));
+    blobUrl = objectUrl.create({}, () => new Blob([file]));
   }
   return html`
     <style>
@@ -108,7 +114,7 @@ export function renderFileReceipt({html, script}, {videoId, language, captionId,
   };
 }
 
-export function renderCookieReceipts({html, script}, receipts) {
+export function renderCookieReceipts({html, script}, receipts, objectUrl) {
   return {
     title: `My receipts`,
     body: html`
@@ -121,6 +127,7 @@ export function renderCookieReceipts({html, script}, receipts) {
             captionId,
             secretKeyBase64,
             isFile: false,
+            objectUrl,
           }))}
       </div>
     `,

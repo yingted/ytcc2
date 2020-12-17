@@ -75,10 +75,12 @@ form.querySelector('.receipt-captions-delete-link')
 
 let cookieImport = form.querySelector('.receipt-cookie-import-link');
 if (cookieImport !== null) {
-  cookieImport.addEventListener('click', () => postNavigate('/add_receipt#' + Array.from(form.elements)
-    .map(({name, value}) => [name, value])
-    .sort(([k1, v1], [k2, v2]) => (k1 > k2) - (k1 < k2))
-    .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v))
+  cookieImport.addEventListener('click', () => postNavigate(form.elements.origin.value + '/add_receipt#' + [
+    ['v', form.elements.v.value],
+    ['lang', form.elements.lang.value],
+    ['id', form.elements.id.value],
+    ['secretKeyBase64', form.elements.secretKeyBase64.value],
+  ].map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v))
     .join('&')));
 }
 
