@@ -140,6 +140,8 @@ export default [{
     }),
     production && terser(),
     production ? execute('precompress static/main.bundle.js') : execute('rm -f static/main.bundle.js.{br,gz}'),
-    !production && livereload({ delay: 200 }),  // livereload, only in dev
+    !production && livereload({
+      watch: 'static/main.bundle.js',
+    }),
   ]
 }];
