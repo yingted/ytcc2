@@ -81,6 +81,14 @@ function renderReceipt({html, script}, {videoId, language, captionId, secretKeyB
                 <a class="receipt-cookie-delete-link" href="javascript:" @click=${e => deleteReceipt(receipt)}><span class="delete-icon"></span><span class="receipt-icon"></span>Delete</a>
               `}
         </div>
+
+        <div>
+          <label>
+            Show your receipt to a website (advanced):<br>
+            <input type="url" name="target" value="${location.origin}/find_receipt">
+          </label>
+          <button class="receipt-show-button" type="button">Show receipt</button>
+        </div>
       </fieldset>
       ${script(receiptEmbeddedJavascript)}
     </form>

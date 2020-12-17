@@ -10,6 +10,10 @@ function uint8ArrayToString(data) {
 }
 let secretKey = stringToUint8Array(atob(form.querySelector('input[name=secretKeyBase64]').value));
 
+/**
+ * Send an HTTP POST to this URL.
+ * Also include form params.
+ */
 function postNavigate(url, params = {}) {
   let form = document.createElement('form');
   form.style.display = 'none';
@@ -19,7 +23,10 @@ function postNavigate(url, params = {}) {
     let input = document.createElement('input');
     input.name = k;
     input.value = v;
+    form.appendChild(input);
   }
+
+  document.body.appendChild(form);
   form.submit();
 }
 
@@ -30,20 +37,15 @@ function postNavigate(url, params = {}) {
  *
  * First, POST without any parameters to get a challenge.
  * Then, POST with _signatureBase64 with a redirect.
- * @param {string} path the target, like '/edit'
+ * @param {string} url the target, like 'http://localhost:8080/edit'
  * @param {Object.<string, string>} params the args, like {v: '...'}
  */
-async function captionsEdit(path, params) {
-  let url = form.elements.origin + path;
-
+async function showReceiptAndNavigate(url, params) {
   // Ask the server for a challenge:
   let challenge = await (await fetch(url, {
     method: 'POST',
     cache: 'no-cache',
     referrerPolicy: 'no-referrer',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: '',
   })).json();
   let nonce = challenge.nonce + '';
@@ -60,20 +62,25 @@ async function captionsEdit(path, params) {
 }
 
 form.querySelector('.receipt-captions-edit-link')
-  .addEventListener('click', () => captionsEdit('/edit', {
-    v: form.elements.v,
-    id: form.elements.id,
+  .addEventListener('click', () => showReceiptAndNavigate(form.elements.origin.value + '/edit', {
+    v: form.elements.v.value,
+    id: form.elements.id.value,
   }));
+
 form.querySelector('.receipt-captions-delete-link')
-  .addEventListener('click', () => captionsEdit('/delete', {
-    v: form.elements.v,
-    id: form.elements.id,
+  .addEventListener('click', () => showReceiptAndNavigate(form.elements.origin.value + '/delete', {
+    v: form.elements.v.value,
+    id: form.elements.id.value,
   }));
+
 let cookieImport = form.querySelector('.receipt-cookie-import-link');
 if (cookieImport !== null) {
   cookieImport.addEventListener('click', () => postNavigate('/add_receipt#' + Array.from(form.elements)
-    .map(item => [item.name, item.value])
+    .map(({name, value}) => [name, value])
     .sort(([k1, v1], [k2, v2]) => (k1 > k2) - (k1 < k2))
     .map(([k, v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v))
     .join('&')));
 }
+
+form.querySelector('.receipt-show-button')
+  .addEventListener('click', () => showReceiptAndNavigate(form.elements.target.value, {}));
