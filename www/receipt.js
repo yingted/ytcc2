@@ -26,9 +26,10 @@ export function renderFileReceiptString({html, script}, {videoId, language, capt
  * @param {string} secretKeyBase64
  * @param {string} type 'cookie', 'file', or 'combined'
  * @param {ObjectUrl} objectUrl
+ * @param {function|undefined} update function to call on receipt change
  * @returns {{title: string, body: TemplateResult}}
  */
-function renderReceipt({html, script}, {videoId, language, captionsId, secretKeyBase64, type, objectUrl}) {
+function renderReceipt({html, script}, {videoId, language, captionsId, secretKeyBase64, type, objectUrl, update}) {
   let receipt = {videoId, language, captionsId, secretKeyBase64, type};
   let blobUrl = '';
   if (type === 'cookie' || type === 'combined') {
@@ -87,7 +88,10 @@ function renderReceipt({html, script}, {videoId, language, captionsId, secretKey
           ${type === 'cookie' || type === 'combined' ?
               html`
                 <a href=${blobUrl} download="receipt-${videoId}.html"><span class="download-icon"></span>Download</a>
-                <button type="button" @click=${e => deleteCookie(receipt)}><span class="delete-icon"></span><span class="receipt-icon"></span>Delete</button>
+                <button type="button" @click=${e => {
+                  deleteCookie(receipt);
+                  update && update();
+                }}><span class="delete-icon"></span><span class="receipt-icon"></span>Delete</button>
               ` : []}
         </div>
 
@@ -117,21 +121,38 @@ export function renderFileReceipt({html, script}, {videoId, language, captionsId
   };
 }
 
-export function renderCookieReceipts({html, script}, receipts, objectUrl) {
+export function renderCookieReceipts({html, script}, receipts, objectUrls, update) {
   return {
     title: `My receipts`,
     body: html`
-      Your receipts:<br>
+      <style>
+        h1 {
+          font-size: 1.5em;
+          padding: 0;
+          margin: 0;
+        }
+        h1 select {
+          height: var(--touch-target-size);
+        }
+      </style>
+      <h1>My receipts:</h1>
       <div style="border: 1px solid black;">
-        ${receipts.map(({videoId, language, captionsId, secretKeyBase64}) =>
+        ${receipts.map(({videoId, language, captionsId, secretKeyBase64}, i) =>
           renderReceipt({html, script}, {
             videoId,
             language,
             captionsId,
             secretKeyBase64,
             type: 'cookie',
-            objectUrl,
+            objectUrl: objectUrls[i],
+            update,
           }))}
+        ${receipts.length === 0 ?
+          html`
+            No receipts.<br>
+            You can add a receipt from a file in the Actions section of the file.<br>
+            Never upload your receipt to a website you don't trust.
+          ` : []}
       </div>
     `,
   };
@@ -164,6 +185,26 @@ export function addCookie(receipt) {
 }
 
 export function deleteCookie(receipt) {
-  localStorage.deleteItem(
+  localStorage.removeItem(
     receiptKey(receipt.videoId, receipt.captionsId));
+}
+
+export function allCookies() {
+  let receipts = [];
+  for (let [k, v] of Object.entries(localStorage)) {
+    try {
+      let usp = new URLSearchParams(k);
+      if (usp.get('type') === 'receipt') {
+        let receipt;
+        try {
+          receipt = JSON.parse(v);
+        } catch (e) {
+          console.warn('unrecognized receipt', v);
+        }
+        receipts.push(receipt);
+      }
+    } catch (e) {
+    }
+  }
+  return receipts;
 }

@@ -321,7 +321,7 @@ function renderPreview(receipt) {
         </figcaption>
         ${renderBrowser({html}, {
           url: `${location.origin}/receipts`,
-          doc: renderCookieReceipts({html, script}, [receipt], previewObjectUrl),
+          doc: renderCookieReceipts({html, script}, [receipt], [previewObjectUrl]),
         })}
       </figure>
     </details>

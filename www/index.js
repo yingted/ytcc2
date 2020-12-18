@@ -132,6 +132,24 @@ app.post('/publish', upload.none(), asyncHandler(async (req, res) => {
   res.json({captionsId});
 }));
 
+app.get('/receipts', (req, res) => {
+  renderToStream(html`
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="referrer" content="no-referrer">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>My receipts</title>
+      </head>
+      <body style="margin: 0 auto; max-width: 640px;">
+        <noscript>You need JavaScript to view this page.</noscript>
+        <script src="/my_receipts.bundle.js"></script>
+      </body>
+    </html>
+  `).pipe(res);
+});
+
 (async function() {
   try {
     await db.init();

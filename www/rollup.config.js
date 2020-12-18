@@ -106,7 +106,7 @@ export default [{
   input: 'main.js',
   output: {
     file: 'static/main.bundle.js',
-    format: 'iife', // immediately-invoked function expression — suitable for <script> tags
+    format: 'iife',
     sourcemap: true,
     globals: {
       crypto: 'undefined',
@@ -142,6 +142,46 @@ export default [{
     production ? execute('precompress static/main.bundle.js') : execute('rm -f static/main.bundle.js.{br,gz}'),
     !production && livereload({
       watch: 'static/main.bundle.js',
+    }),
+  ]
+}, {
+  input: 'my_receipts.js',
+  output: {
+    file: 'static/my_receipts.bundle.js',
+    format: 'iife',
+    sourcemap: true,
+    globals: {
+      crypto: 'undefined',
+    },
+  },
+  plugins: [
+    resolve({
+      browser: true,
+    }),
+    commonjs(),
+    babel({
+      babelHelpers: 'bundled',
+      exclude: [/node_modules/],
+      presets: [
+        ['@babel/preset-env', {
+          // IE11 already doesn't work with a bunch of stuff, so let's just remove it
+          targets: 'defaults, not ie 11',
+          exclude: ['transform-regenerator'],
+        }],
+      ],
+      plugins: [
+        '@babel/plugin-proposal-class-properties',
+      ],
+    }),
+    copy({
+      targets: [
+        { src: './node_modules/dialog-polyfill/dist/dialog-polyfill.css', dest: 'static/dialog-polyfill/' },
+      ],
+    }),
+    production && terser(),
+    production ? execute('precompress static/my_receipts.bundle.js') : execute('rm -f static/my_receipts.bundle.js.{br,gz}'),
+    !production && livereload({
+      watch: 'static/my_receipts.bundle.js',
     }),
   ]
 }];
