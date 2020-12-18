@@ -26,7 +26,7 @@ import {onRender} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
 import {youtubeLanguages} from './gen/youtube_languages.js';
 import {renderBrowser} from './preview_browser.js';
-import {myReceiptsText, myReceiptsLink, renderFileReceipt, renderCookieReceipts} from './receipt.js';
+import {myReceiptsText, myReceiptsLink, renderFileReceipt, renderCookieReceipts, addCookie, renderFileReceiptString} from './receipt.js';
 import {AsyncRef, Signal} from './util.js';
 import {sign_keyPair} from 'tweetnacl-ts';
 import {script} from './script_web.js';
@@ -338,6 +338,7 @@ const publish = window.publish = new AsyncRef({
   srtBase64: '',
 });
 let publishKeys = null;
+let published = false;
 const publishView = publish.map(value => {
   let {initialized, language, receiptType, srtBase64} = value;
 
@@ -353,9 +354,10 @@ const publishView = publish.map(value => {
   }
 
   let receipt = {
+    origin: location.origin,
     videoId: params.videoId,
     language,
-    captionId: 'preview',
+    captionsId: 'preview',
     secretKeyBase64,
   };
   let receiptTypeChange = function receiptTypeChange(e) {
@@ -378,7 +380,48 @@ const publishView = publish.map(value => {
       <a href="https://studio.youtube.com/video/${params.videoId}/translations"
           aria-label="YouTube Studio">${youtubeLogo} Studio</a>.
 
-      <form action="/publish" method="post" @submit=${function(e) {
+      <form action="/publish" method="post" @submit=${async function(e) {
+        // Actual submission is done in JavaScript:
+        e.preventDefault();
+        if (published) return;
+        this.querySelectorAll('button[type=submit]').forEach(b => b.disabled = true);
+        published = true;
+        publishKeys = null;
+
+        let data = new FormData(this);
+        let receiptType = data.get('receipt');
+        data.delete('receipt');
+        let {captionsId} = await (await fetch(this.action, {
+          method: this.method,
+          body: data,
+        })).json();
+        let finalReceipt = Object.assign({}, {
+          origin: location.origin,
+          videoId: data.get('videoId'),
+          language: data.get('language'),
+          captionsId,
+          secretKeyBase64,
+        });
+
+        if (receiptType === 'cookie' || receiptType === 'file-and-cookie') {
+          addCookie(finalReceipt);
+        }
+
+        if (receiptType === 'file' || receiptType === 'file-and-cookie') {
+          // Download the file:
+          let receiptString =
+            renderFileReceiptString({html, script}, finalReceipt);
+          let a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = URL.createObjectURL(new Blob([receiptString]));
+          a.download = `receipt-${finalReceipt.videoId}.html`;
+          document.body.appendChild(a);
+          a.click();
+        }
+
+        // Redirect (to avoid reusing things like key material):
+        window.location.href = `/watch?v=${params.videoId}&id=${captionsId}`;
+
         this.closest('dialog').close();
       }} class="publish-form">
         <input name="videoId" type="hidden" value=${params.videoId}>

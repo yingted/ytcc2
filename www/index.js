@@ -19,6 +19,10 @@ const {html, renderToStream} = require('@popeindustries/lit-html-server');
 const expressStaticGzip = require('express-static-gzip');
 const {decodeSrt, normalizeSrt, encodeSrt} = require('ytcc2-captions');
 const db = require('./db');
+const config = require('./config');
+const crypto = require('crypto');
+const multer  = require('multer');
+const upload = multer();
 
 if (['production', 'development', undefined].indexOf(process.env.NODE_ENV) === -1) {
   throw new Error('Expected NODE_ENV=production or NODE_ENV=development (default), got ' + process.env.NODE_ENV);
@@ -70,7 +74,6 @@ app.use(express.urlencoded({
  * @throws if it can't be parsed
  */
 function srtBase64ToSrt(srtBase64) {
-  debugger;
   try {
     let srt = Buffer.from(srtBase64, 'base64').toString('utf8');
     let captions = decodeSrt(srt);
@@ -83,22 +86,60 @@ function srtBase64ToSrt(srtBase64) {
     throw new Error('could not parse SRT');
   }
 }
-app.post('/publish', (req, res) => {
-  let {videoId, srtBase64, publicKeyBase64, language, receipt} = req.body;
+let base52 = (function() {
+  let chars = '';
+  for (let i = 0; i < 256; ++i) {
+    let c = String.fromCharCode(i);
+    // Remove vowels to avoid offensive strings:
+    if (/[0-9a-z]/i.test(c) && !/[aeiou]/i.test(c)) {
+      chars += c;
+    }
+  }
+  return chars;
+})();
+function secureRandomId() {
+  let x = 0n;
+  for (let c of crypto.randomBytes(128 / 8)) {
+    x = x * 256n + BigInt(c);
+  }
+  let id = [];
+  const base = BigInt(base52.length);
+  while (x !== 0n) {
+    id.push(base52[(x % base).valueOf()]);
+    x = x / base;
+  }
+  return id.reverse().join('');
+}
+function asyncHandler(handler) {
+  return (req, res) => {
+    handler(req, res).catch(e => {
+      console.error('error', e);
+      res.sendStatus(500);
+    });
+  }
+}
+app.post('/publish', upload.none(), asyncHandler(async (req, res) => {
+  let {videoId, srtBase64, publicKeyBase64, language} = req.body;
   let srt = srtBase64ToSrt(srtBase64);
-  // TODO
-  res.set({'content-type': 'text/plain'}).send(
-`Submission received:
-videoId: ${videoId}
-srt: ${srt.length} bytes
-language: ${language}
-receipt: ${receipt}
-publicKeyBase64: ${publicKeyBase64}
-`);
-});
+
+  let captionsId = secureRandomId();
+
+  await db.query(`
+    INSERT INTO captions(video_id, captions_id, srt, language, public_key_base64)
+      VALUES($1, $2, $3, $4, $5)`,
+    [videoId, captionsId, srt, language, publicKeyBase64]);
+
+  res.json({captionsId});
+}));
 
 (async function() {
-  await db.init();
+  try {
+    await db.init();
+    await db.updateSchema();
+  } catch (e) {
+    console.error('error initializing database', e);
+    process.exit(1);
+  }
 
   const port = process.env.PORT || 8080;
   app.listen(port, () => {

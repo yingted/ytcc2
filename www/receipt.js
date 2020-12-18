@@ -1,6 +1,5 @@
 import {receiptEmbeddedJavascript} from './gen/receipt_embedded_javascript.js';
 import {renderDocumentString} from './preview_browser.js';
-import {deleteReceipt} from './cookies.js';
 
 export function myReceiptsText({html}) {
   return html`<style>.receipt-icon::before { content: "🧾"; }</style><span class="receipt-icon"></span>My receipts`;
@@ -9,28 +8,31 @@ export function myReceiptsLink({html}) {
   return html`<a href="/receipts">${myReceiptsText({html})}</a>`;
 }
 
+export function renderFileReceiptString({html, script}, {videoId, language, captionsId, secretKeyBase64}) {
+  return renderDocumentString(
+    {html},
+    renderFileReceipt(
+      {html, script},
+      {videoId, language, captionsId, secretKeyBase64}));
+}
+
 /**
  * Render a receipt.
  * @param {function} html html literal
  * @param {function} script script tag
  * @param {string} videoId
  * @param {string} language
- * @param {string} captionId
+ * @param {string} captionsId
  * @param {string} secretKeyBase64
- * @param {boolean} isFile
+ * @param {string} type 'cookie', 'file', or 'combined'
  * @param {ObjectUrl} objectUrl
  * @returns {{title: string, body: TemplateResult}}
  */
-function renderReceipt({html, script}, {videoId, language, captionId, secretKeyBase64, isFile, objectUrl}) {
-  let receipt = {videoId, language, captionId, secretKeyBase64, isFile};
+function renderReceipt({html, script}, {videoId, language, captionsId, secretKeyBase64, type, objectUrl}) {
+  let receipt = {videoId, language, captionsId, secretKeyBase64, type};
   let blobUrl = '';
-  if (!isFile) {
-    let file =
-      renderDocumentString(
-        {html},
-        renderFileReceipt(
-          {html, script},
-          {videoId, language, captionId, secretKeyBase64}));
+  if (type === 'cookie' || type === 'combined') {
+    let file = renderFileReceiptString({html, script}, {videoId, language, captionsId, secretKeyBase64});
     blobUrl = objectUrl.create({}, () => new Blob([file]));
   }
   return html`
@@ -62,7 +64,7 @@ function renderReceipt({html, script}, {videoId, language, captionId, secretKeyB
         <div><label>Origin: <input name="origin" value=${location.origin} disabled></label></div>
         <div><label>Video ID: <input name="v" value=${videoId} disabled></label></div>
         <div><label>Language: <input name="lang" value=${language} disabled></label></div>
-        <div><label>Caption ID: <input name="id" value=${captionId} disabled></label></div>
+        <div><label>Caption ID: <input name="id" value=${captionsId} disabled></label></div>
         <div><label>Password: <input name="secretKeyBase64" type="password" value=${secretKeyBase64} disabled></label></div>
       </fieldset>
 
@@ -71,21 +73,22 @@ function renderReceipt({html, script}, {videoId, language, captionId, secretKeyB
 
         <div>
           Captions:
-          <a href="${location.origin}/watch?v=${videoId}&id=${captionId}"><span class="view-icon"></span>View</a>
+          <a href="${location.origin}/watch?v=${videoId}&id=${captionsId}"><span class="view-icon"></span>View</a>
           <a class="receipt-captions-edit-link" href="javascript:"><span class="edit-icon"></span>Edit</a>
           <a class="receipt-captions-delete-link" href="javascript:"><span class="delete-icon"></span>Delete</a>
         </div>
 
         <div>
           Receipt:
-          ${isFile ?
+          ${type === 'file' || type === 'combined' ?
               html`
                 <a class="receipt-cookie-import-link" href="javascript:">Add to ${myReceiptsText({html})}</a>
-              ` :
+              ` : []}
+          ${type === 'cookie' || type === 'combined' ?
               html`
                 <a href=${blobUrl} download="receipt-${videoId}.html"><span class="download-icon"></span>Download</a>
-                <button type="button" @click=${e => deleteReceipt(receipt)}><span class="delete-icon"></span><span class="receipt-icon"></span>Delete</button>
-              `}
+                <button type="button" @click=${e => deleteCookie(receipt)}><span class="delete-icon"></span><span class="receipt-icon"></span>Delete</button>
+              ` : []}
         </div>
 
         <div>
@@ -101,15 +104,15 @@ function renderReceipt({html, script}, {videoId, language, captionId, secretKeyB
   `;
 }
 
-export function renderFileReceipt({html, script}, {videoId, language, captionId, secretKeyBase64}) {
+export function renderFileReceipt({html, script}, {videoId, language, captionsId, secretKeyBase64}) {
   return {
-    title: `Captions receipt: ${videoId} ${captionId}`,
+    title: `Captions receipt: ${videoId} ${captionsId}`,
     body: renderReceipt({html, script}, {
       videoId,
       language,
-      captionId,
+      captionsId,
       secretKeyBase64,
-      isFile: true,
+      type: 'file',
     }),
   };
 }
@@ -120,16 +123,47 @@ export function renderCookieReceipts({html, script}, receipts, objectUrl) {
     body: html`
       Your receipts:<br>
       <div style="border: 1px solid black;">
-        ${receipts.map(({videoId, language, captionId, secretKeyBase64}) =>
+        ${receipts.map(({videoId, language, captionsId, secretKeyBase64}) =>
           renderReceipt({html, script}, {
             videoId,
             language,
-            captionId,
+            captionsId,
             secretKeyBase64,
-            isFile: false,
+            type: 'cookie',
             objectUrl,
           }))}
       </div>
     `,
   };
+}
+
+export function renderCombinedReceipt({html, script}, {videoId, language, captionsId, secretKeyBase64}) {
+  return renderReceipt({html, script}, {
+    videoId,
+    language,
+    captionsId,
+    secretKeyBase64,
+    type: 'combined',
+  });
+}
+
+function receiptKey(videoId, captionsId) {
+  let usp = new URLSearchParams({
+    type: 'receipt',
+    videoId,
+    captionsId,
+  });
+  usp.sort();
+  return usp.toString();
+}
+
+export function addCookie(receipt) {
+  localStorage.setItem(
+    receiptKey(receipt.videoId, receipt.captionsId),
+    JSON.stringify(receipt));
+}
+
+export function deleteCookie(receipt) {
+  localStorage.deleteItem(
+    receiptKey(receipt.videoId, receipt.captionsId));
 }
