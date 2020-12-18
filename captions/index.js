@@ -104,6 +104,13 @@ function toSrtCues(t) {
 function fromSrtCues(cues) {
   return srt.from_raw_cues(cues);
 }
+/**
+ * Normalize the captions by converting it to time, text.
+ * Also removes newlines that look like timestamps.
+ */
+function normalizeSrt(t) {
+  return srt.normalize(t);
+}
 
 /**
  * @param srtText {string}
@@ -172,6 +179,7 @@ module.exports = {
   toHtml,
   toSrtCues,
   fromSrtCues,
+  normalizeSrt,
   srtTextToHtml,
   srtTextToSpans,
   decodeTimeSpace,

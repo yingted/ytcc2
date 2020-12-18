@@ -17,7 +17,13 @@
 const express = require('express');
 const {html, renderToStream} = require('@popeindustries/lit-html-server');
 const expressStaticGzip = require('express-static-gzip');
+const {decodeSrt, normalizeSrt, encodeSrt} = require('ytcc2-captions');
 const db = require('./db');
+
+if (['production', 'development', undefined].indexOf(process.env.NODE_ENV) === -1) {
+  throw new Error('Expected NODE_ENV=production or NODE_ENV=development (default), got ' + process.env.NODE_ENV);
+}
+const production = process.env.NODE_ENV === 'production';
 
 const app = express();
 app.use(expressStaticGzip('static', {
@@ -56,15 +62,35 @@ app.get('/watch', (req, res) => {
 app.use(express.urlencoded({
   extended: true,
 }))
+
+/**
+ * Normalize the SRT in UTF-8.
+ * @param {string} srtBase64
+ * @returns {string} srt
+ * @throws if it can't be parsed
+ */
+function srtBase64ToSrt(srtBase64) {
+  debugger;
+  try {
+    let srt = Buffer.from(srtBase64, 'base64').toString('utf8');
+    let captions = decodeSrt(srt);
+    captions = normalizeSrt(captions);
+    return Buffer.from(encodeSrt(captions)).toString('utf8');
+  } catch (e) {
+    if (!production) {
+      console.log('error parsing SRT', e);
+    }
+    throw new Error('could not parse SRT');
+  }
+}
 app.post('/publish', (req, res) => {
   let {videoId, srtBase64, publicKeyBase64, language, receipt} = req.body;
-  /** @type {ArrayBuffer} */
-  let srt = new Uint8Array(Buffer.from(srtBase64, 'base64')).buffer;
+  let srt = srtBase64ToSrt(srtBase64);
   // TODO
   res.set({'content-type': 'text/plain'}).send(
 `Submission received:
 videoId: ${videoId}
-srt: ${srt.byteLength} bytes
+srt: ${srt.length} bytes
 language: ${language}
 receipt: ${receipt}
 publicKeyBase64: ${publicKeyBase64}

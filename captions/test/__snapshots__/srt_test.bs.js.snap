@@ -111,3 +111,409 @@ Object {
   },
 }
 `;
+
+exports[`parses cues at end 1`] = `
+Object {
+  "TAG": 0,
+  "_0": Array [
+    Array [
+      1,
+      Object {
+        "end_": 31622792.27,
+        "start": 392.27,
+        "text": Object {
+          "hd": Array [
+            Object {
+              "TAG": 0,
+              "_0": "a",
+            },
+            "a",
+          ],
+          "tl": Object {
+            "hd": Array [
+              Object {
+                "TAG": 0,
+                "_0": "n",
+              },
+              "n",
+            ],
+            "tl": Object {
+              "hd": Array [
+                Object {
+                  "TAG": 0,
+                  "_0": "d",
+                },
+                "d",
+              ],
+              "tl": Object {
+                "hd": Array [
+                  Object {
+                    "TAG": 0,
+                    "_0": " ",
+                  },
+                  " ",
+                ],
+                "tl": Object {
+                  "hd": Array [
+                    Object {
+                      "TAG": 0,
+                      "_0": "y",
+                    },
+                    "y",
+                  ],
+                  "tl": Object {
+                    "hd": Array [
+                      Object {
+                        "TAG": 0,
+                        "_0": "o",
+                      },
+                      "o",
+                    ],
+                    "tl": Object {
+                      "hd": Array [
+                        Object {
+                          "TAG": 0,
+                          "_0": "u",
+                        },
+                        "u",
+                      ],
+                      "tl": Object {
+                        "hd": Array [
+                          Object {
+                            "TAG": 0,
+                            "_0": "r",
+                          },
+                          "r",
+                        ],
+                        "tl": Object {
+                          "hd": Array [
+                            Object {
+                              "TAG": 0,
+                              "_0": " ",
+                            },
+                            " ",
+                          ],
+                          "tl": Object {
+                            "hd": Array [
+                              Object {
+                                "TAG": 0,
+                                "_0": "p",
+                              },
+                              "p",
+                            ],
+                            "tl": Object {
+                              "hd": Array [
+                                Object {
+                                  "TAG": 0,
+                                  "_0": "r",
+                                },
+                                "r",
+                              ],
+                              "tl": Object {
+                                "hd": Array [
+                                  Object {
+                                    "TAG": 0,
+                                    "_0": "o",
+                                  },
+                                  "o",
+                                ],
+                                "tl": Object {
+                                  "hd": Array [
+                                    Object {
+                                      "TAG": 0,
+                                      "_0": "f",
+                                    },
+                                    "f",
+                                  ],
+                                  "tl": Object {
+                                    "hd": Array [
+                                      Object {
+                                        "TAG": 0,
+                                        "_0": "e",
+                                      },
+                                      "e",
+                                    ],
+                                    "tl": Object {
+                                      "hd": Array [
+                                        Object {
+                                          "TAG": 0,
+                                          "_0": "s",
+                                        },
+                                        "s",
+                                      ],
+                                      "tl": Object {
+                                        "hd": Array [
+                                          Object {
+                                            "TAG": 0,
+                                            "_0": "s",
+                                          },
+                                          "s",
+                                        ],
+                                        "tl": Object {
+                                          "hd": Array [
+                                            Object {
+                                              "TAG": 0,
+                                              "_0": "o",
+                                            },
+                                            "o",
+                                          ],
+                                          "tl": Object {
+                                            "hd": Array [
+                                              Object {
+                                                "TAG": 0,
+                                                "_0": "r",
+                                              },
+                                              "r",
+                                            ],
+                                            "tl": Object {
+                                              "hd": Array [
+                                                Object {
+                                                  "TAG": 0,
+                                                  "_0": "s",
+                                                },
+                                                "s",
+                                              ],
+                                              "tl": Object {
+                                                "hd": Array [
+                                                  Object {
+                                                    "TAG": 0,
+                                                    "_0": "
+",
+                                                  },
+                                                  "
+",
+                                                ],
+                                                "tl": Object {
+                                                  "hd": Array [
+                                                    Object {
+                                                      "TAG": 0,
+                                                      "_0": "w",
+                                                    },
+                                                    "w",
+                                                  ],
+                                                  "tl": Object {
+                                                    "hd": Array [
+                                                      Object {
+                                                        "TAG": 0,
+                                                        "_0": "i",
+                                                      },
+                                                      "i",
+                                                    ],
+                                                    "tl": Object {
+                                                      "hd": Array [
+                                                        Object {
+                                                          "TAG": 0,
+                                                          "_0": "l",
+                                                        },
+                                                        "l",
+                                                      ],
+                                                      "tl": Object {
+                                                        "hd": Array [
+                                                          Object {
+                                                            "TAG": 0,
+                                                            "_0": "l",
+                                                          },
+                                                          "l",
+                                                        ],
+                                                        "tl": Object {
+                                                          "hd": Array [
+                                                            Object {
+                                                              "TAG": 0,
+                                                              "_0": " ",
+                                                            },
+                                                            " ",
+                                                          ],
+                                                          "tl": Object {
+                                                            "hd": Array [
+                                                              Object {
+                                                                "TAG": 0,
+                                                                "_0": "b",
+                                                              },
+                                                              "b",
+                                                            ],
+                                                            "tl": Object {
+                                                              "hd": Array [
+                                                                Object {
+                                                                  "TAG": 0,
+                                                                  "_0": "e",
+                                                                },
+                                                                "e",
+                                                              ],
+                                                              "tl": Object {
+                                                                "hd": Array [
+                                                                  Object {
+                                                                    "TAG": 0,
+                                                                    "_0": " ",
+                                                                  },
+                                                                  " ",
+                                                                ],
+                                                                "tl": Object {
+                                                                  "hd": Array [
+                                                                    Object {
+                                                                      "TAG": 0,
+                                                                      "_0": "y",
+                                                                    },
+                                                                    "y",
+                                                                  ],
+                                                                  "tl": Object {
+                                                                    "hd": Array [
+                                                                      Object {
+                                                                        "TAG": 0,
+                                                                        "_0": "o",
+                                                                      },
+                                                                      "o",
+                                                                    ],
+                                                                    "tl": Object {
+                                                                      "hd": Array [
+                                                                        Object {
+                                                                          "TAG": 0,
+                                                                          "_0": "u",
+                                                                        },
+                                                                        "u",
+                                                                      ],
+                                                                      "tl": Object {
+                                                                        "hd": Array [
+                                                                          Object {
+                                                                            "TAG": 0,
+                                                                            "_0": "r",
+                                                                          },
+                                                                          "r",
+                                                                        ],
+                                                                        "tl": Object {
+                                                                          "hd": Array [
+                                                                            Object {
+                                                                              "TAG": 0,
+                                                                              "_0": " ",
+                                                                            },
+                                                                            " ",
+                                                                          ],
+                                                                          "tl": Object {
+                                                                            "hd": Array [
+                                                                              Object {
+                                                                                "TAG": 0,
+                                                                                "_0": "c",
+                                                                              },
+                                                                              "c",
+                                                                            ],
+                                                                            "tl": Object {
+                                                                              "hd": Array [
+                                                                                Object {
+                                                                                  "TAG": 0,
+                                                                                  "_0": "u",
+                                                                                },
+                                                                                "u",
+                                                                              ],
+                                                                              "tl": Object {
+                                                                                "hd": Array [
+                                                                                  Object {
+                                                                                    "TAG": 0,
+                                                                                    "_0": "s",
+                                                                                  },
+                                                                                  "s",
+                                                                                ],
+                                                                                "tl": Object {
+                                                                                  "hd": Array [
+                                                                                    Object {
+                                                                                      "TAG": 0,
+                                                                                      "_0": "t",
+                                                                                    },
+                                                                                    "t",
+                                                                                  ],
+                                                                                  "tl": Object {
+                                                                                    "hd": Array [
+                                                                                      Object {
+                                                                                        "TAG": 0,
+                                                                                        "_0": "o",
+                                                                                      },
+                                                                                      "o",
+                                                                                    ],
+                                                                                    "tl": Object {
+                                                                                      "hd": Array [
+                                                                                        Object {
+                                                                                          "TAG": 0,
+                                                                                          "_0": "m",
+                                                                                        },
+                                                                                        "m",
+                                                                                      ],
+                                                                                      "tl": Object {
+                                                                                        "hd": Array [
+                                                                                          Object {
+                                                                                            "TAG": 0,
+                                                                                            "_0": "e",
+                                                                                          },
+                                                                                          "e",
+                                                                                        ],
+                                                                                        "tl": Object {
+                                                                                          "hd": Array [
+                                                                                            Object {
+                                                                                              "TAG": 0,
+                                                                                              "_0": "r",
+                                                                                            },
+                                                                                            "r",
+                                                                                          ],
+                                                                                          "tl": Object {
+                                                                                            "hd": Array [
+                                                                                              Object {
+                                                                                                "TAG": 0,
+                                                                                                "_0": "s",
+                                                                                              },
+                                                                                              "s",
+                                                                                            ],
+                                                                                            "tl": Object {
+                                                                                              "hd": Array [
+                                                                                                Object {
+                                                                                                  "TAG": 0,
+                                                                                                  "_0": ".",
+                                                                                                },
+                                                                                                ".",
+                                                                                              ],
+                                                                                              "tl": 0,
+                                                                                            },
+                                                                                          },
+                                                                                        },
+                                                                                      },
+                                                                                    },
+                                                                                  },
+                                                                                },
+                                                                              },
+                                                                            },
+                                                                          },
+                                                                        },
+                                                                      },
+                                                                    },
+                                                                  },
+                                                                },
+                                                              },
+                                                            },
+                                                          },
+                                                        },
+                                                      },
+                                                    },
+                                                  },
+                                                },
+                                              },
+                                            },
+                                          },
+                                        },
+                                      },
+                                    },
+                                  },
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    ],
+    "2...",
+  ],
+}
+`;

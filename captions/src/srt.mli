@@ -22,6 +22,10 @@ val codec: (Encoding.bytes, raw Track.t) Codec.t
 (* For when everything is UTF-8: *)
 val string_codec: (string, raw Track.t) Codec.t
 
+(* For testing: cue parser *)
+type cue
+val cue_parser : (int * cue) Parser.t
+
 val ass_tag_codec: (string, Style.t) Codec.t
 
 (* For pseudo-SRT encoding: *)
@@ -37,3 +41,5 @@ val to_raw_cues : raw Track.t -> raw raw_cue array
 val from_raw_cues : raw raw_cue array -> raw Track.t
 (* Parse "0:01.00 a" to (1.0, "a"): *)
 val short_time_space : Track.seconds Parser.t
+(* Remove all the raw data. Also removes newlines that look like timestamps. *)
+val normalize : raw Track.t -> raw Track.t

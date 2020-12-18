@@ -40,6 +40,7 @@ function assert(cond) {
 
 function captionToText({time, text, source}) {
   if (source !== undefined) return source;
+  // TODO: do this in ocaml without copy/paste
   return encodeTimeSpace(time) + text.replace(/^(\d+:\d)/mg, " $1");
 }
 function textToCaption(textCaption) {

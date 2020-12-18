@@ -37,7 +37,7 @@ exception Invalid_time of string
 let time_parser: Track.seconds Parser.t =
   Codec.make
     ~try_decode:(fun s ->
-      match Scanf.sscanf s "%02d:%02d:%02d,%03d%n"
+      match Scanf.sscanf s "%d:%02d:%02d,%03d%n"
         (fun hh mm ss mmm n ->
           (
             float_of_int (hh * 3600 + mm * 60 + ss) +. float_of_int mmm *. 0.001,
@@ -56,7 +56,6 @@ let time_parser: Track.seconds Parser.t =
 let short_time_parser: Track.seconds Parser.t =
   Codec.make
     ~try_decode:(fun s ->
-      (* TODO: optimize this *)
       match Scanf.sscanf s "%d:%02d:%f%n"
         (fun hh mm ssmmm n ->
           (
@@ -342,7 +341,7 @@ let to_raw_cues t =
   raw_cues
 
 let max_cue_seconds = 366 * 24 * 3600 |> float_of_int
-let from_raw_cues (raw_cues : _) : 'raw Ytcc2Captions.Track.t =
+let from_raw_cues (raw_cues : 'raw raw_cue array) : 'raw Track.t =
   let cues = [||] in
   for i = 0 to Array.length raw_cues - 1 do
     let { time; text; raw; } = raw_cues.(i) in
@@ -373,3 +372,14 @@ let from_raw_cues (raw_cues : _) : 'raw Ytcc2Captions.Track.t =
 let short_time_space =
   let ( * ) = Parser.pair in
   Parser.(short_time_parser * easy_expect_re ~re:" ?" ~default:" " |> first)
+
+let normalize t =
+  to_raw_cues t
+  |> Array.map (fun { time; text; raw = _; } ->
+      let (time, text) =
+        Codec.encode short_time_space (time, text)
+        |> Codec.decode_exn short_time_space
+      in
+      let text = [%raw {|text => text.replace(/^(\d+:\d)/mg, " $1")|}] text in
+      { time; text; raw = None; })
+  |> from_raw_cues

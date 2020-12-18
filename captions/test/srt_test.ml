@@ -59,6 +59,23 @@ describe "stabilizes" (fun () ->
       |> toEqual (None, Result.ok data1)));
 );
 
+describe "parses cues" (fun () ->
+  test "at end" (fun () ->
+    {|1
+00:06:32,270 --> 8784:06:32,270
+and your professors
+will be your customers.
+
+2...|}
+    |> Codec.try_decode Srt.cue_parser
+    |> expect
+    |> toMatchSnapshot
+    (* |> Result.error *)
+    (* |> expect *)
+    (* |> toEqual None *)
+  )
+);
+
 describe "decodes" (fun () ->
   test "a<b>b</b>c" (fun () ->
     let text = "a<b>b</b>c" in
