@@ -83,8 +83,8 @@ function renderReceipt({html, script}, {videoId, language, captionId, secretKeyB
                 <a class="receipt-cookie-import-link" href="javascript:">Add to ${myReceiptsText({html})}</a>
               ` :
               html`
-                <a class="receipt-cookie-export-link" href=${blobUrl} download="receipt-${videoId}.html"><span class="download-icon"></span>Download</a>
-                <a class="receipt-cookie-delete-link" href="javascript:" @click=${e => deleteReceipt(receipt)}><span class="delete-icon"></span><span class="receipt-icon"></span>Delete</a>
+                <a href=${blobUrl} download="receipt-${videoId}.html"><span class="download-icon"></span>Download</a>
+                <button type="button" @click=${e => deleteReceipt(receipt)}><span class="delete-icon"></span><span class="receipt-icon"></span>Delete</button>
               `}
         </div>
 

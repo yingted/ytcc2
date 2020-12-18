@@ -1,5 +1,5 @@
-- receipts: /receipts
 - publish: /publish
+- receipts: /receipts
 - report abuse
 - invite translations for a channel
 - virality prompt/rate limit:
@@ -12,3 +12,4 @@
 - deleteReceipt
 - /fake_receipt (visible on /)
 - /
+- ToS

@@ -1,4 +1,4 @@
-import {sign_detached} from 'tweetnacl-ts';
+import {sign} from 'tweetnacl-ts';
 let form = document.currentScript.closest('form');
 function stringToUint8Array(data) {
   return new Uint8Array(
@@ -32,8 +32,13 @@ function postNavigate(url, params = {}) {
 
 /**
  * Perform a private POST action.
- * The server is assumed to be trusted because we want people to
+ * The server is assumed to be partly trusted because we want people to
  * import a database of public keys and make their clone websites.
+ *
+ * We are trusting the server with our request params, but a malicious
+ * server could forward us the real server's nonce.
+ * We still sign it, but we include the URL so the real server can figure out
+ * if the nonce is trustworthy or not.
  *
  * First, POST without any parameters to get a challenge.
  * Then, POST with _signatureBase64 with a redirect.
@@ -41,24 +46,25 @@ function postNavigate(url, params = {}) {
  * @param {Object.<string, string>} params the args, like {v: '...'}
  */
 async function showReceiptAndNavigate(url, params) {
-  // Ask the server for a challenge:
+  // Ask the server for a random challenge.
+  // The server will verify we only used it once.
   let challenge = await (await fetch(url, {
     method: 'POST',
     cache: 'no-cache',
     referrerPolicy: 'no-referrer',
     body: '',
   })).json();
-  let nonce = challenge.nonce + '';
+  let untrustedNonce = challenge.untrustedNonce + '';
 
-  // Solve the challenge:
-  let signatureBase64 = sign_detached(stringToUint8Array(new URLSearchParams({
+  // Sign the challenge along with the request.
+  // The server can trust that the URL and params came from us.
+  let signedRequest = uint8ArrayToString(sign(stringToUint8Array(JSON.stringify({
     url,
-    nonce,
-  }).sort().toString()), secretKey);
+    params,
+    untrustedNonce,
+  })), secretKey));
 
-  postNavigate(
-    url,
-    Object.assign({}, {_signatureBase64: signatureBase64}, params));
+  postNavigate(url, {signedRequest});
 }
 
 form.querySelector('.receipt-captions-edit-link')
