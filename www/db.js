@@ -58,6 +58,8 @@ async function updateSchema() {
         video_id varchar(100),
         -- 23 bytes (int64 in base52)
         captions_id varchar(100),
+        -- For maintaining insertion order:
+        seq bigint,
         -- adjust up if needed
         srt varchar(1048576),
         -- should be usually 2 or 5 bytes
@@ -72,8 +74,22 @@ async function updateSchema() {
   }
 }
 
+async function withClient(func) {
+  let client = await pool.connect();
+  let rollback = true;
+  try {
+    await client.query('BEGIN');
+    await func(client);
+    await client.query('COMMIT');
+    rollback = false;
+  } finally {
+    if (rollback) await client.query('ROLLBACK');
+  }
+}
+
 module.exports = {
   init, 
   updateSchema,
+  withClient,
   query,
 };

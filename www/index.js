@@ -35,12 +35,40 @@ app.use(expressStaticGzip('static', {
   index: false,
   orderPreference: ['br', 'gz'],
 }));
+app.use(express.urlencoded({
+  extended: true,
+}))
 
-app.get('/watch', (req, res) => {
+function asyncHandler(handler) {
+  return (req, res) => {
+    handler(req, res).catch(e => {
+      console.error('error', e);
+      res.sendStatus(500);
+    });
+  }
+}
+
+
+app.get('/watch', asyncHandler(async (req, res) => {
   let videoId = req.query.v;
+  let captionsId = req.query.id;
+
+  let tracks = (await db.query(`
+    SELECT t.captions_id AS captions_id, t.language AS language, t.srt AS srt
+    FROM captions AS t
+    WHERE t.video_id=$1
+  `, [videoId])).rows.map(({captions_id, language, srt}) => ({
+    captionsId: captions_id,
+    language,
+    srt,
+  }));
+
   const params = {
     videoId,
+    captionsId,
+    tracks,
   };
+
   renderToStream(html`
     <!DOCTYPE html>
     <html lang="en">
@@ -60,12 +88,8 @@ app.get('/watch', (req, res) => {
       </body>
     </html>
   `).pipe(res);
-});
+}));
 
-
-app.use(express.urlencoded({
-  extended: true,
-}))
 
 /**
  * Normalize the SRT in UTF-8.
@@ -110,26 +134,26 @@ function secureRandomId() {
   }
   return id.reverse().join('');
 }
-function asyncHandler(handler) {
-  return (req, res) => {
-    handler(req, res).catch(e => {
-      console.error('error', e);
-      res.sendStatus(500);
-    });
-  }
-}
 app.post('/publish', upload.none(), asyncHandler(async (req, res) => {
   let {videoId, srtBase64, publicKeyBase64, language} = req.body;
   let srt = srtBase64ToSrt(srtBase64);
 
   let captionsId = secureRandomId();
 
-  await db.query(`
-    INSERT INTO captions(video_id, captions_id, srt, language, public_key_base64)
-      VALUES($1, $2, $3, $4, $5)`,
-    [videoId, captionsId, srt, language, publicKeyBase64]);
+  await db.withClient(async client => {
+    let {rows: [{max_seq}]} = await client.query(`
+      SELECT COALESCE(MAX(seq), -1) AS max_seq
+      FROM captions
+    `);
+    let seq = max_seq + 1;
 
-  res.json({captionsId});
+    await client.query(`
+      INSERT INTO captions(video_id, captions_id, seq, srt, language, public_key_base64)
+        VALUES($1, $2, $3, $4, $5, $6)`,
+      [videoId, captionsId, seq, srt, language, publicKeyBase64]);
+
+    res.json({captionsId});
+  });
 }));
 
 app.get('/receipts', (req, res) => {

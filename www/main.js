@@ -49,6 +49,45 @@ const youtubeLogo = html`
   </svg>
 `;
 
+class UnofficialTrack {
+  /**
+   * @param {string} options.captionsId
+   * @param {string} options.language
+   * @param {string} options.srt
+   */
+  constructor(options) {
+    Object.assign(this, options);
+  }
+
+  getCaptions() {
+    return decodeSrt(this.srt);
+  }
+
+  friendlyLanguage() {
+    let isoCode = this.language;
+    for (let {id, name} of youtubeLanguages) {
+      if (id === isoCode) return name;
+    }
+    return `(${isoCode})`;
+  }
+}
+
+function getTrackId(track) {
+  if (track instanceof UnofficialTrack) {
+    return 'unofficial-' + track.captionsId;
+  } else {
+    return 'youtube-' + track.lang;
+  }
+}
+
+function getFriendlyName(track) {
+  if (track instanceof UnofficialTrack) {
+    return `Unofficial ${track.friendlyLanguage()} (${track.captionsId})`;
+  } else {
+    return `YouTube ${track.langOriginal}`;
+  }
+}
+
 // Video model/view:
 const video = new YouTubeVideo(params.videoId);
 window.video = video;
@@ -618,7 +657,7 @@ class TrackPicker {
 
               selectedTrack = null;
               for (let track of tracks) {
-                if ('youtube-' + track.lang === this.value) {
+                if (getTrackId(track) === this.value) {
                   selectedTrack = track;
                   break;
                 }
@@ -631,8 +670,13 @@ class TrackPicker {
               ${selectedTrack === null ? html`<option value="none" selected></option>` : []}
               <option value="open-file">Choose file</option>
               <optgroup label="YouTube">
-                ${tracks.map(track =>
-                  html`<option value="youtube-${track.lang}" ?selected=${selectedTrack === track}>YouTube ${track.langOriginal}</option>`
+                ${tracks.filter(track => !(track instanceof UnofficialTrack)).map(track =>
+                  html`<option value="${getTrackId(track)}" ?selected=${selectedTrack === track}>${getFriendlyName(track)}</option>`
+                )}
+              </optgroup>
+              <optgroup label="Unofficial">
+                ${tracks.filter(track => track instanceof UnofficialTrack).map(track =>
+                  html`<option value="${getTrackId(track)}" ?selected=${selectedTrack === track}>${getFriendlyName(track)}</option>`
                 )}
               </optgroup>
             </select>
@@ -655,6 +699,7 @@ class TrackPicker {
 const trackPicker = window.trackPicker = new TrackPicker();
 
 // Render the page once:
+let trackPickerPrompt = document.createElement('DIV');
 render(html`
   <style>
     :root {
@@ -687,6 +732,7 @@ render(html`
       }
     </style>
     ${trackPicker.render()}
+    ${trackPickerPrompt}
 
     <ul class="navbar">
       <li>
@@ -719,6 +765,11 @@ render(html`
   </main>
 `, document.body);
 
+let pickCaptionsDialog = document.querySelector('.pick-captions-dialog');
+if (pickCaptionsDialog !== null) {
+  pickCaptionsDialog.showModal();
+}
+
 // Main controller, binding everything together:
 
 /**
@@ -740,10 +791,76 @@ function getDefaultTrack(tracks) {
   return null;
 }
 
+function confirmOpenUnofficialTrack(unofficial, official) {
+  let confirmed = true;
+  return new Promise(resolve => {
+    render(html`
+      <dialog class="pick-captions-dialog fixed" @render=${registerDialog} style="
+            width: 25em;
+            max-width: 100%;
+            max-height: 100%;
+            box-sizing: border-box;
+            overflow-y: auto;"
+      @close=${e => resolve(confirmed)}
+      @cancel=${e => resolve(false)}>
+        <h2>Unofficial captions</h2>
+
+        <form method="dialog">
+          <style>
+            .pick-captions-input-group {
+              padding: 0.2em 0;
+            }
+            .pick-captions-input-group button {
+              height: var(--touch-target-size);
+            }
+            .cancel-icon::before {
+              content: "❌";
+            }
+            .accept-icon::before {
+              content: "✔️";
+            }
+          </style>
+
+          Open the unofficial captions instead of the official captions?
+
+          <div class="pick-captions-input-group">
+            <button type="submit"><span class="accept-icon"></span>${getFriendlyName(unofficial)}</button>
+            <button type="button" @click=${function() {
+              confirmed = false;
+              this.closest('dialog').close();
+            }}><span class="cancel-icon"></span>${getFriendlyName(official)}</button>
+          </div>
+        </form>
+      </dialog>
+      `, trackPickerPrompt);
+    trackPickerPrompt.querySelector('dialog').showModal();
+  });
+}
+
 (async function main() {
   let tracks = await listTracks(params.videoId);
   window.tracks = tracks;
   let track = getDefaultTrack(tracks);
+  // Make sure we don't pick this as the default:
+  for (let track of params.tracks) {
+    tracks.push(new UnofficialTrack(track));
+  }
+  let requestedUnofficialTrack = (function() {
+    if (params.captionsId == null) return null;
+    for (let track of tracks) {
+      if (track instanceof UnofficialTrack && track.captionsId === params.captionsId) {
+        return track;
+      }
+    }
+    return null;
+  })();
+  if (requestedUnofficialTrack !== null) {
+    let allowUnofficial = await confirmOpenUnofficialTrack(requestedUnofficialTrack, track);
+    if (allowUnofficial) {
+      track = requestedUnofficialTrack;
+    }
+  }
+
   let setCaptions = function setCaptions(editor, captions) {
     if (editor === null) {
       editor = new CaptionsEditor(video, captions);
@@ -759,8 +876,13 @@ function getDefaultTrack(tracks) {
     let captions;
     language = null;
     if (track !== null) {
-      captions = stripRaw(decodeJson3FromJson(await track.fetchJson3()));
-      language = track.lang;
+      if (track instanceof UnofficialTrack) {
+        captions = track.getCaptions();
+        language = track.language;
+      } else {
+        captions = stripRaw(decodeJson3FromJson(await track.fetchJson3()));
+        language = track.lang;
+      }
     }
 
     // If we've been cancelled, return:

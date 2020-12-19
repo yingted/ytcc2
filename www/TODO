@@ -9,4 +9,5 @@
 - /fake_receipt (visible on /)
 - /
 - ToS
-- /watch?v=${videoId}&id=${captionsId}
+- /edit
+- /delete
