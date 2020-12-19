@@ -52,6 +52,8 @@ export class YouTubeVideo {
     options = options || {};
     this.player = null;
     this.ready = false;
+    this._lastSeek = null;
+    this._userInteracted = false;
     this._handlers = [];
     this.captions = options.captions || empty;
     this.captionsRegion = null;
@@ -169,6 +171,8 @@ export class YouTubeVideo {
    */
   seekTo(time) {
     if (!this.ready) return;
+    this._lastSeek = time;
+    if (!this._userInteracted) return;
     this.player.seekTo(time, /*allowSeekAhead=*/true);
   }
 
@@ -178,6 +182,12 @@ export class YouTubeVideo {
 
   _onStateChange(event) {
     if (!this.ready) return;
+    if (!this._userInteracted) {
+      this._userInteracted = true;
+      if (this._lastSeek !== null) {
+        this.player.seekTo(this._lastSeek, /*allowSeekAhead=*/true);
+      }
+    }
     switch (event.data) {
       case YT.PlayerState.PLAYING:
         break;
