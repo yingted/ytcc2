@@ -218,7 +218,11 @@ const saveAsView = saveAs.map(state => {
           </label>
         </div>
 
-        Download link: <a href=${blobUrl} download=${fileName}>${fileName}</a>
+        Download link: <a href=${blobUrl} download=${fileName} @click=${function() {
+          // Best-effort detection, since the user could be using "open in new tab" -> "save as",
+          // a download manager, or some other technology.
+          editor.setSaved();
+        }}>${fileName}</a>
 
         <div class="save-input-group">
           <button type="submit"><span class="cancel-icon"></span>Close</button>
@@ -906,7 +910,8 @@ function confirmOpenUnofficialTrack(unofficial, official) {
     if (editor === null) {
       editor = new CaptionsEditor(video, captions);
     } else {
-      editor.setCaptions(captions, /*addToHistory=*/true, /*isSaved=*/true);
+      editor.setCaptions(captions, /*addToHistory=*/true);
+      editor.setSaved();
     }
     return editor;
   };

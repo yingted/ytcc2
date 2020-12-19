@@ -413,16 +413,16 @@ export class CaptionsEditor {
     this._unsavedChanges = newUnsavedChanges();
 
     // Initialize the captions:
-    this.setCaptions(captions, /*addToHistory=*/false, /*isSaved=*/true);
+    this.setCaptions(captions, /*addToHistory=*/false);
+    this.setSaved();
   }
 
   /**
    * Set the captions.
    * @param {Srt.raw Track.t option} captions
    * @param {boolean} addToHistory
-   * @param {boolean} isSaved
    */
-  setCaptions(captions, addToHistory, isSaved) {
+  setCaptions(captions, addToHistory) {
     if (captions === undefined) {
       captions = empty;
     }
@@ -448,8 +448,10 @@ export class CaptionsEditor {
       }));
     }
     this._inSetCaptions = false;
+  }
 
-    if (isSaved) this._unsavedChanges.clear();
+  setSaved() {
+    this._unsavedChanges.clear();
   }
 
   /**
@@ -480,9 +482,7 @@ export class CaptionsEditor {
    */
   normalize() {
     // Remove raw anything:
-    this.setCaptions(
-      this._getNormalizedCaptions(),
-      /*addToHistory=*/true, /*isSaved=*/false);
+    this.setCaptions(this._getNormalizedCaptions(), /*addToHistory=*/true);
   }
   _getNormalizedCaptions() {
     return fromSrtCues(
