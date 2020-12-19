@@ -23,6 +23,7 @@ const config = require('./config');
 const crypto = require('crypto');
 const multer  = require('multer');
 const upload = multer();
+const {sign_open} = require('tweetnacl-ts');
 
 if (['production', 'development', undefined].indexOf(process.env.NODE_ENV) === -1) {
   throw new Error('Expected NODE_ENV=production or NODE_ENV=development (default), got ' + process.env.NODE_ENV);
@@ -30,6 +31,7 @@ if (['production', 'development', undefined].indexOf(process.env.NODE_ENV) === -
 const production = process.env.NODE_ENV === 'production';
 
 const app = express();
+app.use(express.text());
 app.use(expressStaticGzip('static', {
   enableBrotli: true,
   index: false,
@@ -40,8 +42,8 @@ app.use(express.urlencoded({
 }))
 
 function asyncHandler(handler) {
-  return (req, res) => {
-    handler(req, res).catch(e => {
+  return function(req, res) {
+    handler.apply(this, arguments).catch(function(e) {
       console.error('error', e);
       res.sendStatus(500);
     });
@@ -433,6 +435,87 @@ app.post('/publish', upload.none(), asyncHandler(async (req, res) => {
     res.json({captionsId});
   });
 }));
+
+let nonces = new Set();
+/**
+ * Wrap a handler in signature verification code.
+ * Takes trustingHandler(req, res, publicKey, params), where params is trusted.
+ * publicKey is base64.
+ * Returns verifyingHandler(req, res), where req.body is untrusted.
+ */
+let signedHandler = function signedHandler(handler) {
+  return (req, res) => {
+    if (req.body === '') {
+      // This nonce could be MITM'd, so we need to also verify the origin.
+      let untrustedNonce = secureRandomId();
+      nonces.add(untrustedNonce);
+      res.json({untrustedNonce});
+      return;
+    }
+
+    let {publicKey, signedRequest} = req.body;
+    if (!(typeof publicKey === 'string' && typeof signedRequest === 'string')) {
+      res.sendStatus(400);
+      return;
+    }
+
+    // Verify their message:
+    let message = sign_open(
+      new Uint8Array(Buffer.from(signedRequest, 'base64')),
+      new Uint8Array(Buffer.from(publicKey, 'base64')));
+    if (message === null) {
+      res.sendStatus(403);
+      return;
+    }
+    let {url, params, untrustedNonce} = JSON.parse(new TextDecoder().decode(message));
+
+    // Verify the nonce:
+    if (!nonces.has(untrustedNonce)) {
+      res.sendStatus(403);
+      return;
+    }
+    nonces.delete(untrustedNonce);
+
+    // Verify the URL origin:
+    let u = new URL(url);
+    let sentToTrustedOrigin = config.origins_and_trusted_proxy_origins.indexOf(u.origin) !== -1;
+    let sentToThisEndpoint = u.pathname === req.originalUrl.replace(/\?.*/, '');
+    if (!(sentToTrustedOrigin && sentToThisEndpoint)) {
+      res.sendStatus(403);
+      return;
+    }
+
+    return handler(req, res, publicKey, params);
+  };
+};
+app.post('/delete', upload.none(), signedHandler(asyncHandler(async (req, res, publicKey, params) => {
+  await db.withClient(async client => {
+    // Find the caption whose key was provided:
+    let {rows} = await client.query(`
+      SELECT t.video_id AS video_id, t.captions_id AS captions_id
+      FROM captions AS t
+      WHERE t.public_key_base64=$1
+    `, [publicKey]);
+
+    if (rows.length === 0) {
+      res.sendStatus(404);
+      return;
+    }
+    if (rows.length !== 1) {
+      console.error('duplicate public keys');
+      res.sendStatus(500);
+      return;
+    }
+    let [{video_id, captions_id}] = rows;
+
+    await client.query(`
+      DELETE
+      FROM captions AS t
+      WHERE t.video_id=$1 AND t.captions_id=$2
+    `, [video_id, captions_id]);
+    res.sendStatus(200);
+  });
+})));
 
 app.get('/receipts', (req, res) => {
   renderToStream(html`

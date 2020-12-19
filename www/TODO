@@ -1,11 +1,12 @@
-- report abuse
+- /edit
+
+- review/diff page
 - invite translations for a channel
+
+- report abuse
 - virality prompt/rate limit:
   "These captions are getting popular. They're not associated with the creator."
   "Publish your captions for free in minutes."
-- review/diff page
 
 - /fake_receipt
 - /find_receipt
-- /edit
-- /delete

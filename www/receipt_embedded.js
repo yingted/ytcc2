@@ -1,14 +1,12 @@
-import {sign} from 'tweetnacl-ts';
+import {sign, sign_keyPair_fromSecretKey} from 'tweetnacl-ts';
 let form = document.currentScript.closest('form');
-function stringToUint8Array(data) {
-  return new Uint8Array(
-    Array.from(data)
-    .map(c => c.charCodeAt(0)));
+function uint8ArrayToBase64(data) {
+  return btoa(String.fromCharCode.apply(String, Array.from(data)));
 }
-function uint8ArrayToString(data) {
-  return btoa(String.fromCharCode.apply(string, Array.from(data)));
+function base64ToUint8Array(data) {
+  return new Uint8Array(Array.from(atob(data)).map(c => c.charCodeAt(0)));
 }
-let secretKey = stringToUint8Array(atob(form.querySelector('input[name=secretKeyBase64]').value));
+let secretKey = base64ToUint8Array(form.querySelector('input[name=secretKeyBase64]').value);
 
 /**
  * Send an HTTP POST to this URL.
@@ -52,32 +50,32 @@ async function showReceiptAndNavigate(url, params) {
     method: 'POST',
     cache: 'no-cache',
     referrerPolicy: 'no-referrer',
+    headers: new Headers({
+      'Content-Type': 'text/plain',
+    }),
     body: '',
   })).json();
   let untrustedNonce = challenge.untrustedNonce + '';
 
   // Sign the challenge along with the request.
   // The server can trust that the URL and params came from us.
-  let signedRequest = uint8ArrayToString(sign(stringToUint8Array(JSON.stringify({
+  let signedRequest = uint8ArrayToBase64(sign(new TextEncoder().encode(JSON.stringify({
     url,
     params,
     untrustedNonce,
   })), secretKey));
 
-  postNavigate(url, {signedRequest});
+  postNavigate(url, {
+    publicKey: uint8ArrayToBase64(sign_keyPair_fromSecretKey(secretKey).publicKey),
+    signedRequest,
+  });
 }
 
 form.querySelector('.receipt-captions-edit-link')
-  .addEventListener('click', () => showReceiptAndNavigate(form.elements.origin.value + '/edit', {
-    v: form.elements.v.value,
-    id: form.elements.id.value,
-  }));
+  .addEventListener('click', () => showReceiptAndNavigate(form.elements.origin.value + '/edit', {}));
 
 form.querySelector('.receipt-captions-delete-link')
-  .addEventListener('click', () => showReceiptAndNavigate(form.elements.origin.value + '/delete', {
-    v: form.elements.v.value,
-    id: form.elements.id.value,
-  }));
+  .addEventListener('click', () => showReceiptAndNavigate(form.elements.origin.value + '/delete', {}));
 
 let cookieImport = form.querySelector('.receipt-cookie-import-link');
 if (cookieImport !== null) {

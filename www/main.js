@@ -864,6 +864,7 @@ function confirmOpenUnofficialTrack(unofficial, official) {
         return track;
       }
     }
+    // If the track has been deleted, silently ignore the captionsId parameter.
     return null;
   })();
   if (requestedUnofficialTrack !== null) {

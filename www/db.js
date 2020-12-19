@@ -66,7 +66,9 @@ async function updateSchema() {
         language varchar(10),
         -- 32 bytes in base64 is 44 bytes
         public_key_base64 varchar(100),
-        PRIMARY KEY(video_id, captions_id)
+        PRIMARY KEY(video_id, captions_id),
+        UNIQUE(captions_id),
+        UNIQUE(public_key_base64)
       );
     `);
   } finally {
