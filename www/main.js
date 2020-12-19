@@ -557,6 +557,11 @@ const publishView = publish.map(value => {
           </div>
         </fieldset>
 
+        <label>
+          <input type="checkbox" required>
+          I have read and agree to the <a href="/terms">terms of service</a>.
+        </label>
+
         <!-- Publish | Cancel -->
         <div class="publish-input-group">
           <button type="submit"><span class="publish-icon"></span>Publish</button>
