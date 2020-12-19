@@ -48,11 +48,180 @@ function asyncHandler(handler) {
   }
 }
 
+// Copied from receipts.js due to es6 modules.
+function myReceiptsText({html}) {
+  return html`<style>.receipt-icon::before { content: "🧾"; }</style><span class="receipt-icon"></span>My receipts`;
+}
+function myReceiptsLink({html}) {
+  return html`<a href="/receipts">${myReceiptsText({html})}</a>`;
+}
+
+/**
+ * Get the YouTube video ID or null.
+ * This function does not reference any external values, so we can directly inline it.
+ * @param {string} value the URL
+ * @returns {string|null}
+ */
+function getVideoIdOrNull(value) {
+  // Detect plain video ID heuristically.
+  // https://webapps.stackexchange.com/a/101153
+  if (/^[0-9A-Za-z_-]{10}[048AEIMQUYcgkosw]$/.test(value)) {
+    return value;
+  }
+
+  // Get the URL:
+  var url;
+  try {
+    url = new URL(value);
+  } catch (e) {
+    try {
+      url = new URL('https://' + value);
+    } catch (e) {
+      return null;
+    }
+  }
+  if (url === null) return null;
+
+  try {
+    if ((url.origin === 'https://www.youtube.com' || url.origin === 'http://www.youtube.com') && url.pathname === '/watch') {
+      var vOrNull = new URLSearchParams(url.search).get('v');
+      if (vOrNull != null) return vOrNull;
+    } else if ((url.origin === 'https://youtu.be' || url.origin === 'http://youtu.be')) {
+      return url.pathname.substring(1);
+    }
+  } catch (e) {
+  }
+
+  return null;
+}
+
+app.get('/', (req, res) => {
+  renderToStream(html`
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="referrer" content="no-referrer">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Captions</title>
+      </head>
+      <body style="margin: 0 auto; max-width: 640px;">
+        <style>
+          :root {
+            --touch-target-size: 48px;
+          }
+          .justice-icon::before {
+            content: "⚖️";
+          }
+          .bug-icon::before {
+            content: "🐛";
+          }
+        </style>
+
+        <header>
+          <style>
+            h1 {
+              font-size: 1.5em;
+              padding: 0;
+              margin: 0;
+            }
+          </style>
+          <h1>Captions</h1>
+          Edit, share, and review captions for YouTube videos.<br>
+        </header>
+
+        <nav>
+          <script>
+            ${getVideoIdOrNull.toString()}
+            function updateValidity(v) {
+              v.setCustomValidity(
+                getVideoIdOrNull(v.value) == null ?
+                'Please enter a valid YouTube URL.' :
+                '');
+            }
+            function simplifyUrl(v) {
+              updateValidity(v);
+              var videoId = getVideoIdOrNull(v.value);
+              if (videoId != null) {
+                v.value = videoId;
+              }
+            }
+          </script>
+          <form class="nav-form" action="/watch" onsubmit="simplifyUrl(this.querySelector('input[name=v]'))">
+            <style>
+              .nav-form {
+                margin: 0.5em 0;
+              }
+              .nav-form select,
+              .nav-form input,
+              .nav-form button {
+                height: var(--touch-target-size);
+              }
+            </style>
+            <label>YouTube URL:</label>
+            <div style="display: flex;">
+              <input name="v" style="display: inline-block; flex-grow: 1;"
+                  placeholder="https://www.youtube.com/watch?v=gKqypLvwd70"
+                  oninput="updateValidity(this)"
+                  onchange="updateValidity(this)"
+                  autofocus required spellcheck="false">
+              <button>View captions</button>
+            </div>
+          </form>
+
+          <ul>
+            <li>${myReceiptsLink({html})}</li>
+            <li><a href="/fake_receipt">Fake receipts</a></li>
+            <li>
+              <a href="https://github.com/yingted/ytcc2/issues/new"><span class="bug-icon"></span>Report an issue</a>
+            </li>
+            <li>
+              <a href="/terms"><span class="justice-icon"><span>Terms of service</a>
+            </li>
+          </ul>
+        </nav>
+      </body>
+    </html>
+  `).pipe(res);
+});
+
+app.get('/terms', (req, res) => {
+  renderToStream(html`
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="referrer" content="no-referrer">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Terms of service</title>
+      </head>
+      <body style="margin: 0 auto; max-width: 640px;">
+        <main>
+        </main>
+      </body>
+    </html>
+  `).pipe(res);
+});
 
 app.get('/watch', asyncHandler(async (req, res) => {
-  let videoId = req.query.v;
+  let videoId = getVideoIdOrNull(req.query.v);
   let captionsId = req.query.id;
 
+  // Validate the video ID:
+  if (videoId === null) {
+    res.status(400).type('text/plain').send('Invalid YouTube video URL: ' + req.query.v);
+    return;
+  }
+  if (videoId !== req.query.v) {
+    let params = {v: videoId};
+    if (captionsId != null) {
+      params.captionsId = captionsId;
+    }
+    res.redirect(301, '/watch?' + new URLSearchParams(params).toString());
+    return;
+  }
+
+  // Get the captions tracks:
   let tracks = (await db.query(`
     SELECT t.captions_id AS captions_id, t.language AS language, t.srt AS srt
     FROM captions AS t

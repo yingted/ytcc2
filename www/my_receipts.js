@@ -53,9 +53,6 @@ switch (location.pathname) {
             padding: 0;
             margin: 0;
           }
-          h1 select {
-            height: var(--touch-target-size);
-          }
         </style>
         <h1>Receipt added</h1>
         See it in ${myReceiptsLink({html})}.
