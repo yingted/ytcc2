@@ -106,6 +106,9 @@ function renderReceipt({html, script}, {videoId, language, captionsId, secretKey
               html`
                 <a href=${blobUrl} download="receipt-${videoId}.html"><span class="download-icon"></span>Download</a>
                 <button type="button" @click=${e => {
+                  if (!window.confirm('Delete receipt?')) {
+                    return;
+                  }
                   deleteCookie(receipt);
                   update && update();
                 }}><span class="delete-icon"></span><span class="receipt-icon"></span>Delete</button>

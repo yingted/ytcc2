@@ -89,7 +89,12 @@ upload.addEventListener('change', function() {
 });
 
 form.querySelector('.receipt-captions-delete-link')
-  .addEventListener('click', () => showReceiptAndNavigate(form.elements.origin.value + '/delete', {}));
+  .addEventListener('click', () => {
+    if (!window.confirm('Delete captions?')) {
+      return;
+    }
+    showReceiptAndNavigate(form.elements.origin.value + '/delete', {});
+  });
 
 let cookieImport = form.querySelector('.receipt-cookie-import-link');
 if (cookieImport !== null) {
