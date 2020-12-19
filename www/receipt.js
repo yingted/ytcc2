@@ -85,7 +85,7 @@ function renderReceipt({html, script}, receipt, type, objectUrl, update) {
 
         <div>
           Captions:
-          <a href="${origin}/watch?v=${videoId}&id=${captionsId}"><span class="view-icon"></span>View</a>
+          <a href="${origin}/watch?v=${videoId}#id=${captionsId}"><span class="view-icon"></span>View</a>
           <!-- Don't validate the file, since the server could have updated the parser. -->
           <!-- Let's leave the filters to avoid people uploading videos by accident. -->
           <input class="receipt-captions-replace-upload" type="file" style="display: none;" accept=".srt,text/srt,.xml,application/xml">
@@ -132,7 +132,7 @@ function renderReceipt({html, script}, receipt, type, objectUrl, update) {
 
 export function renderFileReceipt({html, script}, receipt) {
   return {
-    title: `Captions receipt: ${videoId} ${captionsId}`,
+    title: `Captions receipt: ${receipt.videoId} ${receipt.captionsId}`,
     body: renderReceipt({html, script}, receipt, /*type=*/file),
   };
 }

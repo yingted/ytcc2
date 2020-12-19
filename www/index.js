@@ -303,6 +303,7 @@ app.get('/terms', (req, res) => {
               You can still use the captions editor without playing the video.
             </li>
             <li>The rest of the site mostly avoids cookies. Expect lots of popups.</li>
+            <li>The watch page uses your browser language to pick the captions to load and the language to publish in.</li>
             <li>Your receipts stay on your device.</li>
             <li>This website tracks receipts and knows when anyone edits/deletes captions, or show the receipt to it.</li>
             <li>Receipts are not linked to each other, but they are linked to the captions.</li>
@@ -315,8 +316,6 @@ app.get('/terms', (req, res) => {
 
 app.get('/watch', asyncHandler(async (req, res) => {
   let videoId = getVideoIdOrNull(req.query.v);
-  // Need this for the redirect.
-  let captionsId = req.query.id;
 
   // Validate the video ID:
   if (videoId === null) {
@@ -324,11 +323,7 @@ app.get('/watch', asyncHandler(async (req, res) => {
     return;
   }
   if (videoId !== req.query.v) {
-    let params = {v: videoId};
-    if (captionsId != null) {
-      params.captionsId = captionsId;
-    }
-    res.redirect(301, '/watch?' + new URLSearchParams(params).toString());
+    res.redirect(301, '/watch?v=' + encodeURIComponent(videoId));
     return;
   }
 
@@ -345,7 +340,6 @@ app.get('/watch', asyncHandler(async (req, res) => {
 
   const params = {
     videoId,
-    captionsId,
     tracks,
   };
 
@@ -577,10 +571,7 @@ app.post('/replace', signedHandler(asyncHandler(async (req, res, publicKey, para
       console.error('/replace affected', cur.rowCount, 'rows');
     }
 
-    res.redirect('/watch?' + new URLSearchParams({
-      v: videoId,
-      id: captionsId,
-    }).toString());
+    res.redirect('/watch?v=' + encodeURIComponent(videoId) + '#id=' + encodeURIComponent(captionsId));
   });
 })));
 

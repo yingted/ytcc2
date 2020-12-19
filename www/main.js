@@ -465,7 +465,7 @@ const publishView = publish.map(value => {
         }
 
         // Redirect (to avoid reusing things like key material):
-        window.location.href = `/watch?v=${params.videoId}&id=${captionsId}`;
+        window.location.href = `/watch?v=${params.videoId}#id=${captionsId}`;
 
         this.closest('dialog').close();
       }} class="publish-form">
@@ -881,6 +881,8 @@ function confirmOpenUnofficialTrack(unofficial, official) {
   });
 }
 
+let hashParams = new URLSearchParams(location.hash.substring(1));
+
 (async function main() {
   let tracks = await listTracks(params.videoId);
   window.tracks = tracks;
@@ -890,9 +892,10 @@ function confirmOpenUnofficialTrack(unofficial, official) {
     tracks.push(new UnofficialTrack(track));
   }
   let requestedUnofficialTrack = (function() {
-    if (params.captionsId == null) return null;
+    let captionsId = hashParams.get('id');
+    if (captionsId === null) return null;
     for (let track of tracks) {
-      if (track instanceof UnofficialTrack && track.captionsId === params.captionsId) {
+      if (track instanceof UnofficialTrack && track.captionsId === captionsId) {
         return track;
       }
     }
