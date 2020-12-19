@@ -8,18 +8,15 @@ export function myReceiptsLink({html}) {
   return html`<a href="/receipts">${myReceiptsText({html})}</a>`;
 }
 
-export function renderFileReceiptString({html, script}, {videoId, language, captionsId, secretKeyBase64}) {
-  return renderDocumentString(
-    {html},
-    renderFileReceipt(
-      {html, script},
-      {videoId, language, captionsId, secretKeyBase64}));
+export function renderFileReceiptString({html, script}, receipt) {
+  return renderDocumentString({html}, renderFileReceipt({html, script}, receipt));
 }
 
 /**
  * Render a receipt.
  * @param {function} html html literal
  * @param {function} script script tag
+ * @param {string} origin
  * @param {string} videoId
  * @param {string} language
  * @param {string} captionsId
@@ -29,11 +26,11 @@ export function renderFileReceiptString({html, script}, {videoId, language, capt
  * @param {function|undefined} update function to call on receipt change
  * @returns {{title: string, body: TemplateResult}}
  */
-function renderReceipt({html, script}, {videoId, language, captionsId, secretKeyBase64, type, objectUrl, update}) {
-  let receipt = {videoId, language, captionsId, secretKeyBase64, type};
+function renderReceipt({html, script}, receipt, type, objectUrl, update) {
+  let {origin, videoId, language, captionsId, secretKeyBase64} = receipt;
   let blobUrl = '';
   if (type === 'cookie' || type === 'combined') {
-    let file = renderFileReceiptString({html, script}, {videoId, language, captionsId, secretKeyBase64});
+    let file = renderFileReceiptString({html, script}, receipt);
     blobUrl = objectUrl.create({}, () => new Blob([file]));
   }
   return html`
@@ -62,7 +59,7 @@ function renderReceipt({html, script}, {videoId, language, captionsId, secretKey
       <fieldset>
         <legend>Submission information</legend>
 
-        <div><label>Origin: <input name="origin" value=${location.origin} disabled></label></div>
+        <div><label>Origin: <input name="origin" value=${origin} disabled></label></div>
         <div><label>Video ID: <input name="v" value=${videoId} disabled></label></div>
         <div><label>Language: <input name="lang" value=${language} disabled></label></div>
         <div><label>Caption ID: <input name="id" value=${captionsId} disabled></label></div>
@@ -88,7 +85,7 @@ function renderReceipt({html, script}, {videoId, language, captionsId, secretKey
 
         <div>
           Captions:
-          <a href="${location.origin}/watch?v=${videoId}&id=${captionsId}"><span class="view-icon"></span>View</a>
+          <a href="${origin}/watch?v=${videoId}&id=${captionsId}"><span class="view-icon"></span>View</a>
           <!-- Don't validate the file, since the server could have updated the parser. -->
           <!-- Let's leave the filters to avoid people uploading videos by accident. -->
           <input class="receipt-captions-replace-upload" type="file" style="display: none;" accept=".srt,text/srt,.xml,application/xml">
@@ -115,29 +112,28 @@ function renderReceipt({html, script}, {videoId, language, captionsId, secretKey
               ` : []}
         </div>
 
-        <div>
-          <label>
-            Show your receipt to a website (advanced):<br>
-            <input type="url" name="target" value="${location.origin}/find_receipt">
-          </label>
-          <button class="receipt-show-button" type="button">Show receipt</button>
-        </div>
+        <details>
+          <summary>Advanced</summary>
+          <div>
+            You can show your receipt to a website and ask it do something.
+            For example, showing it to ${origin}/delete asks it to delete your captions.
+            <label>
+              Show your receipt to a website:<br>
+              <input type="url" name="target" value="${origin}/find_receipt">
+            </label>
+            <button class="receipt-show-button" type="button">Show receipt</button>
+          </div>
+        </details>
       </fieldset>
       ${script(receiptEmbeddedJavascript)}
     </form>
   `;
 }
 
-export function renderFileReceipt({html, script}, {videoId, language, captionsId, secretKeyBase64}) {
+export function renderFileReceipt({html, script}, receipt) {
   return {
     title: `Captions receipt: ${videoId} ${captionsId}`,
-    body: renderReceipt({html, script}, {
-      videoId,
-      language,
-      captionsId,
-      secretKeyBase64,
-      type: 'file',
-    }),
+    body: renderReceipt({html, script}, receipt, /*type=*/file),
   };
 }
 
@@ -157,16 +153,8 @@ export function renderCookieReceipts({html, script}, receipts, objectUrls, updat
       </style>
       <h1>My receipts:</h1>
       <div style="border: 1px solid black;">
-        ${receipts.map(({videoId, language, captionsId, secretKeyBase64}, i) =>
-          renderReceipt({html, script}, {
-            videoId,
-            language,
-            captionsId,
-            secretKeyBase64,
-            type: 'cookie',
-            objectUrl: objectUrls[i],
-            update,
-          }))}
+        ${receipts.map((receipt, i) =>
+          renderReceipt({html, script}, receipt, /*type=*/'cookie', objectUrls[i], update))}
         ${receipts.length === 0 ?
           html`
             No receipts.<br>
@@ -178,14 +166,8 @@ export function renderCookieReceipts({html, script}, receipts, objectUrls, updat
   };
 }
 
-export function renderCombinedReceipt({html, script}, {videoId, language, captionsId, secretKeyBase64}) {
-  return renderReceipt({html, script}, {
-    videoId,
-    language,
-    captionsId,
-    secretKeyBase64,
-    type: 'combined',
-  });
+export function renderCombinedReceipt({html, script}, receipt) {
+  return renderReceipt({html, script}, receipt, /*type=*/'combined');
 }
 
 function receiptKey(videoId, captionsId) {
