@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+// This needs dialog-polyfill.css.
+
 import {html, render} from 'lit-html';
 import {until} from 'lit-html/directives/until.js';
 import {live} from 'lit-html/directives/live.js';
@@ -537,10 +539,15 @@ const publishView = publish.map(value => {
           ${initialized ? renderPreview(receipt) : []}
           <br>
           Save receipt to:<br>
+          <style>
+            .cookie-icon::before {
+              content: "🍪";
+            }
+          </style>
           <div class="publish-receipt-choice">
             <label>
               <input type="radio" name="receipt" value="file-and-cookie" required ?checked=${receiptType === "file-and-cookie"} @change=${receiptTypeChange}>
-              Both a receipt file and ${myReceiptsText({html})}
+              <span class="cookie-icon"></span>Both a receipt file and ${myReceiptsText({html})}
             </label>
           </div>
           <div class="publish-receipt-choice">
@@ -552,7 +559,7 @@ const publishView = publish.map(value => {
           <div class="publish-receipt-choice">
             <label>
               <input type="radio" name="receipt" value="cookie" required ?checked=${receiptType === "cookie"} @change=${receiptTypeChange}>
-              Only ${myReceiptsText({html})}
+              <span class="cookie-icon"></span>Only ${myReceiptsText({html})}
             </label>
           </div>
         </fieldset>

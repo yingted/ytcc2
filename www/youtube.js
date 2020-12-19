@@ -18,6 +18,12 @@ import {html, render} from 'lit-html';
 import {styleMap} from 'lit-html/directives/style-map.js';
 import {randomUuid, onRender} from './util.js';
 import {empty, toHtml} from 'ytcc2-captions';
+import dialogPolyfill from 'dialog-polyfill';
+
+// Dialogs need this as @render:
+let registerDialog = onRender(function() {
+  dialogPolyfill.registerDialog(this);
+});
 
  /**
   * Wait for `YT.Player` to be ready.
@@ -40,6 +46,7 @@ function waitForYouTubeIframeAPI() {
  * Wrapper for the YouTube IFrame Player API.
  * You can't use more than one of these at once.
  * this.captions is a 'raw t you can update.
+ * This needs dialog-polyfill.css.
  */
 export class YouTubeVideo {
   /**
@@ -52,7 +59,7 @@ export class YouTubeVideo {
     options = options || {};
     this.player = null;
     this.ready = false;
-    this._lastSeek = null;
+    this._lastDroppedSeek = null;
     this._userInteracted = false;
     this._handlers = [];
     this.captions = options.captions || empty;
@@ -93,6 +100,27 @@ export class YouTubeVideo {
           right: 0%;
           top: 50%;
           bottom: 12%;
+          z-index: 2;
+        }
+        .player-privacy-backdrop {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          max-width: 100%;
+          max-height: 100%;
+          margin: 0;
+          box-sizing: border-box;
+          z-index: 1;
+          background: rgba(255, 255, 255, 0.8);
+          display: flex;
+          align-items: center;
+        }
+        .player-privacy-dialog {
+          position: absolute;
+          max-width: 100%;
+          max-height: 100%;
+          box-sizing: border-box;
+          z-index: 1;
         }
         /* flex child to stick to the bottom */
         .captions-bbox {
@@ -109,14 +137,42 @@ export class YouTubeVideo {
           font-family: Roboto, "Arial Unicode Ms", Arial, Helvetica, Verdana, sans-serif;
           white-space: pre-wrap;
         }
+        .cookie-icon::before {
+          content: "🍪";
+        }
+        .cancel-icon::before {
+          content: "❌";
+        }
+        .player-privacy-dialog button {
+          height: var(--touch-target-size);
+        }
       </style>
       <div class="player-container" style=${styleMap({
         position: 'relative',
         width: '100%',
         'padding-bottom': 'calc(56.25% + 30px)',
       })}>
+        <div class="player-privacy-backdrop">
+          <dialog class="player-privacy-dialog" @render=${registerDialog} open>
+            <h2>Cookies</h2>
+            <form method="dialog">
+              Playing YouTube videos uses cookies.<br>
+              <br>
+              <div>
+                <button @click=${function() {
+                  for (let iframe of this.closest('.player-container').querySelectorAll('iframe[tabindex="-1"]')) {
+                    iframe.removeAttribute('tabindex');
+                  }
+                  this.closest('.player-privacy-backdrop').remove();
+                }}><span class="cookie-icon"></span>Play anyways</button>
+                <button><span class="cancel-icon"></span>Close</button>
+              </div>
+            </form>
+          </dialog>
+        </div>
         <iframe id=${id} width="100%" height="100%" style="position: absolute;" frameborder="0" src=${src}
           title="YouTube player"
+          tabindex="-1"
           @render=${onRender(() => {
             waitForYouTubeIframeAPI().then(() => {
               this.player = new YT.Player(id, {
@@ -163,6 +219,9 @@ export class YouTubeVideo {
 
   getCurrentTime() {
     if (!this.ready) return 0;
+    if (this._lastDroppedSeek !== null) {
+      return this._lastDroppedSeek;
+    }
     return this.player.getCurrentTime();
   }
   /**
@@ -171,8 +230,10 @@ export class YouTubeVideo {
    */
   seekTo(time) {
     if (!this.ready) return;
-    this._lastSeek = time;
-    if (!this._userInteracted) return;
+    if (!this._userInteracted) {
+      this._lastDroppedSeek = time;
+      return;
+    }
     this.player.seekTo(time, /*allowSeekAhead=*/true);
   }
 
@@ -184,8 +245,10 @@ export class YouTubeVideo {
     if (!this.ready) return;
     if (!this._userInteracted) {
       this._userInteracted = true;
-      if (this._lastSeek !== null) {
-        this.player.seekTo(this._lastSeek, /*allowSeekAhead=*/true);
+      if (this._lastDroppedSeek !== null) {
+        let time = this._lastDroppedSeek;
+        this._lastDroppedSeek = null;
+        this.player.seekTo(time, /*allowSeekAhead=*/true);
       }
     }
     switch (event.data) {

@@ -83,7 +83,7 @@ function renderReceipt({html, script}, {videoId, language, captionsId, secretKey
           Receipt:
           ${type === 'file' || type === 'combined' ?
               html`
-                <a class="receipt-cookie-import-link" href="javascript:">Add to ${myReceiptsText({html})}</a>
+                <a class="receipt-cookie-import-link" href="javascript:"><span style="cookie-icon"></span>Add to ${myReceiptsText({html})}</a>
               ` : []}
           ${type === 'cookie' || type === 'combined' ?
               html`

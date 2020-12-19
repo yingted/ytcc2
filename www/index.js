@@ -226,6 +226,7 @@ app.get('/terms', (req, res) => {
 
           <h2>Don't rely on this website</h2>
           <ul>
+            <li>There is no guarantee this website can do anything useful, or does not do anything harmful.</li>
             <li>The website admin can change anything at any time.</li>
             <li>This website can have bugs, errors, omissions, and other problems.</li>
             <li>This website can be taken down, given to somebody else, or hacked at any time.</li>
@@ -280,7 +281,7 @@ app.get('/terms', (req, res) => {
           <ul>
             <li>Only upload data you have copyright to.</li>
             <li>You give this website the right to publish your uploads forever, until you delete it.</li>
-            <li>You will keep your upload receipts so you can delete your uploads.</li>
+            <li>You need to keep your upload receipts to delete your uploads.</li>
             <li>Even if you delete your upload, someone else could have copied it.</li>
             <li>If someone else uploaded your stuff, contact the website to take it down.</li>
           </ul>
@@ -296,10 +297,12 @@ app.get('/terms', (req, res) => {
           <ul>
             <li>
               The /watch page sends data to YouTube.
-              Clicking or typing into either the video or the captions box sends information to YouTube.
+              Playing the video enables YouTube tracking.
+              You can still use the captions editor without playing the video.
             </li>
+            <li>The rest of the site mostly avoids cookies. Expect lots of popups.</li>
             <li>Your receipts stay on your device.</li>
-            <li>This website tracks receipts and knows when edit/delete captions, or show the receipt to it.</li>
+            <li>This website tracks receipts and knows when anyone edits/deletes captions, or show the receipt to it.</li>
             <li>Receipts are not linked to each other, but they are linked to the captions.</li>
           </ul>
         </main>
