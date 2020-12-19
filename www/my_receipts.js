@@ -16,17 +16,51 @@
 
 import {html, render} from 'lit-html';
 import {ObjectUrl} from './object_url.js';
-import {allCookies, renderCookieReceipts} from './receipt.js';
+import {allCookies, renderCookieReceipts, addCookie, myReceiptsLink} from './receipt.js';
 import {script} from './script_web.js';
 
-function update() {
-  const receipts = allCookies();
-  window.receipts = receipts;
-  const objectUrls = receipts.map(receipt => new ObjectUrl());
-  const {title, body} = renderCookieReceipts({html, script}, receipts, objectUrls, update);
-  document.title = title;
-  render(body, document.body);
-}
+switch (location.pathname) {
+  case '/receipts': {
+    let update = function update() {
+      const receipts = allCookies();
+      window.receipts = receipts;
+      const objectUrls = receipts.map(receipt => new ObjectUrl());
+      const {title, body} = renderCookieReceipts({html, script}, receipts, objectUrls, update);
+      document.title = title;
+      render(body, document.body);
+    }
 
-window.addEventListener('storage', update);
-update();
+    window.addEventListener('storage', update);
+    update();
+    break;
+  }
+  case '/add_receipt': {
+    let hash = location.hash;
+    if (hash.startsWith('#')) {
+      let params = Object.fromEntries(new URLSearchParams(hash.substring(1)).entries());
+      let receipt = {
+        origin: location.origin,
+        videoId: params.v,
+        captionsId: params.id,
+        language: params.lang,
+        secretKeyBase64: params.secretKeyBase64,
+      };
+      addCookie(receipt);
+      render(html`
+        <style>
+          h1 {
+            font-size: 1.5em;
+            padding: 0;
+            margin: 0;
+          }
+          h1 select {
+            height: var(--touch-target-size);
+          }
+        </style>
+        <h1>Receipt added</h1>
+        See it in ${myReceiptsLink({html})}.
+      `, document.body);
+    }
+    break;
+  }
+}
