@@ -75,7 +75,10 @@ function renderReceipt({html, script}, {videoId, language, captionsId, secretKey
         <div>
           Captions:
           <a href="${location.origin}/watch?v=${videoId}&id=${captionsId}"><span class="view-icon"></span>View</a>
-          <a class="receipt-captions-edit-link" href="javascript:"><span class="edit-icon"></span>Edit</a>
+          <!-- Don't validate the file, since the server could have updated the parser. -->
+          <!-- Let's leave the filters to avoid people uploading videos by accident. -->
+          <input class="receipt-captions-replace-upload" type="file" style="display: none;" accept=".srt,text/srt,.xml,application/xml">
+          <button type="button" class="receipt-captions-replace-button"><span class="edit-icon"></span>Replace</button>
           <a class="receipt-captions-delete-link" href="javascript:"><span class="delete-icon"></span>Delete</a>
         </div>
 

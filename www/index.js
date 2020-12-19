@@ -17,7 +17,7 @@
 const express = require('express');
 const {html, renderToStream} = require('@popeindustries/lit-html-server');
 const expressStaticGzip = require('express-static-gzip');
-const {decodeSrt, normalizeSrt, encodeSrt} = require('ytcc2-captions');
+const {decodeSrt, normalizeSrt, encodeSrt, decodeJson3, decodeSrv3, stripRaw} = require('ytcc2-captions');
 const db = require('./db');
 const config = require('./config');
 const crypto = require('crypto');
@@ -488,7 +488,7 @@ let signedHandler = function signedHandler(handler) {
     return handler(req, res, publicKey, params);
   };
 };
-app.post('/delete', upload.none(), signedHandler(asyncHandler(async (req, res, publicKey, params) => {
+app.post('/delete', signedHandler(asyncHandler(async (req, res, publicKey, params) => {
   await db.withClient(async client => {
     // Find the caption whose key was provided:
     let {rows} = await client.query(`
@@ -514,6 +514,73 @@ app.post('/delete', upload.none(), signedHandler(asyncHandler(async (req, res, p
       WHERE t.video_id=$1 AND t.captions_id=$2
     `, [video_id, captions_id]);
     res.sendStatus(200);
+  });
+})));
+app.post('/replace', signedHandler(asyncHandler(async (req, res, publicKey, params) => {
+  await db.withClient(async client => {
+    // Parse the file:
+    let {bytesBase64} = params;
+    if (typeof bytesBase64 !== 'string') {
+      res.sendStatus(400);
+      return;
+    }
+
+    let buf = new Uint8Array(Buffer.from(bytesBase64, 'base64')).buffer;
+    let captions;
+    try {
+      captions = decodeSrt(buf);
+    } catch (e) {
+      try {
+        captions = stripRaw(decodeSrv3(buf));
+      } catch (e) {
+        try {
+          captions = stripRaw(decodeJson3(buf));
+        } catch (e) {
+          res.sendStatus(400);
+          return;
+        }
+      }
+    }
+
+    let srt = Buffer.from(encodeSrt(normalizeSrt(captions))).toString('utf8');
+
+    // Get the IDs for the redirect.
+    let {rows} = await client.query(`
+      SELECT t.video_id AS video_id, t.captions_id AS captions_id
+      FROM captions AS t
+      WHERE t.public_key_base64=$1
+    `, [publicKey]);
+    if (rows.length > 1) {
+      console.error('/replace affects', rows.length, 'rows');
+      res.sendStatus(500);
+      return;
+    }
+    if (rows.length === 0) {
+      res.sendStatus(404);
+      return;
+    }
+    let videoId = rows[0].video_id;
+    let captionsId = rows[0].captions_id;
+
+    // Find the caption whose key was provided:
+    let cur = await client.query(`
+      UPDATE captions AS t
+      SET srt=$1
+      WHERE t.public_key_base64=$2
+    `, [srt, publicKey]);
+
+    if (cur.rowCount === 0) {
+      res.sendStatus(400);
+      return;
+    }
+    if (cur.rowCount > 1) {
+      console.error('/replace affected', cur.rowCount, 'rows');
+    }
+
+    res.redirect('/watch?' + new URLSearchParams({
+      v: videoId,
+      id: captionsId,
+    }).toString());
   });
 })));
 

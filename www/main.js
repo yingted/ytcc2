@@ -22,7 +22,7 @@ import {live} from 'lit-html/directives/live.js';
 import {asyncReplace} from 'lit-html/directives/async-replace.js';
 import {YouTubeVideo} from './youtube.js';
 import {CaptionsEditor} from './editor.js';
-import {decodeJson3FromJson, decodeSrv3, decodeSrt, stripRaw} from 'ytcc2-captions';
+import {decodeJson3, decodeJson3FromJson, decodeSrv3, decodeSrt, stripRaw} from 'ytcc2-captions';
 import {listTracks} from './youtube_captions.js';
 import {onRender} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
@@ -606,22 +606,50 @@ class TrackPicker {
         file.arrayBuffer().then(buffer => {
           let captions = null;
 
-          if (file.name.toLowerCase().endsWith('.srt')) {
+          let trySrt = function trySrt(verbose) {
             try {
               captions = decodeSrt(buffer);
+              return true;
             } catch (e) {
-              console.error(e);
-              alert('Error importing SRT file: ' + file.name);
+              if (verbose) {
+                console.error(e);
+                alert('Error importing SRT file: ' + file.name);
+              }
             }
-          } else if (file.name.toLowerCase().endsWith('.xml')) {
+            return false;
+          };
+          let trySrv3 = function trySrv3(verbose) {
             try {
               captions = stripRaw(decodeSrv3(buffer));
+              return true;
             } catch (e) {
-              console.error(e);
-              alert('Error importing srv3 file: ' + file.name);
+              if (verbose) {
+                console.error(e);
+                alert('Error importing srv3 file: ' + file.name);
+              }
             }
+            return false;
+          };
+          let tryJson3 = function tryJson3(verbose) {
+            try {
+              captions = stripRaw(decodeSrv3(buffer));
+              return true;
+            } catch (e) {
+              if (verbose) {
+                console.error(e);
+                alert('Error importing srv3 file: ' + file.name);
+              }
+            }
+            return false;
+          };
+          if (file.name.toLowerCase().endsWith('.srt') && trySrt(true)) {
+          } else if (file.name.toLowerCase().endsWith('.xml') && trySrv3(true)) {
+          } else if (file.name.toLowerCase().endsWith('.json') && tryJson3(true)) {
+          } else if (trySrt(false)) {
+          } else if (trySrv3(false)) {
+          } else if (tryJson3(false)) {
           } else {
-            alert('File name must end with .srt or .xml: ' + file.name);
+            alert('Captions file name should end with .srt or .xml: ' + file.name);
           }
 
           if (captions !== null) {
@@ -651,7 +679,7 @@ class TrackPicker {
         <h1>
           <input type="file"
             style="display: none;"
-            accept=".srt,text/srt,.xml,application/xml"
+            accept=".srt,text/srt,.xml,application/xml,.json,application/json"
             @render=${onRender(function() { filePicker = this; })}
             @change=${openFile}>
           <label style="width: 100%; display: flex; align-items: center;">

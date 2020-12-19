@@ -1,4 +1,6 @@
-- /edit
+- receipt a11y
+- unsaved changes on save/publish
+- put captionsId into # and remove watch redirect
 
 - review/diff page
 - invite translations for a channel
@@ -10,3 +12,4 @@
 
 - /fake_receipt
 - /find_receipt
+- replace-in-publish

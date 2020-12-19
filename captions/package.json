@@ -21,7 +21,9 @@
     "@glennsl/bs-jest": "^0.5.1",
     "bs-platform": "*",
     "jest": "^26.6.1",
-    "jest-environment-jsdom": "^25.5.0"
+    "jest-environment-jsdom": "^25.5.0",
+    "jsdom": "16.4.0",
+    "jsdom-global": "3.0.2"
   },
   "dependencies": {
     "jschardet": "^2.2.1",

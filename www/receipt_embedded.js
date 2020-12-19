@@ -71,8 +71,22 @@ async function showReceiptAndNavigate(url, params) {
   });
 }
 
-form.querySelector('.receipt-captions-edit-link')
-  .addEventListener('click', () => showReceiptAndNavigate(form.elements.origin.value + '/edit', {}));
+let upload = form.querySelector('.receipt-captions-replace-upload');
+form.querySelector('.receipt-captions-replace-button')
+  .addEventListener('click', function() {
+    upload.click();
+  });
+upload.addEventListener('change', function() {
+  let file = this.files[0];
+  let reader = new FileReader();
+  reader.onload = function(e) {
+    let bytesBase64 = btoa(e.target.result);
+    showReceiptAndNavigate(form.elements.origin.value + '/replace', {bytesBase64});
+  };
+  reader.readAsBinaryString(file);
+  this.value = '';
+  debugger;
+});
 
 form.querySelector('.receipt-captions-delete-link')
   .addEventListener('click', () => showReceiptAndNavigate(form.elements.origin.value + '/delete', {}));
