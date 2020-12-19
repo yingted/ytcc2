@@ -69,8 +69,22 @@ function renderReceipt({html, script}, {videoId, language, captionsId, secretKey
         <div><label>Password: <input name="secretKeyBase64" type="password" value=${secretKeyBase64} disabled></label></div>
       </fieldset>
 
-      <fieldset>
+      <fieldset class="actions-fieldset">
         <legend>Actions</legend>
+
+        <style>
+          .actions-fieldset {
+            --touch-target-size: 48px;
+          }
+          .actions-fieldset input,
+          .actions-fieldset button {
+            height: var(--touch-target-size);
+          }
+          .actions-fieldset a[href] {
+            display: inline-block;
+            padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
+          }
+        </style>
 
         <div>
           Captions:
