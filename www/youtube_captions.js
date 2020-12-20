@@ -29,6 +29,7 @@ class Track {
    * @param {string} options.lang language iso code
    * @param {string} options.langOriginal language in the language
    * @param {string} options.langTranslated language in our language
+   * @param {string} options.langDefault maybe the default for this language?
    * @param {?string} options.ytdataId ID for new YT data API
    */
   constructor(options) {
@@ -75,6 +76,7 @@ export function listTracks(videoId) {
           lang: track.getAttribute('lang_code'),
           langOriginal: track.getAttribute('lang_original'),
           langTranslated: track.getAttribute('lang_translated'),
+          langDefault: track.getAttribute('lang_default') == 'true',
           name: track.getAttribute('name'),
         }));
       }

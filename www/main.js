@@ -844,6 +844,9 @@ function getDefaultTrack(tracks) {
   }
   for (let language of languages) {
     for (let track of tracks) {
+      if (track.lang === language && track.langDefault) return track;
+    }
+    for (let track of tracks) {
       if (track.lang === language) return track;
     }
   }
