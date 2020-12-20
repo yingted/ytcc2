@@ -16,7 +16,8 @@
 
 import {EditorState, EditorSelection, Transaction} from '@codemirror/next/state';
 import {EditorView, keymap, Decoration, ViewPlugin, WidgetType} from '@codemirror/next/view';
-import {defaultKeymap} from '@codemirror/next/commands';
+import {searchKeymap} from '@codemirror/next/search';
+import * as commands from '@codemirror/next/commands';
 import {history, historyKeymap} from '@codemirror/next/history';
 import {indentService} from '@codemirror/next/language';
 import {render, html} from 'lit-html';
@@ -387,8 +388,22 @@ export class CaptionsEditor {
           history(),
           keymap([
             ...homeEndKeymap,
-            ...defaultKeymap,
             ...historyKeymap,
+            ...searchKeymap,
+            // { key: "Alt-ArrowLeft", mac: "Ctrl-ArrowLeft", run: commands.cursorSyntaxLeft, shift: commands.selectSyntaxLeft },
+            // { key: "Alt-ArrowRight", mac: "Ctrl-ArrowRight", run: commands.cursorSyntaxRight, shift: commands.selectSyntaxRight },
+            { key: "Alt-ArrowUp", run: commands.moveLineUp },
+            { key: "Shift-Alt-ArrowUp", run: commands.copyLineUp },
+            { key: "Alt-ArrowDown", run: commands.moveLineDown },
+            { key: "Shift-Alt-ArrowDown", run: commands.copyLineDown },
+            { key: "Escape", run: commands.simplifySelection },
+            { key: "Mod-l", run: commands.selectLine },
+            // { key: "Mod-i", run: commands.selectParentSyntax },
+            // { key: "Mod-[", run: commands.indentLess },
+            // { key: "Mod-]", run: commands.indentMore },
+            // { key: "Mod-Alt-\\", run: commands.indentSelection },
+            { key: "Shift-Mod-k", run: commands.deleteLine },
+            { key: "Shift-Mod-\\", run: commands.cursorMatchingBracket }
           ]),
           captionsHighlighterExtension,
           EditorView.updateListener.of(this._onEditorUpdate.bind(this)),

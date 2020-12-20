@@ -133,7 +133,7 @@ function renderReceipt({html, script}, receipt, type, objectUrl, update) {
 export function renderFileReceipt({html, script}, receipt) {
   return {
     title: `Captions receipt: ${receipt.videoId} ${receipt.captionsId}`,
-    body: renderReceipt({html, script}, receipt, /*type=*/file),
+    body: renderReceipt({html, script}, receipt, /*type=*/'file'),
   };
 }
 
