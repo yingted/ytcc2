@@ -430,7 +430,58 @@ app.post('/publish', upload.none(), asyncHandler(async (req, res) => {
   });
 }));
 
-let nonces = new Set();
+class TtlSet {
+  /**
+   * Create a set with a coarse-grained TTL.
+   * Time complexity is numShards and timeout margin is ttl / numShards.
+   * This object cannot be deleted.
+   * @param {number} numShards the number of shards, must be >= 2
+   * @param {number} ttl the minimum time to keep things around
+   */
+  constructor(numShards, ttl) {
+    if (numShards < 2) throw new Error('numShards < 2: ' + numShards);
+    // [newest, second-newest, ..., oldest]
+    this._shards = [];
+    for (let i = 0; i < numShards; ++i) {
+      this._shards.push(new Set());
+    }
+    setInterval(function() {
+      let [removed] = this._shards.splice(this._shards.length - 1);
+      this._shards.unshift(new Set());
+    }, ttl / (numShards - 1));
+  }
+
+  /**
+   * Add a value if it's not included.
+   * Extends the TTL.
+   */
+  add(value) {
+    this._shards[0].add(value);
+  }
+
+  /**
+   * Removes a value.
+   */
+  remove(value) {
+    for (let shard of this._shards) {
+      shard.remove(value);
+    }
+  }
+
+  /**
+   * Tests if a value exists.
+   */
+  has(value) {
+    for (let shard of this._shards) {
+      if (shard.has(value)) return true;
+    }
+    return false;
+  }
+}
+// Nonces are non-sensitive data, and the only reason for deleting it is to avoid memory leaks.
+// Security only depends on them being used at most once.
+// WCAG asks for a 20 hours session limit, but I'm increasing it to ~1 week since the cost is low.
+let nonces = new TtlSet(100, 3600 * 24 * 7);
 /**
  * Wrap a handler in signature verification code.
  * Takes trustingHandler(req, res, publicKey, params), where params is trusted.
