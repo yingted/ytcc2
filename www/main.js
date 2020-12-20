@@ -22,8 +22,7 @@ import {live} from 'lit-html/directives/live.js';
 import {asyncReplace} from 'lit-html/directives/async-replace.js';
 import {YouTubeVideo} from './youtube.js';
 import {CaptionsEditor} from './editor.js';
-import {decodeJson3, decodeJson3FromJson, decodeSrv3, decodeSrt, stripRaw} from 'ytcc2-captions';
-import {listTracks} from './youtube_captions.js';
+import {listTracks, getDefaultTrack} from './youtube_captions.js';
 import {onRender} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
 import {youtubeLanguages} from './gen/youtube_languages.js';
@@ -33,6 +32,7 @@ import {AsyncRef, Signal} from './util.js';
 import {sign_keyPair} from 'tweetnacl-ts';
 import {script} from './script_web.js';
 import {ObjectUrl} from './object_url.js';
+import {CaptionsPicker, UnofficialTrack} from './track_picker.js';
 
 // Browser workarounds:
 // Remove noscript:
@@ -50,49 +50,6 @@ const youtubeLogo = html`
     <path fill="red" d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3-5.2 3z"></path>
   </svg>
 `;
-
-class UnofficialTrack {
-  /**
-   * @param {string} options.captionsId
-   * @param {string} options.language
-   * @param {string} options.srt
-   */
-  constructor(options) {
-    Object.assign(this, options);
-  }
-
-  getCaptions() {
-    return decodeSrt(this.srt);
-  }
-
-  friendlyLanguage() {
-    let isoCode = this.language;
-    for (let {id, name} of youtubeLanguages) {
-      if (id === isoCode) return name;
-    }
-    return `(${isoCode})`;
-  }
-}
-
-function getTrackId(track) {
-  if (track instanceof UnofficialTrack) {
-    return 'unofficial-' + track.captionsId;
-  } else {
-    return 'youtube-' + track.lang + '--' + track.name;
-  }
-}
-
-function getFriendlyName(track) {
-  if (track instanceof UnofficialTrack) {
-    return `Unofficial ${track.friendlyLanguage()} (${track.captionsId})`;
-  } else {
-    let name = track.name;
-    if (name) {
-      name = ` (${name})`;
-    }
-    return `YouTube ${track.langOriginal}${name}`;
-  }
-}
 
 // Video model/view:
 const video = new YouTubeVideo(params.videoId);
@@ -594,165 +551,10 @@ const publishView = publish.map(value => {
   `;
 });
 
-class TrackPicker {
-  constructor() {
-    // Track picker model, representing programmatic changes:
-    this.model = new AsyncRef({
-      tracks: [],  // YT tracks
-      selectedTrack: null,
-    });
-    // Signal for picking YouTube captions.
-    // Also allow picking null (synthetic only).
-    /** @type {Signal<Track>} */
-    this.pick = new Signal();
-    // Signal for a captions file opened.
-    /** @type {Signal<Srt.raw Track.t>} */
-    this.openFile = new Signal();
-    /** @type {AsyncRef<TemplateResult>} */
-    this.view = this.model.map(({tracks, selectedTrack}) => {
-      let thiz = this;
-      let filePicker;
-      let openFile = function openFile(e) {
-        let files = this.files;
-        if (files.length !== 1) return;
-        let [file] = files;
-        file.arrayBuffer().then(buffer => {
-          let captions = null;
-
-          let trySrt = function trySrt(verbose) {
-            try {
-              captions = decodeSrt(buffer);
-              return true;
-            } catch (e) {
-              if (verbose) {
-                console.error(e);
-                alert('Error importing SRT file: ' + file.name);
-              }
-            }
-            return false;
-          };
-          let trySrv3 = function trySrv3(verbose) {
-            try {
-              captions = stripRaw(decodeSrv3(buffer));
-              return true;
-            } catch (e) {
-              if (verbose) {
-                console.error(e);
-                alert('Error importing srv3 file: ' + file.name);
-              }
-            }
-            return false;
-          };
-          let tryJson3 = function tryJson3(verbose) {
-            try {
-              captions = stripRaw(decodeSrv3(buffer));
-              return true;
-            } catch (e) {
-              if (verbose) {
-                console.error(e);
-                alert('Error importing srv3 file: ' + file.name);
-              }
-            }
-            return false;
-          };
-          if (file.name.toLowerCase().endsWith('.srt') && trySrt(true)) {
-          } else if (file.name.toLowerCase().endsWith('.xml') && trySrv3(true)) {
-          } else if (file.name.toLowerCase().endsWith('.json') && tryJson3(true)) {
-          } else if (trySrt(false)) {
-          } else if (trySrv3(false)) {
-          } else if (tryJson3(false)) {
-          } else {
-            alert('Captions file name should end with .srt or .xml: ' + file.name);
-          }
-
-          if (captions !== null) {
-            // Set the track to null:
-            let {tracks, selectedTrack} = thiz.model.value;
-            selectedTrack = null;
-            thiz.model.value = {tracks, selectedTrack};
-            thiz.openFile.emit(captions);
-          }
-
-          if (this.files === files) {
-            this.value = null;
-          }
-        });
-      };
-      return html`
-        <style>
-          h1 {
-            font-size: 1.5em;
-            padding: 0;
-            margin: 0;
-          }
-          h1 select {
-            height: var(--touch-target-size);
-          }
-        </style>
-        <h1>
-          <input type="file"
-            style="display: none;"
-            accept=".srt,text/srt,.xml,application/xml,.json,application/json"
-            @render=${onRender(function() { filePicker = this; })}
-            @change=${openFile}>
-          <label style="width: 100%; display: flex; align-items: center;">
-            <span style="white-space: pre;">Captions: </span>
-            <select style="flex-grow: 1; min-width: 0;" @change=${function() {
-              let {tracks, selectedTrack} = thiz.model.value;
-
-              if (this.value === 'open-file') {
-                // Switch the picker back to the old value and show the dialog:
-                this.value =
-                  selectedTrack === null ? 'none' : 'youtube-' + selectedTrack.lang;
-                filePicker.click();
-                return;
-              }
-
-              selectedTrack = null;
-              for (let track of tracks) {
-                if (getTrackId(track) === this.value) {
-                  selectedTrack = track;
-                  break;
-                }
-              }
-
-              thiz.model.value = {tracks, selectedTrack};
-              thiz.pick.emit(selectedTrack);
-            }}>
-              <!-- null track, which users can't select -->
-              ${selectedTrack === null ? html`<option value="none" selected></option>` : []}
-              <option value="open-file">Choose file</option>
-              <optgroup label="YouTube">
-                ${tracks.filter(track => !(track instanceof UnofficialTrack)).map(track =>
-                  html`<option value="${getTrackId(track)}" ?selected=${selectedTrack === track}>${getFriendlyName(track)}</option>`
-                )}
-              </optgroup>
-              <optgroup label="Unofficial">
-                ${tracks.filter(track => track instanceof UnofficialTrack).map(track =>
-                  html`<option value="${getTrackId(track)}" ?selected=${selectedTrack === track}>${getFriendlyName(track)}</option>`
-                )}
-              </optgroup>
-            </select>
-          </label>
-        </h1>
-      `;
-    });
-  }
-  /**
-   * Redraw this widget and fire a synthetic change event.
-   */
-  onLoaded(tracks, selectedTrack) {
-    this.model.value = {tracks, selectedTrack};
-    this.pick.emit(selectedTrack);
-  }
-  render() {
-    return asyncReplace(this.view.observe());
-  }
-}
-const trackPicker = window.trackPicker = new TrackPicker();
+const captionsPicker = window.captionsPicker = new CaptionsPicker();
 
 // Render the page once:
-let trackPickerPrompt = document.createElement('DIV');
+let captionsPickerPrompt = document.createElement('DIV');
 render(html`
   <style>
     :root {
@@ -791,8 +593,8 @@ render(html`
         content: "🐛";
       }
     </style>
-    ${trackPicker.render()}
-    ${trackPickerPrompt}
+    ${captionsPicker.render()}
+    ${captionsPickerPrompt}
 
     <ul class="navbar">
       <li>
@@ -830,30 +632,6 @@ if (pickCaptionsDialog !== null) {
   pickCaptionsDialog.showModal();
 }
 
-// Main controller, binding everything together:
-
-/**
- * Get the default track based on navigator.language.
- * @param {array<Track>} tracks
- * @returns {Track|null}
- */
-function getDefaultTrack(tracks) {
-  let languages = [navigator.language];
-  if (/-/.test(navigator.language)) {
-    languages.push(navigator.language.replace(/-.*/, ''));
-  }
-  for (let language of languages) {
-    for (let track of tracks) {
-      if (track.lang === language && track.langDefault) return track;
-    }
-    for (let track of tracks) {
-      if (track.lang === language) return track;
-    }
-  }
-  if (tracks.length > 0) return tracks[0];
-  return null;
-}
-
 function confirmOpenUnofficialTrack(unofficial, official) {
   let confirmed = true;
   return new Promise(resolve => {
@@ -887,28 +665,35 @@ function confirmOpenUnofficialTrack(unofficial, official) {
           Open the unofficial captions instead of the official captions?
 
           <div class="pick-captions-input-group">
-            <button type="submit"><span class="accept-icon"></span>${getFriendlyName(unofficial)}</button>
+            <button type="submit"><span class="accept-icon"></span>${unofficial.name}</button>
             <button type="button" @click=${function() {
               confirmed = false;
               this.closest('dialog').close();
-            }}><span class="cancel-icon"></span>${getFriendlyName(official)}</button>
+            }}><span class="cancel-icon"></span>${official.name}</button>
           </div>
         </form>
       </dialog>
-      `, trackPickerPrompt);
-    trackPickerPrompt.querySelector('dialog').showModal();
+      `, captionsPickerPrompt);
+    captionsPickerPrompt.querySelector('dialog').showModal();
   });
 }
 
 let hashParams = new URLSearchParams(location.hash.substring(1));
 
-(async function main() {
-  let tracks = await listTracks(params.videoId);
-  window.tracks = tracks;
-  let track = getDefaultTrack(tracks);
-  // Make sure we don't pick this as the default:
+/**
+ * Get the YouTube and unofficial tracks.
+ * @returns {Track[]} tracks
+ * @returns {Track} defaultTrack
+ */
+async function getCombinedTracks() {
+  // Official tracks:
+  let officialTracks = await listTracks(params.videoId);
+  let defaultOfficialTrack = getDefaultTrack(officialTracks);
+
+  // Unofficial tracks:
+  let unofficialTracks = []
   for (let track of params.tracks) {
-    tracks.push(new UnofficialTrack(track));
+    unofficialTracks.push(new UnofficialTrack(track));
   }
   let requestedUnofficialTrack = (function() {
     let captionsId = hashParams.get('id');
@@ -921,51 +706,51 @@ let hashParams = new URLSearchParams(location.hash.substring(1));
     // If the track has been deleted, silently ignore the captionsId parameter.
     return null;
   })();
+
+  // Merged tracks:
+  let tracks = officialTracks.concat(unofficialTracks);
+  let defaultTrack = defaultOfficialTrack;
   if (requestedUnofficialTrack !== null) {
     let allowUnofficial = await confirmOpenUnofficialTrack(requestedUnofficialTrack, track);
     if (allowUnofficial) {
-      track = requestedUnofficialTrack;
+      defaultTrack = requestedUnofficialTrack;
     }
   }
 
-  let setCaptions = function setCaptions(editor, captions) {
-    if (editor === null) {
-      editor = new CaptionsEditor(video, captions);
-    } else {
-      editor.setCaptions(captions, /*addToHistory=*/true);
-      editor.setSaved();
-    }
-    return editor;
+  return {
+    tracks,
+    defaultTrack,
   };
-  trackPicker.pick.addListener(async track => {
-    let {editor: editor_, language} = editor.value;
+}
 
-    // Load the data:
-    let captions;
-    language = null;
-    if (track !== null) {
-      if (track instanceof UnofficialTrack) {
-        captions = track.getCaptions();
-        language = track.language;
-      } else {
-        captions = stripRaw(decodeJson3FromJson(await track.fetchJson3()));
-        language = track.lang;
-      }
+// Main controller, binding everything together:
+
+(async function main() {
+  // Bind captions picker to editor.
+  captionsPicker.captionsChange.addListener(({captions, language, type}) => {
+    let {
+      editor: curEditor,
+      language: curLanguage,
+    } = editor.value;
+
+    if (curEditor === null) {
+      curEditor = new CaptionsEditor(video, captions);
+    } else {
+      curEditor.setCaptions(captions, /*addToHistory=*/true);
+      curEditor.setSaved();
     }
 
-    // If we've been cancelled, return:
-    if (track !== trackPicker.model.value.selectedTrack) {
-      return;
-    }
+    curLanguage = language ?? curLanguage;
 
-    editor_ = setCaptions(editor_, captions);
+    editor.value = {
+      editor: curEditor,
+      language: curLanguage,
+    };
+  });
 
-    editor.value = {editor: editor_, language};
-  });
-  trackPicker.openFile.addListener(captions => {
-    let {editor: editor_, language} = editor.value;
-    editor_ = setCaptions(editor_, captions);
-    editor.value = {editor: editor_, language};
-  });
-  trackPicker.onLoaded(tracks, track);
+  let {tracks, defaultTrack} = await getCombinedTracks();
+  window.tracks = tracks;
+
+  captionsPicker.setTracks(tracks);
+  captionsPicker.selectTrack(defaultTrack);
 })();

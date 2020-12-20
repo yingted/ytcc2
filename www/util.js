@@ -81,15 +81,38 @@ export class AsyncRef {
     });
   }
   /**
+   * Iterate through all changes, but debounce events if the iteration is slow.
    * @returns {AsyncIterator<T>}
    */
-  async *observeFuture() {
-    let next = this.nextValue();
-    for (;;) {
-      let cur = await next;
-      next = this.nextValue();
-      yield cur;
-    }
+  observeFuture() {
+    let thiz = this;
+    let queue = [];
+    (function select() {
+      let next = new Promise(resolve => {
+        thiz._callbacks.push(x => {
+          // Add the next promise:
+          select();
+          // Resolve this promise:
+          resolve({value: x, done: false});
+        });
+      });
+      queue.push(next);
+      // Avoid having more than the most recent finished event and the next event:
+      if (queue.length > 2) {
+        queue = queue.slice(queue.length - 2);
+      }
+    })();
+
+    return {
+      [Symbol.asyncIterator]() {
+        return {
+          // Get the next event:
+          next() {
+            return queue.shift();
+          }
+        }
+      }
+    };
   }
   /**
    * @returns {AsyncIterator<T>}

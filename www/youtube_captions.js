@@ -21,7 +21,7 @@
  *     console.log(track, JSON.stringify(track.fetchJson3())));
  */
 
-class Track {
+class YouTubeTrack {
   /**
    * Make a new captions
    * @param {string} options.videoId
@@ -30,34 +30,54 @@ class Track {
    * @param {string} options.langOriginal language in the language
    * @param {string} options.langTranslated language in our language
    * @param {string} options.langDefault maybe the default for this language?
-   * @param {?string} options.ytdataId ID for new YT data API
    */
-  constructor(options) {
-    Object.assign(this, options);
+  constructor({videoId, name, lang, langOriginal, langTranslated, langDefault}) {
+    this._videoId = videoId;
+    this._trackName = name;
+    this._languageIsoCode = lang;
+    this._languageInLanguage = langOriginal;
+    this._languageName = langTranslated;
+    this._isDefault = langDefault;
+  }
+
+  /**
+   * @returns {string}
+   */
+  get name() {
+    let name = this._trackName;
+    if (name) {
+      name = ` (${name})`;
+    }
+    return `YouTube ${this._languageInLanguage}${name}`;
+  }
+
+  /**
+   * @returns {string}
+   */
+  get id() {
+    return 'youtube-' + this._languageIsoCode + '--' + this._trackName;
   }
 
   /**
    * Get the captions
    */
-  fetchJson3() {
-    return fetch('https://www.youtube-nocookie.com/api/timedtext?' +
-      'v=' + encodeURIComponent(this.videoId) + '&' +
-      'lang=' + encodeURIComponent(this.lang) + '&' +
-      'name=' + encodeURIComponent(this.name) + '&' +
-      'fmt=json3')
-    .then(res => {
-      if (!res.ok) {
-        throw new Error('could not get captions through youtube.com/api');
-      }
-      return res.json();
-    });
+  async fetchJson3() {
+    const res = await fetch('https://www.youtube-nocookie.com/api/timedtext?' +
+      'v=' + encodeURIComponent(this._videoId) + '&' +
+      'lang=' + encodeURIComponent(this._languageIsoCode) + '&' +
+      'name=' + encodeURIComponent(this._trackName) + '&' +
+      'fmt=json3');
+    if (!res.ok) {
+      throw new Error('could not get captions through youtube.com/api');
+    }
+    return res.json();
   }
 }
 
 /**
  * List the captions for a video.
  * @param {string} videoId
- * @returns {Promise<Track>}
+ * @returns {Promise<YouTubeTrack>}
  */
 export function listTracks(videoId) {
   return fetch('https://www.youtube-nocookie.com/api/timedtext?v=' + encodeURIComponent(videoId) + '&type=list&asrs=1')
@@ -71,15 +91,37 @@ export function listTracks(videoId) {
       let doc = new DOMParser().parseFromString(text, 'text/xml');
       let captions = [];
       for (let track of doc.querySelectorAll('transcript_list > track')) {
-        captions.push(new Track({
+        captions.push(new YouTubeTrack({
           videoId,
+          name: track.getAttribute('name'),
           lang: track.getAttribute('lang_code'),
           langOriginal: track.getAttribute('lang_original'),
           langTranslated: track.getAttribute('lang_translated'),
           langDefault: track.getAttribute('lang_default') == 'true',
-          name: track.getAttribute('name'),
         }));
       }
       return captions;
     });
+}
+
+/**
+ * Get the YouTube default track based on navigator.language.
+ * @param {YouTubeTrack[]} tracks
+ * @returns {YouTubeTrack|null}
+ */
+export function getDefaultTrack(tracks) {
+  let languages = [navigator.language];
+  if (/-/.test(navigator.language)) {
+    languages.push(navigator.language.replace(/-.*/, ''));
+  }
+  for (let language of languages) {
+    for (let track of tracks) {
+      if (track._languageIsoCode === language && track._isDefault) return track;
+    }
+    for (let track of tracks) {
+      if (track._languageIsoCode === language) return track;
+    }
+  }
+  if (tracks.length > 0) return tracks[0];
+  return null;
 }

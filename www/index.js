@@ -445,7 +445,7 @@ class TtlSet {
     for (let i = 0; i < numShards; ++i) {
       this._shards.push(new Set());
     }
-    setInterval(function() {
+    setInterval(() => {
       let [removed] = this._shards.splice(this._shards.length - 1);
       this._shards.unshift(new Set());
     }, ttl / (numShards - 1));

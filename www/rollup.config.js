@@ -88,7 +88,7 @@ export default [{
     commonjs(),
     babel({
       babelHelpers: 'bundled',
-      exclude: [/node_modules/],
+      exclude: [/node_modules/, /_trusted\.js/],
       presets: [
         ['@babel/preset-env', {
           // IE11 already doesn't work with a bunch of stuff, so let's just remove it
@@ -121,7 +121,7 @@ export default [{
     commonjs(),
     babel({
       babelHelpers: 'bundled',
-      exclude: [/node_modules/],
+      exclude: [/node_modules/, /_trusted\.js/],
       presets: [
         ['@babel/preset-env', {
           // IE11 already doesn't work with a bunch of stuff, so let's just remove it
@@ -161,7 +161,7 @@ export default [{
     commonjs(),
     babel({
       babelHelpers: 'bundled',
-      exclude: [/node_modules/],
+      exclude: [/node_modules/, /_trusted\.js/],
       presets: [
         ['@babel/preset-env', {
           // IE11 already doesn't work with a bunch of stuff, so let's just remove it
