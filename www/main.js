@@ -78,8 +78,9 @@ const saveAs = new AsyncRef({
   baseNameState: BaseNameState.PREFILLED,
   fileType: 'srv3',
 });
+window.saveAs = saveAs;
 const saveAsView = saveAs.map(state => {
-  let {editor, baseName, videoIdBaseName, titleBaseName, baseNameState, fileType} = state;
+  let {editor, baseName, videoIdBaseName, titleBaseName, baseNameState: _, fileType} = state;
   let fileName = baseName;
   let blobUrl = '';
   if (editor !== null) {
@@ -129,30 +130,30 @@ const saveAsView = saveAs.map(state => {
         <div>
           <label>
             Name: 
-            <input list="save-basenames" name="basename" .value=${live(baseNameState === BaseNameState.FOCUSED ? '' : baseName)}
+            <input list="save-basenames" name="basename" .value=${live(saveAs.value.baseNameState === BaseNameState.FOCUSED ? '' : saveAs.value.baseName)}
                 @click=${function(e) {
-                  if (baseNameState === BaseNameState.PREFILLED) {
-                    saveAs.value = Object.assign({}, state, {
+                  if (saveAs.value.baseNameState === BaseNameState.PREFILLED) {
+                    saveAs.value = Object.assign({}, saveAs.value, {
                       baseNameState: BaseNameState.FOCUSED,
                     });
                   }
                 }}
                 @focus=${function(e) {
-                  if (baseNameState === BaseNameState.PREFILLED) {
-                    saveAs.value = Object.assign({}, state, {
+                  if (saveAs.value.baseNameState === BaseNameState.PREFILLED) {
+                    saveAs.value = Object.assign({}, saveAs.value, {
                       baseNameState: BaseNameState.FOCUSED,
                     });
                   }
                 }}
                 @blur=${function(e) {
-                  if (baseNameState === BaseNameState.FOCUSED) {
-                    saveAs.value = Object.assign({}, state, {
+                  if (saveAs.value.baseNameState === BaseNameState.FOCUSED) {
+                    saveAs.value = Object.assign({}, saveAs.value, {
                       baseNameState: BaseNameState.PREFILLED,
                     });
                   }
                 }}
                 @change=${function(e) {
-                  saveAs.value = Object.assign({}, state, {
+                  saveAs.value = Object.assign({}, saveAs.value, {
                     baseName: this.value,
                     baseNameState: BaseNameState.MODIFIED,
                   });
@@ -169,7 +170,7 @@ const saveAsView = saveAs.map(state => {
           <label>
             File type:
             <select name="filetype" @change=${function(e) {
-              saveAs.value = Object.assign({}, state, {
+              saveAs.value = Object.assign({}, saveAs.value, {
                 fileType: this.value,
               });
             }}>
@@ -804,6 +805,10 @@ async function getCombinedTracks() {
       editor: curEditor,
       language: curLanguage,
     };
+  });
+
+  diffBasePicker.captionsChange.addListener(({captions, language, type}) => {
+    console.log('diffbase pick', {captions, language, type});
   });
 
   let {tracks, defaultTrack} = await getCombinedTracks();

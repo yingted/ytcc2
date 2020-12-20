@@ -123,14 +123,30 @@ export class AsyncRef {
   }
   /**
    * Transform this AsyncRef with a synchronous function.
+   * Has a delay.
    */
-  map(func) {
+  _map(func) {
     let ret = new AsyncRef(func(this._value));
     let thiz = this;
     (async function() {
       for await (let x of thiz.observeFuture()) {
         ret.value = func(x);
       }
+    })();
+    return ret;
+  }
+
+  /**
+   * Transform this AsyncRef with a synchronous function.
+   */
+  map(func) {
+    let ret = new AsyncRef(func(this._value));
+    let thiz = this;
+    (function select() {
+      thiz._callbacks.push(function(x) {
+        select();
+        ret.value = func(x);
+      });
     })();
     return ret;
   }
