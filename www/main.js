@@ -201,6 +201,7 @@ const editor = window.editor = new AsyncRef({
   /** @type {string|null} */
   language: null,
 });
+const diffBasePicker = window.diffBasePicker = new CaptionsPicker();
 const editorView = editor.map(function renderEditorAndToolbar({editor, language}) {
   if (editor === null) {
     return html`Loading captions...`;
@@ -242,6 +243,17 @@ const editorView = editor.map(function renderEditorAndToolbar({editor, language}
       }
       .preview-icon::before {
         content: "🔍";
+      }
+      .diff-icon::before {
+        content: "@";
+        color: white;
+        background-color: red;
+        text-decoration: line-through;
+      }
+      .diff-icon::after {
+        content: "#";
+        color: white;
+        background-color: green;
       }
     </style>
 
@@ -298,7 +310,34 @@ const editorView = editor.map(function renderEditorAndToolbar({editor, language}
           dialog.showModal();
         }}><span class="publish-icon"></span>Publish</button>
       </li>
+
+      <li>
+        <button class="diff-button"><span class="diff-icon"></span>Compare</button>
+      </li>
     </ul>
+
+    <div class="diff-picker-container">
+      <style>
+        .diff-picker-container h2 {
+          font-size: 1.5em;
+          padding: 0;
+          margin: 0;
+          width: 100%;
+        }
+        .diff-picker-container select {
+          height: var(--touch-target-size);
+          flex-grow: 1;
+          min-width: 0;
+        }
+      </style>
+      <h2>
+        <label class="diff-picker-container" style="width: 100%; display: flex; align-items: center;">
+          <span style="white-space: pre;">Comparing with: </span>
+          ${diffBasePicker.render()}
+        </label>
+      </h2>
+    </label>
+
     ${editor.render()}
   `;
 });
@@ -593,7 +632,26 @@ render(html`
         content: "🐛";
       }
     </style>
-    ${captionsPicker.render()}
+    <style>
+      h1 {
+        font-size: 1.5em;
+        padding: 0;
+        margin: 0;
+      }
+      h1 select {
+        height: var(--touch-target-size);
+      }
+      h1 label.captions-picker select {
+        flex-grow: 1;
+        min-width: 0;
+      }
+    </style>
+    <h1>
+      <label class="captions-picker" style="width: 100%; display: flex; align-items: center;">
+        <span style="white-space: pre;">Captions: </span>
+        ${captionsPicker.render()}
+      </label>
+    </h1>
     ${captionsPickerPrompt}
 
     <ul class="navbar">
@@ -753,4 +811,5 @@ async function getCombinedTracks() {
 
   captionsPicker.setTracks(tracks);
   captionsPicker.selectTrack(defaultTrack);
+  diffBasePicker.setTracks(tracks);
 })();

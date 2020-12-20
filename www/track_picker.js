@@ -160,62 +160,48 @@ class TrackPicker {
         });
       };
       return html`
-        <style>
-          h1 {
-            font-size: 1.5em;
-            padding: 0;
-            margin: 0;
+        <select @change=${function() {
+          let {tracks, selectedTrack} = thiz.model.value;
+
+          if (this.value === 'open-file') {
+            // Switch the picker back to the old value and show the dialog:
+            this.value =
+              selectedTrack === null ? 'none' : 'youtube-' + selectedTrack.lang;
+            filePicker.click();
+            return;
           }
-          h1 select {
-            height: var(--touch-target-size);
+
+          selectedTrack = null;
+          for (let track of tracks) {
+            if (track.id === this.value) {
+              selectedTrack = track;
+              break;
+            }
           }
-        </style>
-        <h1>
-          <input type="file"
-            style="display: none;"
-            accept=".srt,text/srt,.xml,application/xml,.json,application/json"
-            @render=${onRender(function() { filePicker = this; })}
-            @change=${openFile}>
-          <label style="width: 100%; display: flex; align-items: center;">
-            <span style="white-space: pre;">Captions: </span>
-            <select style="flex-grow: 1; min-width: 0;" @change=${function() {
-              let {tracks, selectedTrack} = thiz.model.value;
 
-              if (this.value === 'open-file') {
-                // Switch the picker back to the old value and show the dialog:
-                this.value =
-                  selectedTrack === null ? 'none' : 'youtube-' + selectedTrack.lang;
-                filePicker.click();
-                return;
-              }
-
-              selectedTrack = null;
-              for (let track of tracks) {
-                if (track.id === this.value) {
-                  selectedTrack = track;
-                  break;
-                }
-              }
-
-              thiz.model.value = {tracks, selectedTrack};
-              thiz.pick.emit(selectedTrack);
-            }}>
-              <!-- null track, which users can't select -->
-              ${selectedTrack === null ? html`<option value="none" selected></option>` : []}
-              <option value="open-file">Choose file</option>
-              <optgroup label="YouTube">
-                ${tracks.filter(track => !(track instanceof UnofficialTrack)).map(track =>
-                  html`<option value="${track.id}" ?selected=${selectedTrack === track}>${track.name}</option>`
-                )}
-              </optgroup>
-              <optgroup label="Unofficial">
-                ${tracks.filter(track => track instanceof UnofficialTrack).map(track =>
-                  html`<option value="${track.id}" ?selected=${selectedTrack === track}>${track.name}</option>`
-                )}
-              </optgroup>
-            </select>
-          </label>
-        </h1>
+          thiz.model.value = {tracks, selectedTrack};
+          thiz.pick.emit(selectedTrack);
+        }}>
+          <!-- null track, which users can't select -->
+          ${selectedTrack === null ? html`<option value="none" selected></option>` : []}
+          <option value="open-file">Choose file</option>
+          <optgroup label="YouTube">
+            ${tracks.filter(track => !(track instanceof UnofficialTrack)).map(track =>
+              html`<option value="${track.id}" ?selected=${selectedTrack === track}>${track.name}</option>`
+            )}
+          </optgroup>
+          <optgroup label="Unofficial">
+            ${tracks.filter(track => track instanceof UnofficialTrack).map(track =>
+              html`<option value="${track.id}" ?selected=${selectedTrack === track}>${track.name}</option>`
+            )}
+          </optgroup>
+        </select>
+        <!-- label uses the first input, so put the hidden input second -->
+        <input type="file"
+          style="display: none;"
+          accept=".srt,text/srt,.xml,application/xml,.json,application/json"
+          @render=${onRender(function() { filePicker = this; })}
+          @change=${openFile}>
       `;
     });
   }
