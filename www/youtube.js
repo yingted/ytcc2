@@ -164,8 +164,8 @@ export class YouTubeVideo {
                     iframe.removeAttribute('tabindex');
                   }
                   this.closest('.player-privacy-backdrop').remove();
-                }}><span class="cookie-icon"></span>Play anyways</button>
-                <button><span class="cancel-icon"></span>Close</button>
+                }}><span class="cookie-icon"></span>Video with cookies</button>
+                <button><span class="cancel-icon"></span>Captions only</button>
               </div>
             </form>
           </dialog>

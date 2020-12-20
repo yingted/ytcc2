@@ -78,7 +78,7 @@ function getTrackId(track) {
   if (track instanceof UnofficialTrack) {
     return 'unofficial-' + track.captionsId;
   } else {
-    return 'youtube-' + track.lang;
+    return 'youtube-' + track.lang + '--' + track.name;
   }
 }
 
@@ -86,7 +86,11 @@ function getFriendlyName(track) {
   if (track instanceof UnofficialTrack) {
     return `Unofficial ${track.friendlyLanguage()} (${track.captionsId})`;
   } else {
-    return `YouTube ${track.langOriginal}`;
+    let name = track.name;
+    if (name) {
+      name = ` (${name})`;
+    }
+    return `YouTube ${track.langOriginal}${name}`;
   }
 }
 
@@ -252,6 +256,11 @@ const editorView = editor.map(function renderEditorAndToolbar({editor, language}
         list-style-type: none;
         padding: 0;
         margin: 0;
+        white-space: nowrap;
+        overflow-x: auto;
+      }
+      ul.toolbar > * {
+        white-space: normal;
       }
       ul.toolbar > li {
         display: inline-block;
@@ -757,12 +766,19 @@ render(html`
         width: 100%;
         min-width: 0;
         list-style-type: none;
+        margin: 0;
         padding: 0;
-        margin: 0 -1em 0 0;
+        white-space: nowrap;
+        overflow-x: auto;
+      }
+      ul.navbar > * {
+        white-space: normal;
       }
       ul.navbar > li {
         display: inline-block;
-        margin: 0 1em 0 0;
+      }
+      ul.navbar > li:not(:first) {
+        margin-inline-start: 0 0 0 1em;
       }
       ul.navbar > li > a[href] {
         display: inline-block;
@@ -780,15 +796,14 @@ render(html`
 
     <ul class="navbar">
       <li>
+        ${myReceiptsLink({html})}
+      </li>
+
+      <li>
         <a href="https://studio.youtube.com/video/${params.videoId}/translations"
             aria-label="Edit in YouTube Studio">
           <span class="pencil-icon"></span>${youtubeLogo} Studio
         </a>
-      </li>
-
-      <li>
-        <a href="https://youtubexternalcc.netlify.app/video-player.html?videoID=${params.videoId}"
-            aria-label="Edit in youtube external cc"><span class="pencil-icon"></span>youtubexternalcc</a>
       </li>
 
       <li>
@@ -797,7 +812,8 @@ render(html`
       </li>
 
       <li>
-        ${myReceiptsLink({html})}
+        <a href="https://youtubexternalcc.netlify.app/video-player.html?videoID=${params.videoId}"
+            aria-label="Edit in youtube external cc"><span class="pencil-icon"></span>youtubexternalcc</a>
       </li>
     </ul>
   </nav>
