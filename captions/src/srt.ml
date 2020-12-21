@@ -14,11 +14,6 @@
    limitations under the License.
 *)
 
-[%%raw {|
-require('jsdom-global')();
-global.DOMParser = window.DOMParser;
-|}]
-
 (* Unrecognized tags *)
 type raw = string
 type cue = raw Track.cue

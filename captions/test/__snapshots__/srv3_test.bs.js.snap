@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`converts /home/ted/ytcc2/captions/test/data/YTSubConverter/il4cAeVzZwI.orig.srv3.xml from json3 1`] = `
+exports[`converts ./data/YTSubConverter/il4cAeVzZwI.orig.srv3.xml from json3 1`] = `
 "<?xml version=\\"1.0\\" encoding=\\"utf-8\\" ?><timedtext format=\\"3\\">
 <head>
 <pen id=\\"0\\"/>
@@ -2642,7 +2642,7 @@ exports[`converts /home/ted/ytcc2/captions/test/data/YTSubConverter/il4cAeVzZwI.
 </timedtext>"
 `;
 
-exports[`converts /home/ted/ytcc2/captions/test/data/YTSubConverter/sc3-z_2aNX0.orig.srv3.xml from json3 1`] = `
+exports[`converts ./data/YTSubConverter/sc3-z_2aNX0.orig.srv3.xml from json3 1`] = `
 "<?xml version=\\"1.0\\" encoding=\\"utf-8\\" ?><timedtext format=\\"3\\">
 <head>
 <pen id=\\"0\\"/>

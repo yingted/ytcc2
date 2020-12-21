@@ -22,7 +22,6 @@
     "bs-platform": "*",
     "jest": "^26.6.1",
     "jest-environment-jsdom": "^25.5.0",
-    "jsdom": "16.4.0",
     "jsdom-global": "3.0.2"
   },
   "dependencies": {

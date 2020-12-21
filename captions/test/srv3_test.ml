@@ -42,8 +42,14 @@ describe "converts" (fun () ->
       |> Js.Json.parseExn)
     in
     let srv3 = lazy (readFileUtf8 path) in
+    let base_path =
+      "." ^
+      String.sub path
+      (String.length [%raw "__dirname"])
+      (String.length path - String.length [%raw "__dirname"])
+    in
 
-    test (path ^ " to json3") (fun () ->
+    test (base_path ^ " to json3") (fun () ->
       Lazy.force srv3
       |> Codec.decode_exn Srv3.xml_codec
       |> Js.Json.stringifyAny
@@ -52,7 +58,7 @@ describe "converts" (fun () ->
       |> expect
       |> toEqual (Lazy.force json));
 
-    test (path ^ " from json3") (fun () ->
+    test (base_path ^ " from json3") (fun () ->
       Lazy.force json
       |> Js.Json.stringify
       |> Codec.decode_exn Codec.json

@@ -46,7 +46,14 @@ let _ =
 describe "stabilizes" (fun () ->
   listFiles (([%raw "__dirname"]) ^ "/data/{pysub-parser/*.srt,courseinfo-rev.srt}")
   |> Js.Array.forEach (fun path ->
-    test path (fun () ->
+    let base_path =
+      "." ^
+      String.sub path
+      (String.length [%raw "__dirname"])
+      (String.length path - String.length [%raw "__dirname"])
+    in
+
+    test base_path (fun () ->
       let data = readFile path in
       let data1 = roundtrip Srt.codec data in
       let data2 = Result.bind data1 (roundtrip Srt.codec) in

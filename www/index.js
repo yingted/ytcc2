@@ -24,6 +24,8 @@ const crypto = require('crypto');
 const multer  = require('multer');
 const upload = multer();
 const {sign_open} = require('tweetnacl-ts');
+require('jsdom-global')();
+global.DOMParser = window.DOMParser;
 
 if (['production', 'development', undefined].indexOf(process.env.NODE_ENV) === -1) {
   throw new Error('Expected NODE_ENV=production or NODE_ENV=development (default), got ' + process.env.NODE_ENV);
@@ -446,7 +448,7 @@ class TtlSet {
       this._shards.push(new Set());
     }
     setInterval(() => {
-      let [removed] = this._shards.splice(this._shards.length - 1);
+      let [deleted] = this._shards.splice(this._shards.length - 1);
       this._shards.unshift(new Set());
     }, ttl / (numShards - 1));
   }
@@ -460,11 +462,11 @@ class TtlSet {
   }
 
   /**
-   * Removes a value.
+   * Deletes a value.
    */
-  remove(value) {
+  delete(value) {
     for (let shard of this._shards) {
-      shard.remove(value);
+      shard.delete(value);
     }
   }
 
@@ -519,7 +521,7 @@ let signedHandler = function signedHandler(handler) {
       res.sendStatus(403);
       return;
     }
-    nonces.remove(untrustedNonce);
+    nonces.delete(untrustedNonce);
 
     // Verify the URL origin:
     let u = new URL(url);
