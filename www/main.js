@@ -316,12 +316,18 @@ const editorPaneView = editorPane.map(function renderEditorAndToolbar({editor, l
       </li>
 
       <li>
-        <button class="diff-button"><span class="diff-icon"></span>Compare</button>
+        <button class="diff-button" @click=${function() {
+          let picker = document.querySelector('.diff-picker-container');
+          picker.classList.toggle('collapsed');
+        }}><span class="diff-icon"></span>Compare</button>
       </li>
     </ul>
 
-    <div class="diff-picker-container">
+    <div class="diff-picker-container collapsed">
       <style>
+        .diff-picker-container.collapsed {
+          display: none;
+        }
         .diff-picker-container h2 {
           font-size: 1.5em;
           padding: 0;
@@ -335,12 +341,12 @@ const editorPaneView = editorPane.map(function renderEditorAndToolbar({editor, l
         }
       </style>
       <h2>
-        <label class="diff-picker-container" style="width: 100%; display: flex; align-items: center;">
+        <label style="width: 100%; display: flex; align-items: center;">
           <span style="white-space: pre;">Show changes: </span>
           ${diffBasePicker.render()}
         </label>
       </h2>
-    </label>
+    </div>
 
     ${editor.render()}
   `;

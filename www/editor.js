@@ -716,5 +716,5 @@ export class CaptionsEditor {
  * @returns {string}
  */
 export function captionsToText(captions) {
-  toText(toSrtCues(captions))
+  return toText(toSrtCues(captions));
 }
