@@ -388,11 +388,11 @@ export class CaptionsEditor {
         extensions: [
           history(),
           keymap([
-            ...commands.standardKeymap,
             ...homeEndKeymap,
             ...historyKeymap,
             ...searchKeymap,
             ...foldKeymap,
+            ...commands.standardKeymap,
             // { key: "Alt-ArrowLeft", mac: "Ctrl-ArrowLeft", run: commands.cursorSyntaxLeft, shift: commands.selectSyntaxLeft },
             // { key: "Alt-ArrowRight", mac: "Ctrl-ArrowRight", run: commands.cursorSyntaxRight, shift: commands.selectSyntaxRight },
             { key: "Alt-ArrowUp", run: commands.moveLineUp },

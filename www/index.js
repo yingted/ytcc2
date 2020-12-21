@@ -519,7 +519,7 @@ let signedHandler = function signedHandler(handler) {
       res.sendStatus(403);
       return;
     }
-    nonces.delete(untrustedNonce);
+    nonces.remove(untrustedNonce);
 
     // Verify the URL origin:
     let u = new URL(url);

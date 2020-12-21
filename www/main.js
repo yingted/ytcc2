@@ -760,8 +760,8 @@ async function getCombinedTracks() {
   let requestedUnofficialTrack = (function() {
     let captionsId = hashParams.get('id');
     if (captionsId === null) return null;
-    for (let track of tracks) {
-      if (track instanceof UnofficialTrack && track.captionsId === captionsId) {
+    for (let track of unofficialTracks) {
+      if (track.captionsId === captionsId) {
         return track;
       }
     }
@@ -773,7 +773,7 @@ async function getCombinedTracks() {
   let tracks = officialTracks.concat(unofficialTracks);
   let defaultTrack = defaultOfficialTrack;
   if (requestedUnofficialTrack !== null) {
-    let allowUnofficial = await confirmOpenUnofficialTrack(requestedUnofficialTrack, track);
+    let allowUnofficial = await confirmOpenUnofficialTrack(requestedUnofficialTrack, defaultOfficialTrack);
     if (allowUnofficial) {
       defaultTrack = requestedUnofficialTrack;
     }

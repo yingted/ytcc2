@@ -1,4 +1,5 @@
 - review/diff page
+
 - report abuse
 - invite translations for a channel
 
@@ -9,3 +10,6 @@
 - /fake_receipt
 - /find_receipt
 - replace-in-publish
+
+- auto timings
+- highlight low asr confidence
