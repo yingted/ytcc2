@@ -17,7 +17,7 @@
     "@babel/runtime": "^7.12.5",
     "@codemirror/next": "^0.15.0",
     "@popeindustries/lit-html-server": "^3.1.0",
-    "codemirror-next-merge": "github:yingted/codemirror-next-merge",
+    "codemirror-next-merge": "git+https://github.com/yingted/codemirror-next-merge.git",
     "core-js": "^3.8.1",
     "dialog-polyfill": "^0.5.4",
     "express": "^4.17.1",
