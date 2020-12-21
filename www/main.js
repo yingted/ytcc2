@@ -21,7 +21,7 @@ import {until} from 'lit-html/directives/until.js';
 import {live} from 'lit-html/directives/live.js';
 import {asyncReplace} from 'lit-html/directives/async-replace.js';
 import {YouTubeVideo} from './youtube.js';
-import {CaptionsEditor} from './editor.js';
+import {CaptionsEditor, captionsToText} from './editor.js';
 import {listTracks, getDefaultTrack} from './youtube_captions.js';
 import {onRender} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
@@ -33,6 +33,9 @@ import {sign_keyPair} from 'tweetnacl-ts';
 import {script} from './script_web.js';
 import {ObjectUrl} from './object_url.js';
 import {CaptionsPicker, UnofficialTrack} from './track_picker.js';
+import {revertString} from 'codemirror-next-merge';
+import {ChangeSet, tagExtension} from '@codemirror/next/state';
+import {unfoldAll, foldAll} from '@codemirror/next/fold';
 
 // Browser workarounds:
 // Remove noscript:
@@ -194,8 +197,8 @@ const saveAsView = saveAs.map(state => {
   `;
 });
 
-// Editor model/view:
-const editor = window.editor = new AsyncRef({
+// Editor pane model/view:
+const editorPane = window.editorPane = new AsyncRef({
   // Start the editor as null to avoid drawing an empty editor.
   /** @type {CaptionsEditor|null} */
   editor: null,
@@ -203,7 +206,7 @@ const editor = window.editor = new AsyncRef({
   language: null,
 });
 const diffBasePicker = window.diffBasePicker = new CaptionsPicker();
-const editorView = editor.map(function renderEditorAndToolbar({editor, language}) {
+const editorPaneView = editorPane.map(function renderEditorAndToolbar({editor, language}) {
   if (editor === null) {
     return html`Loading captions...`;
   }
@@ -333,7 +336,7 @@ const editorView = editor.map(function renderEditorAndToolbar({editor, language}
       </style>
       <h2>
         <label class="diff-picker-container" style="width: 100%; display: flex; align-items: center;">
-          <span style="white-space: pre;">Comparing with: </span>
+          <span style="white-space: pre;">Show changes: </span>
           ${diffBasePicker.render()}
         </label>
       </h2>
@@ -682,7 +685,7 @@ render(html`
   <main>
     ${video.render()}
     <hr>
-    ${asyncReplace(editorView.observe())}
+    ${asyncReplace(editorPaneView.observe())}
   </main>
 `, document.body);
 
@@ -785,36 +788,69 @@ async function getCombinedTracks() {
 // Main controller, binding everything together:
 
 (async function main() {
-  // Bind captions picker to editor.
-  captionsPicker.captionsChange.addListener(({captions, language, type}) => {
-    let {
-      editor: curEditor,
-      language: curLanguage,
-    } = editor.value;
+  // Load the tracks:
+  let {tracks, defaultTrack} = await getCombinedTracks();
+  captionsPicker.setTracks(tracks);
+  diffBasePicker.setTracks(tracks);
+  captionsPicker.selectTrack(defaultTrack);
+  window.tracks = tracks;
+
+  // Bind captions picker:
+  let editor;
+  let setCaptions = async function setCaptions({captions, language}) {
+    if (captions === null) return;
+    let {editor: curEditor, language: curLanguage} = editorPane.value;
 
     if (curEditor === null) {
-      curEditor = new CaptionsEditor(video, captions);
+      editor = new CaptionsEditor(video, captions);
+      curEditor = editor;
     } else {
       curEditor.setCaptions(captions, /*addToHistory=*/true);
       curEditor.setSaved();
     }
-
     curLanguage = language ?? curLanguage;
 
-    editor.value = {
-      editor: curEditor,
-      language: curLanguage,
-    };
+    editorPane.value = {editor, language: curLanguage};
+  };
+  captionsPicker.captionsChange.addListener(setCaptions);
+  setCaptions({
+    language: captionsPicker.getLanguage(),
+    captions: await captionsPicker.fetchCaptions(),
+  });
+  console.assert(editor);
+
+  // Diff plugin:
+  let diffTag = Symbol('diff');
+  editor.view.dispatch({
+    reconfigure: {
+      append: tagExtension(diffTag, []),
+    },
   });
 
-  diffBasePicker.captionsChange.addListener(({captions, language, type}) => {
-    console.log('diffbase pick', {captions, language, type});
+  // Bind the diff base picker:
+  let setDiffBase = function setDiffBase({captions, language}) {
+    // Unfold unchanged sections:
+    unfoldAll(editor.view);
+
+    // Update the extension:
+    let extension = [];
+    if (captions !== null) {
+      extension = revertString(captionsToText(captions));
+    }
+    editor.view.dispatch({
+      reconfigure: {
+        [diffTag]: extension,
+      },
+    });
+
+    // Fold unchanged sections:
+    if (captions !== null) {
+      foldAll(editor.view);
+    }
+  };
+  diffBasePicker.captionsChange.addListener(setDiffBase);
+  setDiffBase({
+    language: diffBasePicker.getLanguage(),
+    captions: await diffBasePicker.fetchCaptions(),
   });
-
-  let {tracks, defaultTrack} = await getCombinedTracks();
-  window.tracks = tracks;
-
-  captionsPicker.setTracks(tracks);
-  captionsPicker.selectTrack(defaultTrack);
-  diffBasePicker.setTracks(tracks);
 })();

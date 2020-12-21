@@ -17,6 +17,7 @@
 import {EditorState, EditorSelection, Transaction} from '@codemirror/next/state';
 import {EditorView, keymap, Decoration, ViewPlugin, WidgetType} from '@codemirror/next/view';
 import {searchKeymap} from '@codemirror/next/search';
+import {foldKeymap} from '@codemirror/next/fold';
 import * as commands from '@codemirror/next/commands';
 import {history, historyKeymap} from '@codemirror/next/history';
 import {indentService} from '@codemirror/next/language';
@@ -387,9 +388,11 @@ export class CaptionsEditor {
         extensions: [
           history(),
           keymap([
+            ...commands.standardKeymap,
             ...homeEndKeymap,
             ...historyKeymap,
             ...searchKeymap,
+            ...foldKeymap,
             // { key: "Alt-ArrowLeft", mac: "Ctrl-ArrowLeft", run: commands.cursorSyntaxLeft, shift: commands.selectSyntaxLeft },
             // { key: "Alt-ArrowRight", mac: "Ctrl-ArrowRight", run: commands.cursorSyntaxRight, shift: commands.selectSyntaxRight },
             { key: "Alt-ArrowUp", run: commands.moveLineUp },
@@ -706,4 +709,12 @@ export class CaptionsEditor {
       </div>
     `;
   }
+}
+
+/**
+ * @param {Srt.raw Track.t} captions
+ * @returns {string}
+ */
+export function captionsToText(captions) {
+  toText(toSrtCues(captions))
 }

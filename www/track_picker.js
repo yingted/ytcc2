@@ -44,6 +44,10 @@ export class UnofficialTrack {
     return 'unofficial-' + this.captionsId;
   }
 
+  get languageIsoCode() {
+    return this._languageIsoCode;
+  }
+
   getCaptions() {
     return decodeSrt(this._srt);
   }
@@ -127,6 +131,7 @@ class TrackPicker {
     this.model = new AsyncRef({
       tracks: [],  // YT tracks
       selectedTrack: null,
+      disabled: false,
     });
     // Signal for picking YouTube captions.
     // Also allow picking null (synthetic only).
@@ -136,7 +141,7 @@ class TrackPicker {
     /** @type {Signal<Srt.raw Track.t>} */
     this.openFile = new Signal();
     /** @type {AsyncRef<TemplateResult>} */
-    this.view = this.model.map(({tracks, selectedTrack}) => {
+    this.view = this.model.map(({tracks, selectedTrack, disabled}) => {
       let thiz = this;
       let filePicker;
       let openFile = function openFile(e) {
@@ -150,7 +155,7 @@ class TrackPicker {
             // Set the track to null:
             let {tracks, selectedTrack} = thiz.model.value;
             selectedTrack = null;
-            thiz.model.value = {tracks, selectedTrack};
+            thiz.model.value = {...thiz.model.value, tracks, selectedTrack};
             thiz.openFile.emit(captions);
           }
 
@@ -160,7 +165,7 @@ class TrackPicker {
         });
       };
       return html`
-        <select @change=${function() {
+        <select ?disabled=${disabled} @change=${function() {
           let {tracks, selectedTrack} = thiz.model.value;
 
           if (this.value === 'open-file') {
@@ -179,7 +184,7 @@ class TrackPicker {
             }
           }
 
-          thiz.model.value = {tracks, selectedTrack};
+          thiz.model.value = {...thiz.model.value, tracks, selectedTrack};
           thiz.pick.emit(selectedTrack);
         }}>
           <!-- null track, which users can't select -->
@@ -213,36 +218,62 @@ class TrackPicker {
     return this.model.value.tracks.slice(0);
   }
   /**
+   * Update the tracks.
+   * Does not trigger pick events.
    * @params {Track[]} tracks
    */
   setTracks(tracks) {
     let {tracks: oldTracks, selectedTrack} = this.model.value;
-    let emit = false;
     if (tracks.indexOf(selectedTrack) === -1 &&
         selectedTrack !== null) {
       selectedTrack = null;
-      emit = true;
     }
     this.model.value = {
+      ...this.model.value,
       tracks,
       selectedTrack,
     };
-    this.pick.emit(selectedTrack);
   }
+  /**
+   * Update the selected tracks.
+   * Does not trigger pick events.
+   * @params {Track[]} tracks
+   */
   selectTrack(track) {
     if (this.model.value.tracks.indexOf(track) === -1 ||
         this.model.value.selectedTrack === track) {
       return;
     }
     this.model.value = {
+      ...this.model.value,
       tracks: this.model.value.tracks,
       selectedTrack: track,
     };
-    this.pick.emit(track);
+  }
+  getSelectedTrack() {
+    return this.model.value.selectedTrack;
+  }
+  get disabled() {
+    return this.model.value.disabled;
+  }
+  set disabled(disabled) {
+    this.model.value = {
+      ...this.model.value,
+      disabled,
+    };
   }
 
   render() {
     return asyncReplace(this.view.observe());
+  }
+}
+
+async function fetchCaptions(track) {
+  if (track === null) return null;
+  if (track instanceof UnofficialTrack) {
+    return track.getCaptions();
+  } else {
+    return stripRaw(decodeJson3FromJson(await track.fetchJson3()));
   }
 }
 
@@ -268,20 +299,11 @@ export class CaptionsPicker {
       }
 
       // Load the data:
-      let state;
-      if (track instanceof UnofficialTrack) {
-        state = {
-          captions: track.getCaptions(),
-          language: track.language,
-          type: 'unofficial',
-        };
-      } else {
-        state = {
-          captions: stripRaw(decodeJson3FromJson(await track.fetchJson3())),
-          language: track.lang,
-          type: 'youtube',
-        };
-      }
+      let state = {
+        captions: await fetchCaptions(track),
+        language: track.languageIsoCode,
+        type: track instanceof UnofficialTrack ? 'unofficial' : 'youtube',
+      };
 
       // If we've been cancelled (during await), return:
       if (track !== this._trackPicker.model.value.selectedTrack) {
@@ -307,6 +329,23 @@ export class CaptionsPicker {
   }
   selectTrack(tracks) {
     this._trackPicker.selectTrack(tracks);
+  }
+  getSelectedTrack() {
+    return this._trackPicker.getSelectedTrack();
+  }
+  fetchCaptions() {
+    return fetchCaptions(this.getSelectedTrack());
+  }
+  getLanguage() {
+    let track = this.getSelectedTrack();
+    if (track === null) return null;
+    return track.languageIsoCode;
+  }
+  get disabled() {
+    return this._trackPicker.disabled;
+  }
+  set disabled(disabled) {
+    this._trackPicker.disabled = disabled;
   }
   render() {
     return this._trackPicker.render();

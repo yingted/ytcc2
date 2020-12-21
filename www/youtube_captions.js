@@ -58,6 +58,10 @@ class YouTubeTrack {
     return 'youtube-' + this._languageIsoCode + '--' + this._trackName;
   }
 
+  get languageIsoCode() {
+    return this._languageIsoCode;
+  }
+
   /**
    * Get the captions
    */
