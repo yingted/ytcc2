@@ -802,18 +802,17 @@ async function getCombinedTracks() {
   window.tracks = tracks;
 
   // Bind captions picker:
-  let editor;
+  let editor = new CaptionsEditor(video);
+  editorPane.value = {
+    editor,
+    language: null,
+  };
   let setCaptions = async function setCaptions({captions, language}) {
     if (captions === null) return;
     let {editor: curEditor, language: curLanguage} = editorPane.value;
 
-    if (curEditor === null) {
-      editor = new CaptionsEditor(video, captions);
-      curEditor = editor;
-    } else {
-      curEditor.setCaptions(captions, /*addToHistory=*/true);
-      curEditor.setSaved();
-    }
+    curEditor.setCaptions(captions, /*addToHistory=*/true);
+    curEditor.setSaved();
     curLanguage = language ?? curLanguage;
 
     editorPane.value = {editor, language: curLanguage};
@@ -823,7 +822,6 @@ async function getCombinedTracks() {
     language: captionsPicker.getLanguage(),
     captions: await captionsPicker.fetchCaptions(),
   });
-  console.assert(editor);
 
   // Diff plugin:
   let diffTag = Symbol('diff');
