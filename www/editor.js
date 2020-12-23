@@ -34,6 +34,7 @@ import {homeEndKeymap} from './codemirror_indent_keymap';
 import {RangeSet} from '@codemirror/next/rangeset';
 import {oneDark} from '@codemirror/next/theme-one-dark';
 import {newUnsavedChanges} from './unsaved_changes.js';
+import {DummyVideo} from './video.js';
 
 function assert(cond) {
   console.assert(cond);
@@ -51,6 +52,10 @@ function textToCaption(textCaption) {
 }
 function toText(captions) {
   return captions.map(captionToText).join('\n');
+}
+function fromText(text) {
+  return textToCues(text)
+    .map(cue => textToCaption(text.substring(cue.from, cue.to)));
 }
 /**
  * Parse text to cues, skipping leading continuations.
@@ -381,7 +386,7 @@ export class CaptionsEditor {
    */
   constructor(video, captions) {
     // Widgets:
-    this.video = video;
+    this.video = video || new DummyVideo();
     this.view = new EditorView({
       state: EditorState.create({
         doc: '',
@@ -431,7 +436,21 @@ export class CaptionsEditor {
     this._unsavedChanges = newUnsavedChanges();
 
     // Initialize the captions:
-    this.setCaptions(captions, /*addToHistory=*/false);
+    if (typeof captions === 'string') {
+      this.setCaptions(empty, /*addToHistory=*/false);
+      this.view.dispatch(this.view.state.update({
+        changes: {
+          from: 0,
+          to: this.view.state.doc.length,
+          insert: captions,
+        },
+        annotations: [
+          Transaction.addToHistory.of(false),
+        ],
+      }));
+    } else {
+      this.setCaptions(captions, /*addToHistory=*/false);
+    }
     this.setSaved();
   }
 
@@ -703,6 +722,7 @@ export class CaptionsEditor {
     if (textbox !== null) {
       textbox.setAttribute('aria-label', 'Captions editor');
     }
+    this.view.dom.style.height = '100%';
     return html`
       <div style="height: 25em; width: 100%; overflow: auto;">
         ${this.view.dom}
@@ -717,4 +737,7 @@ export class CaptionsEditor {
  */
 export function captionsToText(captions) {
   return toText(toSrtCues(captions));
+}
+export function captionsFromText(text) {
+  return fromSrtCues(fromText(text));
 }

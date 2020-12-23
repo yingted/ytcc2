@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {directive} from 'lit-html';
+import {render, directive} from 'lit-html';
 
 /**
  * @returns {string} uuid a random UUID in compact hex format
@@ -173,3 +173,10 @@ export class Signal {
     }
   }
 }
+
+export function render0(template) {
+  const container = document.createElement('div');
+  render(template, container);
+  console.assert(container.firstElementChild === container.lastElementChild);
+  return container.firstElementChild;
+};

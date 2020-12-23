@@ -1,8 +1,9 @@
 import {html} from 'lit-html';
 import {asyncReplace} from 'lit-html/directives/async-replace.js';
+import {ifDefined} from 'lit-html/directives/if-defined';
 import {decodeJson3, decodeJson3FromJson, decodeSrv3, decodeSrt, stripRaw} from 'ytcc2-captions';
 import {youtubeLanguages} from './gen/youtube_languages.js';
-import {AsyncRef, onRender, Signal} from './util.js';
+import {AsyncRef, onRender, Signal, render0} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
 
 // Dialogs need this as @render:
@@ -268,7 +269,7 @@ class TrackPicker {
   }
 }
 
-async function fetchCaptions(track) {
+export async function fetchCaptions(track) {
   if (track === null) return null;
   if (track instanceof UnofficialTrack) {
     return track.getCaptions();
@@ -350,4 +351,133 @@ export class CaptionsPicker {
   render() {
     return this._trackPicker.render();
   }
+}
+
+/**
+ * Like TrackPicker, but without the optgroups.
+ */
+export class HomogeneousTrackPicker {
+  constructor({id}) {
+    // YouTubeTrack picker model, representing programmatic changes:
+    this.model = new AsyncRef({
+      tracks: [],  // YT tracks
+      selectedTrack: null,
+      disabled: false,
+    });
+    // Signal for picking YouTube captions.
+    // Also allow picking null (synthetic only).
+    /** @type {Signal<YouTubeTrack>} */
+    this.pick = new Signal();
+    /** @type {AsyncRef<TemplateResult>} */
+    this.view = this.model.map(({tracks, selectedTrack, disabled}) => {
+      let thiz = this;
+      return html`
+        <select ?disabled=${disabled} @change=${function() {
+          let {tracks, selectedTrack} = thiz.model.value;
+
+          selectedTrack = null;
+          for (let track of tracks) {
+            if (track.id === this.value) {
+              selectedTrack = track;
+              break;
+            }
+          }
+
+          thiz.model.value = {...thiz.model.value, tracks, selectedTrack};
+          thiz.pick.emit(selectedTrack);
+        }} id=${ifDefined(id)}>
+          <!-- null track, which users can't select -->
+          ${selectedTrack === null ? html`<option value="none" selected></option>` : []}
+          ${tracks.map(track =>
+            html`<option value="${track.id}" ?selected=${selectedTrack === track}>${track.name}</option>`
+          )}
+        </select>
+      `;
+    });
+  }
+
+  /**
+   * @returns {YouTubeTrack[]}
+   */
+  getTracks() {
+    return this.model.value.tracks.slice(0);
+  }
+  /**
+   * Update the tracks.
+   * Does not trigger pick events.
+   * @params {YouTubeTrack[]} tracks
+   */
+  setTracks(tracks) {
+    let {tracks: oldTracks, selectedTrack} = this.model.value;
+    if (tracks.indexOf(selectedTrack) === -1 &&
+        selectedTrack !== null) {
+      selectedTrack = null;
+    }
+    this.model.value = {
+      ...this.model.value,
+      tracks,
+      selectedTrack,
+    };
+  }
+  /**
+   * Update the selected tracks.
+   * Does not trigger pick events.
+   * @params {YouTubeTrack[]} tracks
+   */
+  selectTrack(track) {
+    if (this.model.value.tracks.indexOf(track) === -1 ||
+        this.model.value.selectedTrack === track) {
+      return;
+    }
+    this.model.value = {
+      ...this.model.value,
+      tracks: this.model.value.tracks,
+      selectedTrack: track,
+    };
+  }
+  getSelectedTrack() {
+    return this.model.value.selectedTrack;
+  }
+  get disabled() {
+    return this.model.value.disabled;
+  }
+  set disabled(disabled) {
+    this.model.value = {
+      ...this.model.value,
+      disabled,
+    };
+  }
+
+  render() {
+    return asyncReplace(this.view.observe());
+  }
+}
+
+/**
+ * Ask for a captions file.
+ * If a file is picked, onPick is called.
+ * If it's cancelled, onPick is not called.
+ * If it's invalid, alert() is called and onPick is not called.
+ */
+export function makeFileInput(onPick) {
+  return render0(html`
+    <input type="file"
+      accept=".srt,text/srt,.xml,application/xml,.json,application/json"
+      @change=${function(e) {
+        let files = this.files;
+        if (files.length !== 1) return;
+        let [file] = files;
+        file.arrayBuffer().then(buffer => {
+          let captions = decodeCaptionsOrAlert(file.name, buffer);
+
+          if (this.files === files) {
+            this.value = null;
+          }
+
+          if (captions !== null) {
+            onPick(captions)
+          }
+        });
+      }}>
+  `);
 }

@@ -52,28 +52,55 @@ async function updateSchema() {
       CREATE TABLE IF NOT EXISTS schema_changes(name varchar(1000));
     `);
 
-    await update(client, '0-create-captions', `
-      CREATE TABLE captions(
+    await update(client, '0-create-private-captions', `
+      -- Captions intended for file-sharing use case.
+      CREATE TABLE private_captions(
+        id SERIAL,
+
+        -- 32 bytes in base64 is 44 bytes
+        -- Used to validate deletion:
+        deletion_public_key_base64 varchar(100),
+
+        -- Encrypted data. It could be garbage or anything really.
+        encryption_nonce varchar(100) NOT NULL,
+        encrypted_data varchar(1048576) NOT NULL,
+        -- Expiration time:
+        delete_at timestamp NOT NULL,
+        PRIMARY KEY(id),
+        UNIQUE(deletion_public_key_base64),
+        UNIQUE(encryption_nonce)
+      );
+    `);
+
+    await update(client, '1-create-public-captions', `
+      CREATE TABLE public_captions(
         -- 11 bytes (int64 in ~base64?)
         video_id varchar(100),
-        -- 23 bytes (int64 in base52)
-        captions_id varchar(100),
         -- For maintaining insertion order:
-        seq bigint,
-        -- adjust up if needed
-        srt varchar(1048576),
-        -- should be usually 2 or 5 bytes
-        language varchar(10),
+        seq SERIAL,
+
         -- 32 bytes in base64 is 44 bytes
-        public_key_base64 varchar(100),
-        PRIMARY KEY(video_id, captions_id),
-        UNIQUE(captions_id),
-        UNIQUE(public_key_base64)
+        -- Used to authorize deletion.
+        deletion_public_key_base64 varchar(100) NOT NULL,
+
+        -- should be usually 2 or 5 bytes
+        language varchar(10) NOT NULL,
+        -- SRT UTF-8 string. Should be equal to private_captions.encrypted_data's size.
+        srt varchar(1048576) NOT NULL,
+        PRIMARY KEY(video_id, seq),
+        UNIQUE(deletion_public_key_base64)
       );
     `);
   } finally {
     client.release();
   }
+}
+
+async function gc() {
+  await pool.query(`
+    DELETE FROM private_captions AS t
+    WHERE t.delete_at <= now();
+  `);
 }
 
 async function withClient(func) {
@@ -94,4 +121,5 @@ module.exports = {
   updateSchema,
   withClient,
   query,
+  gc,
 };

@@ -21,21 +21,23 @@ import {until} from 'lit-html/directives/until.js';
 import {live} from 'lit-html/directives/live.js';
 import {asyncReplace} from 'lit-html/directives/async-replace.js';
 import {YouTubeVideo} from './youtube.js';
-import {CaptionsEditor, captionsToText, captionsFromText} from './editor.js';
+import {CaptionsEditor, captionsToText} from './editor.js';
 import {listTracks, getDefaultTrack} from './youtube_captions.js';
-import {onRender, render0, AsyncRef, Signal} from './util.js';
+import {onRender, render0} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
 import {youtubeLanguages} from './gen/youtube_languages.js';
 import {renderBrowser} from './preview_browser.js';
 import {myReceiptsText, myReceiptsLink, renderFileReceipt, renderCookieReceipts, addCookie, renderFileReceiptString} from './receipt.js';
+import {AsyncRef, Signal} from './util.js';
 import {sign_keyPair} from 'tweetnacl-ts';
 import {script} from './script_web.js';
 import {ObjectUrl} from './object_url.js';
-import {fetchCaptions, makeFileInput, HomogeneousTrackPicker, CaptionsPicker, UnofficialTrack} from './track_picker.js';
+import {HomogeneousTrackPicker, CaptionsPicker, UnofficialTrack} from './track_picker.js';
 import {revertString} from 'codemirror-next-merge';
 import {ChangeSet, tagExtension} from '@codemirror/next/state';
 import {unfoldAll, foldAll} from '@codemirror/next/fold';
 import {renderFooter} from './templates.js';
+import {decodeSrt} from 'ytcc2-captions';
 import {Html5Video, DummyVideo} from './video.js';
 
 // Browser workarounds:
@@ -212,7 +214,6 @@ async function askForYouTubeVideo() {
       <dialog
           @render=${registerDialog}
           @cancel=${function(e) {
-            document.body.removeChild(dialog);
             resolve(null);
           }}
           @close=${function(e) {
@@ -333,7 +334,7 @@ async function askForVideo() {
                 dialog.close();
                 resolve(video);
               }}>
-                <h3><span class="cookie-icon"></span>${youtubeLogo}YouTube</h3>
+                <h3><span class="cookie-icon">${youtubeLogo}</span>YouTube</h3>
                 Playing YouTube videos uses tracking cookies.
               </button>
             </li>
@@ -356,23 +357,65 @@ async function askForVideo() {
   });
 }
 
+async function getCombinedTracks(videoId) {
+  // Official tracks:
+  let officialTracks = await listTracks(videoId);
+  let defaultOfficialTrack = getDefaultTrack(officialTracks);
+
+  return {
+    tracks: officialTracks,
+    defaultTrack: defaultOfficialTrack,
+  };
+
+  // Unofficial tracks:
+  let unofficialTracks = []
+  for (let track of params.tracks) {
+    unofficialTracks.push(new UnofficialTrack(track));
+  }
+  let requestedUnofficialTrack = (function() {
+    let captionsId = hashParams.get('id');
+    if (captionsId === null) return null;
+    for (let track of unofficialTracks) {
+      if (track.captionsId === captionsId) {
+        return track;
+      }
+    }
+    // If the track has been deleted, silently ignore the captionsId parameter.
+    return null;
+  })();
+
+  // Merged tracks:
+  let tracks = officialTracks.concat(unofficialTracks);
+  let defaultTrack = defaultOfficialTrack;
+  if (requestedUnofficialTrack !== null) {
+    let allowUnofficial = await confirmOpenUnofficialTrack(requestedUnofficialTrack, defaultOfficialTrack);
+    if (allowUnofficial) {
+      defaultTrack = requestedUnofficialTrack;
+    }
+  }
+
+  return {
+    tracks,
+    defaultTrack,
+  };
+}
+
 /**
  * Ask the user for the YouTube captions. Can be cancelled.
  *
  * Open YouTube captions
- * [YouTube English (Default) v]
+ * [English (Default) v]
+ * Or, [file].
  * [Open][Cancel]
  *
- * @param {string} videoId
+ * @param {YouTubeVideo} video
  * @returns {Srt.raw Track.t|null}
  */
-async function askForYouTubeCaptions(videoId) {
+async function askForYouTubeCaptions(video) {
   return new Promise(resolve => {
     let picker = new HomogeneousTrackPicker({id: 'youtube-track-picker'});
     (async function() {
-      let tracks = await listTracks(videoId);
-      let defaultTrack = getDefaultTrack(tracks);
-      // TODO: error handling
+      let {tracks, defaultTrack} = await getCombinedTracks(video.videoId);
       picker.setTracks(tracks);
       picker.selectTrack(defaultTrack);
     })();
@@ -381,7 +424,6 @@ async function askForYouTubeCaptions(videoId) {
       <dialog
           @render=${registerDialog}
           @cancel=${function(e) {
-            document.body.removeChild(dialog);
             resolve(null);
           }}
           @close=${function(e) {
@@ -390,33 +432,8 @@ async function askForYouTubeCaptions(videoId) {
         <h2><label for="youtube-track-picker">Open YouTube captions</label></h2>
 
         <form method="dialog" class="youtube-track-picker-form"
-            @submit=${async function(e) {
-              let track = picker.model.value.selectedTrack;
-              if (track === null) {
-                resolve(null);
-                return;
-              }
-
-              // Delay everything:
-              e.preventDefault();
-              for (let e of this.elements) {
-                e.disabled = true;
-              }
-              let cleanup = () => {
-                for (let e of this.elements) {
-                  e.disabled = false;
-                }
-              };
-
-              // Don't resolve if we have an error fetching captions:
-              let captions
-              try {
-                captions = await fetchCaptions(track);
-              } finally {
-                cleanup();
-              }
-              dialog.close();
-              resolve(captions);
+            @submit=${function(e) {
+              resolve(picker.model.value.selectedTrack);
             }}>
           <style>
             #youtube-track-picker {
@@ -434,11 +451,15 @@ async function askForYouTubeCaptions(videoId) {
             ${picker.render()}
           </div>
 
-          <p>
-            <!-- TODO -->
-            Not all captions appear here yet.
-            I'm working on it.
-          </p>
+          <div>
+            Or, <a href="javascript:" @click=${async function(e) {
+              let captions = await askForFileCaptions();
+              if (captions !== null) {
+                dialog.close();
+                resolve(captions);
+              }
+            }}>open a captions file</a>.
+          </div>
 
           <button>Open</button>
           <button type="button" @click=${function(e) {
@@ -456,66 +477,41 @@ async function askForYouTubeCaptions(videoId) {
 }
 
 /**
- * Ask the user for the unofficial captions. Can be cancelled.
+ * Ask the user for the captions. Can be cancelled.
  *
- * Open unofficial captions
- * [Unofficial English (Default) v]
+ * Open captions
+ * [Choose file]
  * [Open][Cancel]
  *
- * @param {string} videoId
  * @returns {Srt.raw Track.t|null}
  */
-async function askForUnofficialCaptions(videoId) {
+async function askForFileCaptions() {
   return new Promise(resolve => {
-    let picker = new HomogeneousTrackPicker({id: 'unofficial-track-picker'});
-    (async function() {
-      let result = await window.fetch('/captions?v=' + encodeURIComponent(videoId));
-      if (!result.ok) return;
-      let tracks = await result.json();
-      tracks = tracks.map(track => new UnofficialTrack(track));
-      // TODO: error handling
-      // TODO: don't set a default
-      let defaultTrack = tracks[0];
-
-      picker.setTracks(tracks);
-      picker.selectTrack(defaultTrack);
-    })();
-
     let dialog = render0(html`
       <dialog
           @render=${registerDialog}
           @cancel=${function(e) {
-            document.body.removeChild(dialog);
             resolve(null);
           }}
           @close=${function(e) {
             document.body.removeChild(dialog);
           }}>
-        <h2><label for="unofficial-track-picker">Open unofficial captions</label></h2>
+        <h2><label for="youtube-track-picker">Open captions</label></h2>
 
-        <form method="dialog" class="unofficial-track-picker-form"
+        <form method="dialog" class="youtube-track-picker-form"
             @submit=${function(e) {
-              let track = picker.model.value.selectedTrack;
-              if (track === null) {
-                resolve(null);
-                return;
-              }
-              resolve(track.getCaptions());
+              resolve(picker.model.value.selectedTrack);
             }}>
           <style>
-            #unofficial-track-picker {
+            #youtube-track-picker {
               height: var(--touch-target-size);
             }
-            .unofficial-track-picker-form button {
+            .youtube-track-picker-form button {
               min-height: var(--touch-target-size);
-            }
-            .unofficial-track-picker-form a[href] {
-              display: inline-block;
-              padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
             }
           </style>
           <div>
-            ${picker.render()}
+            <input type="file">
           </div>
 
           <button>Open</button>
@@ -539,16 +535,10 @@ async function askForUnofficialCaptions(videoId) {
  */
 function askForCaptions({videoId}) {
   return new Promise(resolve => {
-    let filePicker = makeFileInput(captions => {
-      dialog.close();
-      resolve(captions);
-    });
-    filePicker.style.display = 'none';
     let dialog = render0(html`
       <dialog
           @render=${registerDialog}
           @cancel=${function(e) {
-            document.body.removeChild(dialog);
             resolve(null);
           }}
           @close=${function(e) {
@@ -573,11 +563,11 @@ function askForCaptions({videoId}) {
             .file-icon::before {
               content: "📂";
             }
-            .new-icon::before {
-              content: "✨";
+            .cancel-icon::before {
+              content: "❌";
             }
-            .publish-icon::before {
-              content: "🌐";
+            .cookie-icon::before {
+              content: "🍪";
             }
           </style>
 
@@ -585,65 +575,46 @@ function askForCaptions({videoId}) {
             <!-- File -->
             <li>
               <button type="button" @click=${function(e) {
-                filePicker.click();
+                let file = this.closest('li').querySelector('input[type=file]');
+                file.value = '';
+                file.click();
+                e.preventDefault();
               }}>
                 <h3><span class="file-icon"></span>File</h3>
-                Open YouTube srv3 or SRT files.
+                YouTube srv3 and SRT formats are supported.
               </button>
-              ${filePicker}
+              <input type="file" accept="video/*" style="display: none;" @change=${function(e) {
+                if (e.target.files.length === 0) return;
+                let video = new Html5Video(videoFileUrl.create({}, () => e.target.files[0]));
+                dialog.close();
+                resolve(video);
+              }}>
             </li>
 
             <!-- YouTube -->
             <li>
               <button @click=${async function(e) {
                 e.preventDefault();
-                let captions = await askForYouTubeCaptions(videoId);
-                if (captions == null) return;
+                let video = await askForYouTubeVideo();
+                if (video === null) return;
                 dialog.close();
-                resolve(captions);
-              }} ?disabled=${videoId == null}>
-                <h3>${youtubeLogo}YouTube</h3>
-                YouTube official or automatic captions.
-              </button>
-            </li>
-
-            <!-- Unofficial -->
-            <li>
-              <button @click=${async function(e) {
-                e.preventDefault();
-                let captions = await askForUnofficialCaptions(videoId);
-                if (captions == null) return;
-                dialog.close();
-                resolve(captions);
-              }} ?disabled=${videoId == null}>
-                <h3><span class="publish-icon"></span>Unofficial</h3>
-                Captions uploaded to this website.
+                resolve(video);
+              }}>
+                <h3><span class="cookie-icon">${youtubeLogo}</span>YouTube</h3>
+                Playing YouTube videos uses tracking cookies.
               </button>
             </li>
 
             <!-- None -->
             <li>
               <button @click=${function(e) {
-                resolve(captionsFromText(
-                  '0:00 Hello\n' +
-                  '0:01 <i>Narrator: Hello</i>'));
+                resolve(new DummyVideo());
               }}>
-                <h3><span class="new-icon"></span>New</h3>
-                Start from scratch.
+                <h3><span class="cancel-icon"></span>No video</h3>
+                Edit captions without a video.
               </button>
             </li>
           </ul>
-
-          <style>
-            .cancel-icon::before {
-              content: "❌";
-            }
-          </style>
-          <button @click=${function(e) {
-            resolve(null);
-          }} style="min-height: var(--touch-target-size);">
-            <span class="cancel-icon"></span>Cancel
-          </button>
         </form>
       </dialog>
     `);
@@ -671,6 +642,7 @@ function renderEditorPane({html}, {editor, addCueDisabled}) {
             content: "➕";
           }
         </style>
+        <!-- TODO -->
         <button
             @click=${e => {
               editor.addCue(editor.video.getCurrentTime(), '');
@@ -699,6 +671,9 @@ function renderDummyEditorPane({html}) {
     srtUrl: 'javascript:',
   }), fileMenubar);
 
+  // TODO
+  await askForCaptions({videoId: 'gKqypLvwd70'});
+
   // Get the video and captions:
   let video, captions;
   for (;;) {
@@ -713,7 +688,7 @@ function renderDummyEditorPane({html}) {
     render(video.render(), videoPane);
 
     // Get the captions:
-    let videoId = null;
+    let videoId;
     if (video instanceof YouTubeVideo) {
       videoId = video.videoId;
     }
@@ -725,7 +700,7 @@ function renderDummyEditorPane({html}) {
   }
 
   // Show the captions:
-  let editor = new CaptionsEditor(video, captions);
+  let editor = new CaptionsEditor(video);
   render(renderEditorPane({html}, {editor}), editorPane);
 
   // TODO

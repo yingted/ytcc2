@@ -22,6 +22,8 @@ const db = require('./db');
 const config = require('./config');
 const crypto = require('crypto');
 const multer  = require('multer');
+const {renderFooter} = require('./templates.js');
+const {renderTerms} = require('./terms.js');
 const upload = multer();
 const {sign_open} = require('tweetnacl-ts');
 require('jsdom-global')();
@@ -52,52 +54,9 @@ function asyncHandler(handler) {
   }
 }
 
-// Copied from receipts.js due to es6 modules.
-function myReceiptsText({html}) {
-  return html`<style>.receipt-icon::before { content: "🧾"; }</style><span class="receipt-icon"></span>My receipts`;
-}
-function myReceiptsLink({html}) {
-  return html`<a href="/receipts">${myReceiptsText({html})}</a>`;
-}
-
-/**
- * Get the YouTube video ID or null.
- * This function does not reference any external values, so we can directly inline it.
- * @param {string} value the URL
- * @returns {string|null}
- */
-function getVideoIdOrNull(value) {
-  // Detect plain video ID heuristically.
-  // https://webapps.stackexchange.com/a/101153
-  if (/^[0-9A-Za-z_-]{10}[048AEIMQUYcgkosw]$/.test(value)) {
-    return value;
-  }
-
-  // Get the URL:
-  var url;
-  try {
-    url = new URL(value);
-  } catch (e) {
-    try {
-      url = new URL('https://' + value);
-    } catch (e) {
-      return null;
-    }
-  }
-  if (url === null) return null;
-
-  try {
-    if ((url.origin === 'https://www.youtube.com' || url.origin === 'http://www.youtube.com') && url.pathname === '/watch') {
-      var vOrNull = new URLSearchParams(url.search).get('v');
-      if (vOrNull != null) return vOrNull;
-    } else if ((url.origin === 'https://youtu.be' || url.origin === 'http://youtu.be')) {
-      return url.pathname.substring(1);
-    }
-  } catch (e) {
-  }
-
-  return null;
-}
+app.get('/terms', (req, res) => {
+  renderToStream(renderTerms({html})).pipe(res);
+});
 
 app.get('/', (req, res) => {
   renderToStream(html`
@@ -108,264 +67,67 @@ app.get('/', (req, res) => {
         <meta name="referrer" content="no-referrer">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Captions</title>
+        <link rel="stylesheet" type="text/css" href="/dialog-polyfill/dialog-polyfill.css" />
       </head>
       <body style="margin: 0 auto; max-width: 640px;">
-        <style>
-          :root {
-            --touch-target-size: 48px;
-          }
-          .justice-icon::before {
-            content: "⚖️";
-          }
-          .bug-icon::before {
-            content: "🐛";
-          }
-        </style>
+        <noscript>You need JavaScript to view this page.</noscript>
+        <script src="/main.bundle.js"></script>
 
-        <header>
-          <style>
-            h1 {
-              font-size: 1.5em;
-              padding: 0;
-              margin: 0;
-            }
-          </style>
-          <h1>Captions</h1>
-          Edit, share, and review captions for YouTube videos.<br>
-        </header>
-
-        <nav>
-          <script>
-            ${getVideoIdOrNull.toString()}
-            function updateValidity(v) {
-              v.setCustomValidity(
-                getVideoIdOrNull(v.value) == null ?
-                'Please enter a valid YouTube URL.' :
-                '');
-            }
-            function simplifyUrl(v) {
-              updateValidity(v);
-              var videoId = getVideoIdOrNull(v.value);
-              if (videoId != null) {
-                v.value = videoId;
-              }
-            }
-          </script>
-          <form class="nav-form" action="/watch" onsubmit="simplifyUrl(this.querySelector('input[name=v]'))">
-            <style>
-              .nav-form {
-                margin: 0.5em 0;
-              }
-              .nav-form select,
-              .nav-form input,
-              .nav-form button {
-                height: var(--touch-target-size);
-              }
-            </style>
-            <label>YouTube URL:</label>
-            <div style="display: flex;">
-              <input name="v" style="display: inline-block; flex-grow: 1;"
-                  placeholder="https://www.youtube.com/watch?v=gKqypLvwd70"
-                  oninput="updateValidity(this)"
-                  onchange="updateValidity(this)"
-                  autofocus required spellcheck="false">
-              <button>View captions</button>
-            </div>
-          </form>
-
-          <ul>
-            <li>${myReceiptsLink({html})}</li>
-            <li><a href="/fake_receipt">Fake receipts</a></li>
-            <li>
-              <a href="https://github.com/yingted/ytcc2/issues/new"><span class="bug-icon"></span>Report an issue</a>
-            </li>
-            <li>
-              <a href="/terms"><span class="justice-icon"><span>Terms of service</a>
-            </li>
-          </ul>
-        </nav>
+        ${renderFooter({html})}
       </body>
     </html>
   `).pipe(res);
 });
 
-app.get('/terms', (req, res) => {
-  renderToStream(html`
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="referrer" content="no-referrer">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Terms of service</title>
-      </head>
-      <body style="margin: 0 auto; max-width: 640px;">
-        <header>
-          <style>
-            h1 {
-              font-size: 1.5em;
-              padding: 0;
-              margin: 0;
-            }
-            .bug-icon::before {
-              content: "🐛";
-            }
-            header {
-              margin-block-end: 0.5em;
-            }
-          </style>
-          <h1>Terms of service</h1>
-          Thanks for coming to read the terms of service.<br>
-          If anything is wrong, please <a href="https://github.com/yingted/ytcc2/issues/new"><span class="bug-icon"></span>report an issue</a>.
-        </header>
-
-        <main>
-          <h2>These terms</h2>
-          <ul>
-            <li>This website provides file sharing services for captions for YouTube videos.</li>
-            <li>These terms may be updated at any time. For example, to add a legalese version.</li>
-            <li>If you don't agree to them, don't use this website.</li>
-            <li>You need to be at least 13 years old (16 in Europe), and also old enough to accept these terms.</li>
-          </ul>
-
-          <h2>Don't rely on this website</h2>
-          <ul>
-            <li>There is no guarantee this website can do anything useful, or does not do anything harmful.</li>
-            <li>The website admin can change anything at any time.</li>
-            <li>This website can have bugs, errors, omissions, and other problems.</li>
-            <li>This website can be taken down, given to somebody else, or hacked at any time.</li>
-          </ul>
-
-          <h2>Uploading captions (Publish button)</h2>
-          <ul>
-            <li>Don't upload anything illegal. For example, violating copyright.</li>
-            <li>Don't violate people's privacy, including your own.</li>
-            <li>Keep the receipt so you can edit/delete your captions if you need to. (more below)</li>
-            <li>Opening a captions file doesn't upload your captions.</li>
-            <li>Uploading is optional. You can also save your captions to a file you can send privately.</li>
-          </ul>
-
-          <h2>Receipts</h2>
-          <ul>
-            <li>Receipts prove you uploaded the captions without revealing your real name or email.</li>
-            <li>Don't give your receipts to people or websites you don't trust.</li>
-            <li>Receipts let you edit or delete captions, which is important for your data rights. Keep them safe.</li>
-            <li>
-              If you lose your receipt, nobody can create a new receipt.
-              You can ask the website admin to edit or delete captions for you, but you might need to prove your identity in real life.
-            </li>
-            <li>
-              Cookie receipts are a convenience, to make it easier to exercise your data rights, but browsers sometimes erase cookies without asking.
-              File receipts are more reliable because you can back them up.
-            </li>
-            <li>
-              Cookie and file receipts stay on your computer, but this website can read cookie receipts at any time without asking.
-              This is how the My receipts page works.
-            </li>
-            <li>
-              The password field in the receipt is hidden to reduce the chance of phishing.
-              Your browser and browser extensions can use the password.
-              If you send your receipt to anyone, they can also use the password.
-            </li>
-            <li>
-              You can make a fake receipt on <a href="/fake_receipt">/fake_receipt</a>.
-              There are no guarantees about the fake receipt service.
-            </li>
-          </ul>
-
-          <h2>Other people's videos, captions, and websites</h2>
-          <ul>
-            <li>This website is not responsible for other people's content.</li>
-            <li>The captions viewer shows captions from YouTube and captions uploaded by other users.</li>
-            <li>The captions viewer includes a YouTube video player, which plays YouTube videos from other users.</li>
-            <li>This website has links to other websites, managed by other people.</li>
-          </ul>
-
-          <h2>Your copyrights</h2>
-          <ul>
-            <li>Only upload data you have copyright to.</li>
-            <li>You give this website the right to publish your uploads forever, until you delete it.</li>
-            <li>You need to keep your upload receipts to delete your uploads.</li>
-            <li>Even if you delete your upload, someone else could have copied it.</li>
-            <li>If someone else uploaded your stuff, contact the website to take it down.</li>
-          </ul>
-
-          <h2>This website's copyrights</h2>
-          <ul>
-            <li>The code for this website is <a href="https://github.com/yingted/ytcc2">available on GitHub</a>.</li>
-            <li>The license is in the link.</li>
-            <li>This website's copyrights don't apply to the embedded videos, uploaded captions, or other linked websites.</li>
-          </ul>
-
-          <h2>Your privacy</h2>
-          <ul>
-            <li>
-              The /watch page sends data to YouTube.
-              Playing the video enables YouTube tracking.
-              You can still use the captions editor without playing the video.
-            </li>
-            <li>The rest of the site mostly avoids cookies. Expect lots of popups.</li>
-            <li>The watch page uses your browser language to pick the captions to load and the language to publish in.</li>
-            <li>Your receipts stay on your device.</li>
-            <li>This website tracks receipts and knows when anyone edits/deletes captions, or show the receipt to it.</li>
-            <li>Receipts are not linked to each other, but they are linked to the captions.</li>
-          </ul>
-        </main>
-      </body>
-    </html>
-  `).pipe(res);
-});
-
-app.get('/watch', asyncHandler(async (req, res) => {
-  let videoId = getVideoIdOrNull(req.query.v);
-
-  // Validate the video ID:
-  if (videoId === null) {
-    res.status(400).type('text/plain').send('Invalid YouTube video URL: ' + req.query.v);
+app.get('/captions/:captionsId', asyncHandler(async (req, res) => {
+  let {captionsId} = req.params;
+  captionsId = parseInt(captionsId);
+  if (isNaN(captionsId)) {
+    res.status(400).type('text/plain').send('Invalid captions ID');
     return;
   }
-  if (videoId !== req.query.v) {
-    res.redirect(301, '/watch?v=' + encodeURIComponent(videoId));
-    return;
-  }
-
   // Get the captions tracks:
   let tracks = (await db.query(`
-    SELECT t.captions_id AS captions_id, t.language AS language, t.srt AS srt
-    FROM captions AS t
-    WHERE t.video_id=$1
-  `, [videoId])).rows.map(({captions_id, language, srt}) => ({
+    SELECT t.encrypted_data AS encrypted_data
+    FROM private_captions AS t
+    WHERE t.public_key_base64=$1
+      AND t.delete_at > now()
+    LIMIT 2
+  `, [captionsId])).rows.map(({video_id, language, srt}) => ({
     captionsId: captions_id,
     language,
     srt,
   }));
 
-  const params = {
-    videoId,
-    tracks,
-  };
-
-  renderToStream(html`
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="referrer" content="no-referrer">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>View captions</title>
-        <link rel="stylesheet" type="text/css" href="/dialog-polyfill/dialog-polyfill.css" />
-      </head>
-      <body style="margin: 0 auto; max-width: 640px;">
-        <noscript>You need JavaScript to view this page.</noscript>
-        <script>
-          const params = ${JSON.stringify(params)};
-        </script>
-        <script src="/main.bundle.js"></script>
-      </body>
-    </html>
-  `).pipe(res);
+  if (tracks.length === 0) {
+    res.sendStatus(404);
+    return;
+  }
+  if (tracks.length > 1) {
+    res.sendStatus(500);
+    return;
+  }
+  res.json(tracks[0]);
 }));
 
+// /captions?v=:videoId
+app.get('/captions', asyncHandler(async (req, res) => {
+  let videoId = req.query.v;
+  if (videoId == null) {
+    res.sendStatus(400);
+    return;
+  }
+
+  // Get the captions tracks:
+  let tracks = (await db.query(`
+    SELECT t.language AS language, t.srt AS srt
+    FROM public_captions AS t
+    WHERE t.video_id=$1
+    ORDER BY t.seq ASC
+  `, [videoId])).rows;
+
+  res.json(tracks);
+}));
 
 /**
  * Normalize the SRT in UTF-8.
@@ -410,7 +172,7 @@ function secureRandomId() {
   }
   return id.reverse().join('');
 }
-app.post('/publish', upload.none(), asyncHandler(async (req, res) => {
+app.post('/captions', upload.none(), asyncHandler(async (req, res) => {
   let {videoId, srtBase64, publicKeyBase64, language} = req.body;
   let srt = srtBase64ToSrt(srtBase64);
 
@@ -535,7 +297,7 @@ let signedHandler = function signedHandler(handler) {
     return handler(req, res, publicKey, params);
   };
 };
-app.post('/delete', signedHandler(asyncHandler(async (req, res, publicKey, params) => {
+app.delete('/captions/:captionsId', signedHandler(asyncHandler(async (req, res, publicKey, params) => {
   await db.withClient(async client => {
     // Find the caption whose key was provided:
     let {rows} = await client.query(`
@@ -563,106 +325,6 @@ app.post('/delete', signedHandler(asyncHandler(async (req, res, publicKey, param
     res.sendStatus(200);
   });
 })));
-app.post('/replace', signedHandler(asyncHandler(async (req, res, publicKey, params) => {
-  await db.withClient(async client => {
-    // Parse the file:
-    let {bytesBase64} = params;
-    if (typeof bytesBase64 !== 'string') {
-      res.sendStatus(400);
-      return;
-    }
-
-    let buf = new Uint8Array(Buffer.from(bytesBase64, 'base64')).buffer;
-    let captions;
-    try {
-      captions = decodeSrt(buf);
-    } catch (e) {
-      try {
-        captions = stripRaw(decodeSrv3(buf));
-      } catch (e) {
-        try {
-          captions = stripRaw(decodeJson3(buf));
-        } catch (e) {
-          res.sendStatus(400);
-          return;
-        }
-      }
-    }
-
-    let srt = Buffer.from(encodeSrt(normalizeSrt(captions))).toString('utf8');
-
-    // Get the IDs for the redirect.
-    let {rows} = await client.query(`
-      SELECT t.video_id AS video_id, t.captions_id AS captions_id
-      FROM captions AS t
-      WHERE t.public_key_base64=$1
-    `, [publicKey]);
-    if (rows.length > 1) {
-      console.error('/replace affects', rows.length, 'rows');
-      res.sendStatus(500);
-      return;
-    }
-    if (rows.length === 0) {
-      res.sendStatus(404);
-      return;
-    }
-    let videoId = rows[0].video_id;
-    let captionsId = rows[0].captions_id;
-
-    // Find the caption whose key was provided:
-    let cur = await client.query(`
-      UPDATE captions AS t
-      SET srt=$1
-      WHERE t.public_key_base64=$2
-    `, [srt, publicKey]);
-
-    if (cur.rowCount === 0) {
-      res.sendStatus(400);
-      return;
-    }
-    if (cur.rowCount > 1) {
-      console.error('/replace affected', cur.rowCount, 'rows');
-    }
-
-    res.redirect('/watch?v=' + encodeURIComponent(videoId) + '#id=' + encodeURIComponent(captionsId));
-  });
-})));
-
-app.get('/receipts', (req, res) => {
-  renderToStream(html`
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="referrer" content="no-referrer">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>My receipts</title>
-      </head>
-      <body style="margin: 0 auto; max-width: 640px;">
-        <noscript>You need JavaScript to view this page.</noscript>
-        <script src="/my_receipts.bundle.js"></script>
-      </body>
-    </html>
-  `).pipe(res);
-});
-
-app.post('/add_receipt', (req, res) => {
-  renderToStream(html`
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="referrer" content="no-referrer">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Add receipt</title>
-      </head>
-      <body style="margin: 0 auto; max-width: 640px;">
-        <noscript>You need JavaScript to view this page.</noscript>
-        <script src="/my_receipts.bundle.js"></script>
-      </body>
-    </html>
-  `).pipe(res);
-});
 
 (async function() {
   try {
@@ -672,6 +334,14 @@ app.post('/add_receipt', (req, res) => {
     console.error('error initializing database', e);
     process.exit(1);
   }
+
+  // GC old data every 24 hours:
+  (async function() {
+    for (;;) {
+      await db.gc();
+      await new Promise(resolve => setTimeout(resolve, 1000 * 3600 * 24));
+    }
+  })();
 
   const port = process.env.PORT || 8080;
   app.listen(port, () => {
