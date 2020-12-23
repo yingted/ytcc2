@@ -41,7 +41,7 @@ app.use(expressStaticGzip('static', {
 }));
 app.use(express.urlencoded({
   extended: true,
-}))
+}));
 
 function asyncHandler(handler) {
   return function(req, res) {
