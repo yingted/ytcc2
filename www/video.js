@@ -181,9 +181,9 @@ export class Html5Video {
           white-space: pre-wrap;
         }
       </style>
-      <video @render=${onRender(function() {
-        this._video = thiz;
-      })} width="100%" height="100%" controls>
+      <video width="100%" height="100%" controls @render=${onRender(function() {
+        thiz._video = this;
+      })}>
         <source src=${this.url}>
       </video>
       <div class="captions-region" @render=${onRender(function() {

@@ -35,6 +35,7 @@ import {RangeSet} from '@codemirror/next/rangeset';
 import {oneDark} from '@codemirror/next/theme-one-dark';
 import {newUnsavedChanges} from './unsaved_changes.js';
 import {DummyVideo} from './video.js';
+import {Signal} from './util.js';
 
 function assert(cond) {
   console.assert(cond);
@@ -387,6 +388,7 @@ export class CaptionsEditor {
   constructor(video, captions) {
     // Widgets:
     this.video = video || new DummyVideo();
+    this.docChanged = new Signal();
     this.view = new EditorView({
       state: EditorState.create({
         doc: '',
@@ -684,6 +686,8 @@ export class CaptionsEditor {
       this.video.captions = this._rawCaptions;
 
       assert(update.state.doc.toString().endsWith(toText(this._editableCaptions)));
+
+      this.docChanged.emit(update.state.doc);
     }
 
     // Seek the video if needed:

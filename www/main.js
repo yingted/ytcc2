@@ -19,6 +19,7 @@
 import {html, render} from 'lit-html';
 import {until} from 'lit-html/directives/until.js';
 import {live} from 'lit-html/directives/live.js';
+import {ifDefined} from 'lit-html/directives/if-defined.js';
 import {asyncReplace} from 'lit-html/directives/async-replace.js';
 import {YouTubeVideo} from './youtube.js';
 import {CaptionsEditor, captionsToText, captionsFromText} from './editor.js';
@@ -94,7 +95,7 @@ function getVideoIdOrNull(value) {
   return null;
 }
 
-function renderFileMenubar({html}, {srv3Url, srtUrl}) {
+function renderFileMenubar({html}, {baseName, srv3Url, srtUrl, updateSrv3, updateSrt}) {
   return html`
     <style>
       ul.toolbar {
@@ -122,7 +123,14 @@ function renderFileMenubar({html}, {srv3Url, srtUrl}) {
     </style>
     <ul class="toolbar" role="menubar">
       <li role="menuitem">
-        <a href=${srv3Url}>Download captions (srv3)</a>
+        <a href=${srv3Url} download="${ifDefined(baseName)}.srv3.xml"
+            @mousedown=${ifDefined(updateSrv3)}
+            @touchstart=${ifDefined(updateSrv3)}
+            @click=${ifDefined(updateSrv3)}
+            @focus=${ifDefined(updateSrv3)}
+            @mouseover=${ifDefined(updateSrv3)}
+            @contextmenu=${ifDefined(updateSrv3)}
+            >Download captions (srv3)</a>
       </li>
       <li style="float: right;">
         <details @toggle=${function() {
@@ -136,9 +144,33 @@ function renderFileMenubar({html}, {srv3Url, srtUrl}) {
       .more-menu:not(.open) {
         display: none;
       }
+      .more-menu button {
+        min-height: var(--touch-target-size);
+      }
+      .more-menu a[href] {
+        display: inline-block;
+        padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
+      }
+      .publish-icon::before {
+        content: "🌐";
+      }
     </style>
     <ul class="more-menu" role="menu" aria-label="More">
-      <li role="menuitem"><a href=${srtUrl}>Download captions (SRT)</a></li>
+      <li role="menuitem">
+        <a href=${srtUrl} download="${ifDefined(baseName)}.srt"
+            @mousedown=${ifDefined(updateSrt)}
+            @touchstart=${ifDefined(updateSrt)}
+            @click=${ifDefined(updateSrt)}
+            @focus=${ifDefined(updateSrt)}
+            @mouseover=${ifDefined(updateSrt)}
+            @contextmenu=${ifDefined(updateSrt)}
+            >Download captions (SRT)</a>
+      </li>
+      <li role="menuitem">
+        <button>
+          <span class="publish-icon"></span>Publish
+        </button>
+      </li>
     </ul>
   `;
 }
@@ -296,8 +328,8 @@ async function askForVideo() {
             .file-icon::before {
               content: "📂";
             }
-            .cancel-icon::before {
-              content: "❌";
+            .empty-icon::before {
+              content: "⬜";
             }
             .cookie-icon::before {
               content: "🍪";
@@ -343,7 +375,7 @@ async function askForVideo() {
               <button @click=${function(e) {
                 resolve(new DummyVideo());
               }}>
-                <h3><span class="cancel-icon"></span>No video</h3>
+                <h3><span class="empty-icon"></span>No video</h3>
                 Edit captions without a video.
               </button>
             </li>
@@ -372,7 +404,6 @@ async function askForYouTubeCaptions(videoId) {
     (async function() {
       let tracks = await listTracks(videoId);
       let defaultTrack = getDefaultTrack(tracks);
-      // TODO: error handling
       picker.setTracks(tracks);
       picker.selectTrack(defaultTrack);
     })();
@@ -473,12 +504,8 @@ async function askForUnofficialCaptions(videoId) {
       if (!result.ok) return;
       let tracks = await result.json();
       tracks = tracks.map(track => new UnofficialTrack(track));
-      // TODO: error handling
-      // TODO: don't set a default
-      let defaultTrack = tracks[0];
 
       picker.setTracks(tracks);
-      picker.selectTrack(defaultTrack);
     })();
 
     let dialog = render0(html`
@@ -642,7 +669,7 @@ function askForCaptions({videoId}) {
           <button @click=${function(e) {
             resolve(null);
           }} style="min-height: var(--touch-target-size);">
-            <span class="cancel-icon"></span>Cancel
+            <span class="cancel-icon"></span>Change video
           </button>
         </form>
       </dialog>
@@ -701,6 +728,7 @@ function renderDummyEditorPane({html}) {
 
   // Get the video and captions:
   let video, captions;
+  let baseName = 'captions';
   for (;;) {
     // Clear the video and captions selection:
     render(renderDummyVideo({html}), videoPane);
@@ -710,12 +738,14 @@ function renderDummyEditorPane({html}) {
     video = await askForVideo();
 
     // Show the video early as feedback:
+    window.video = video;
     render(video.render(), videoPane);
 
     // Get the captions:
     let videoId = null;
     if (video instanceof YouTubeVideo) {
       videoId = video.videoId;
+      baseName = videoId;
     }
     captions = await askForCaptions({videoId});
     // Repeat until we have captions:
@@ -726,13 +756,57 @@ function renderDummyEditorPane({html}) {
 
   // Show the captions:
   let editor = new CaptionsEditor(video, captions);
+  window.editor = editor;
   render(renderEditorPane({html}, {editor}), editorPane);
 
-  // TODO
-  render(renderFileMenubar({html}, {
-    srv3Url: 'javascript:',
-    srtUrl: 'javascript:',
-  }), fileMenubar);
+  // Get a debounced view of the doc:
+  let doc = new AsyncRef(editor.view.state.doc);
+  editor.docChanged.addListener(async function(newDoc) {
+    // Avoid updating on every keypress on slow machines:
+    await new Promise(resolve => window.requestIdleCallback(resolve));
+    if (doc.value !== editor.view.state.doc) {
+      doc.value = editor.view.state.doc;
+    }
+  });
+
+  // Start a background thread to update the URLs:
+  (async function updateUrl() {
+    let srv3Blob = new ObjectUrl();
+    let srtBlob = new ObjectUrl();
+    let srv3Url;
+    let srtUrl;
+    let updateSrv3 = () => srv3Url = srv3Blob.create(editor._rawCaptions, () => new Blob([editor.getSrv3Captions()]));
+    let updateSrt = () => srtUrl = srtBlob.create(editor._rawCaptions, () => new Blob([editor.getSrtCaptions()]));
+    updateSrv3();
+    updateSrt();
+    for (;;) {
+      // Update immediately on link clicks:
+      let linkClicked = new Promise(resolve => {
+        render(renderFileMenubar({html}, {
+          baseName: baseName + '-' + new Date().toISOString().replace(/:/g, '_'),
+          srv3Url,
+          srtUrl,
+          // Avoid resolving multiple times. Not clear if we need this.
+          updateSrv3: function() {
+            updateSrv3();
+            resolve();
+            resolve = () => {};
+          },
+          updateSrt: function() {
+            updateSrt();
+            resolve();
+            resolve = () => {};
+          },
+        }), fileMenubar);
+      });
+      // Update eventually on doc changed:
+      let editorChanged = doc.nextValue().then(doc => {
+        updateSrt();
+        updateSrv3();
+      });
+      await Promise.race([linkClicked, editorChanged]);
+    }
+  })();
 })();
 
 if (false) {

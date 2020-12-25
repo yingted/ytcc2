@@ -172,7 +172,7 @@ class TrackPicker {
           if (this.value === 'open-file') {
             // Switch the picker back to the old value and show the dialog:
             this.value =
-              selectedTrack === null ? 'none' : 'youtube-' + selectedTrack.lang;
+              selectedTrack === null ? '' : 'youtube-' + selectedTrack.lang;
             filePicker.click();
             return;
           }
@@ -189,7 +189,7 @@ class TrackPicker {
           thiz.pick.emit(selectedTrack);
         }}>
           <!-- null track, which users can't select -->
-          ${selectedTrack === null ? html`<option value="none" selected></option>` : []}
+          ${selectedTrack === null ? html`<option value="" selected></option>` : []}
           <option value="open-file">Choose file</option>
           <optgroup label="YouTube">
             ${tracks.filter(track => !(track instanceof UnofficialTrack)).map(track =>
@@ -363,16 +363,17 @@ export class HomogeneousTrackPicker {
       tracks: [],  // YT tracks
       selectedTrack: null,
       disabled: false,
+      required: true,
     });
     // Signal for picking YouTube captions.
     // Also allow picking null (synthetic only).
     /** @type {Signal<YouTubeTrack>} */
     this.pick = new Signal();
     /** @type {AsyncRef<TemplateResult>} */
-    this.view = this.model.map(({tracks, selectedTrack, disabled}) => {
+    this.view = this.model.map(({tracks, selectedTrack, disabled, required}) => {
       let thiz = this;
       return html`
-        <select ?disabled=${disabled} @change=${function() {
+        <select ?disabled=${disabled} ?required=${required} @change=${function() {
           let {tracks, selectedTrack} = thiz.model.value;
 
           selectedTrack = null;
@@ -387,7 +388,7 @@ export class HomogeneousTrackPicker {
           thiz.pick.emit(selectedTrack);
         }} id=${ifDefined(id)}>
           <!-- null track, which users can't select -->
-          ${selectedTrack === null ? html`<option value="none" selected></option>` : []}
+          ${selectedTrack === null ? html`<option value="" hidden disabled selected></option>` : []}
           ${tracks.map(track =>
             html`<option value="${track.id}" ?selected=${selectedTrack === track}>${track.name}</option>`
           )}
@@ -445,6 +446,15 @@ export class HomogeneousTrackPicker {
     this.model.value = {
       ...this.model.value,
       disabled,
+    };
+  }
+  get required() {
+    return this.model.value.required;
+  }
+  set required(required) {
+    this.model.value = {
+      ...this.model.value,
+      required,
     };
   }
 
