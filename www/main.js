@@ -95,7 +95,7 @@ function getVideoIdOrNull(value) {
   return null;
 }
 
-function renderFileMenubar({html}, {baseName, srv3Url, srtUrl, updateSrv3, updateSrt}) {
+function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSrv3, updateSrt}) {
   return html`
     <style>
       ul.toolbar {
@@ -166,11 +166,18 @@ function renderFileMenubar({html}, {baseName, srv3Url, srtUrl, updateSrv3, updat
             @contextmenu=${ifDefined(updateSrt)}
             >Download captions (SRT)</a>
       </li>
-      <li role="menuitem">
-        <button>
-          <span class="publish-icon"></span>Publish
-        </button>
-      </li>
+
+      ${videoId == null ? [] : html`
+        <li role="menuitem">
+          <a href="https://studio.youtube.com/video/${videoId}/translations">${youtubeLogo}YouTube Studio</a>
+        </li>
+
+        <li role="menuitem">
+          <button>
+            <span class="publish-icon"></span>Publish unofficially
+          </button>
+        </li>
+      `}
     </ul>
   `;
 }
@@ -729,6 +736,7 @@ function renderDummyEditorPane({html}) {
   // Get the video and captions:
   let video, captions;
   let baseName = 'captions';
+  let videoId;
   for (;;) {
     // Clear the video and captions selection:
     render(renderDummyVideo({html}), videoPane);
@@ -742,7 +750,7 @@ function renderDummyEditorPane({html}) {
     render(video.render(), videoPane);
 
     // Get the captions:
-    let videoId = null;
+    videoId = null;
     if (video instanceof YouTubeVideo) {
       videoId = video.videoId;
       baseName = videoId;
@@ -783,6 +791,7 @@ function renderDummyEditorPane({html}) {
       // Update immediately on link clicks:
       let linkClicked = new Promise(resolve => {
         render(renderFileMenubar({html}, {
+          videoId,
           baseName: baseName + '-' + new Date().toISOString().replace(/:/g, '_'),
           srv3Url,
           srtUrl,
@@ -813,145 +822,6 @@ if (false) {
   // Video model/view:
   const video = new YouTubeVideo(params.videoId);
   window.video = video;
-
-  // Save as model/view:
-  const srtUrl = new ObjectUrl();
-  const srv3Url = new ObjectUrl();
-  const BaseNameState = Object.freeze({
-    // Initially default value:
-    PREFILLED: Symbol('prefilled'),
-    // Logically default, but cleared to prevent filtering:
-    FOCUSED: Symbol('focused'),
-    // onchange fired:
-    MODIFIED: Symbol('modified'),
-  });
-  const saveAs = new AsyncRef({
-    /** @type {CaptionsEditor|null} */
-    editor: null,
-    /** @type {string} */
-    baseName: 'captions',
-    /** @type {string} */
-    videoIdBaseName: 'captions',
-    /** @type {string|null} */
-    titleBaseName: null,
-    baseNameState: BaseNameState.PREFILLED,
-    fileType: 'srv3',
-  });
-  window.saveAs = saveAs;
-  const saveAsView = saveAs.map(state => {
-    let {editor, baseName, videoIdBaseName, titleBaseName, baseNameState: _, fileType} = state;
-    let fileName = baseName;
-    let blobUrl = '';
-    if (editor !== null) {
-      let captions = editor._rawCaptions;
-      switch (fileType) {
-        case 'srv3':
-          blobUrl = srv3Url.create(captions, () => new Blob([editor.getSrv3Captions()]));
-          fileName += '.srv3.xml';
-          break;
-        case 'srt':
-          blobUrl = srtUrl.create(captions, () => new Blob([editor.getSrtCaptions()]));
-          fileName += '.srt';
-          break;
-      }
-    }
-
-    return html`
-      <dialog class="fixed" @render=${registerDialog} style="
-          width: 25em;
-          max-width: 100%;
-          max-height: 100%;
-          box-sizing: border-box;
-          overflow-y: auto;">
-        <h2><span class="save-icon"></span>Save as</h2>
-
-        <form method="dialog" class="save-form">
-          <style>
-            .save-input-group {
-              padding: 0.2em 0;
-            }
-            .save-form > fieldset {
-              width: 100%;
-              min-width: 100%;
-              box-sizing: border-box;
-            }
-            .save-form select,
-            .save-form input,
-            .save-input-group button {
-              height: var(--touch-target-size);
-            }
-            .save-form a[href] {
-              display: inline-block;
-              padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
-            }
-          </style>
-
-          <div>
-            <label>
-              Name: 
-              <input list="save-basenames" name="basename" .value=${live(saveAs.value.baseNameState === BaseNameState.FOCUSED ? '' : saveAs.value.baseName)}
-                  @click=${function(e) {
-                    if (saveAs.value.baseNameState === BaseNameState.PREFILLED) {
-                      saveAs.value = Object.assign({}, saveAs.value, {
-                        baseNameState: BaseNameState.FOCUSED,
-                      });
-                    }
-                  }}
-                  @focus=${function(e) {
-                    if (saveAs.value.baseNameState === BaseNameState.PREFILLED) {
-                      saveAs.value = Object.assign({}, saveAs.value, {
-                        baseNameState: BaseNameState.FOCUSED,
-                      });
-                    }
-                  }}
-                  @blur=${function(e) {
-                    if (saveAs.value.baseNameState === BaseNameState.FOCUSED) {
-                      saveAs.value = Object.assign({}, saveAs.value, {
-                        baseNameState: BaseNameState.PREFILLED,
-                      });
-                    }
-                  }}
-                  @change=${function(e) {
-                    saveAs.value = Object.assign({}, saveAs.value, {
-                      baseName: this.value,
-                      baseNameState: BaseNameState.MODIFIED,
-                    });
-                  }}>
-              <datalist id="save-basenames">
-                <!-- lit-html seems to need closing tags: -->
-                <option value=${videoIdBaseName}></option>
-                ${titleBaseName !== null ? html`<option value=${titleBaseName}></option>` : []}
-              </datalist>
-            </label>
-          </div>
-
-          <div>
-            <label>
-              File type:
-              <select name="filetype" @change=${function(e) {
-                saveAs.value = Object.assign({}, saveAs.value, {
-                  fileType: this.value,
-                });
-              }}>
-                <option value="srv3" selected>YouTube serving format 3 (.srv3.xml)</option>
-                <option value="srt">SubRip Text (.srt)</option>
-              </select>
-            </label>
-          </div>
-
-          Download link: <a href=${blobUrl} download=${fileName} @click=${function() {
-            // Best-effort detection, since the user could be using "open in new tab" -> "save as",
-            // a download manager, or some other technology.
-            editor.setSaved();
-          }}>${fileName}</a>
-
-          <div class="save-input-group">
-            <button type="submit"><span class="cancel-icon"></span>Close</button>
-          </div>
-        </form>
-      </dialog>
-    `;
-  });
 
   // Editor pane model/view:
   const editorPane = window.editorPane = new AsyncRef({
@@ -1018,46 +888,6 @@ if (false) {
       </style>
 
       <ul class="toolbar" aria-label="Toolbar">
-        <li>
-          ${asyncReplace(saveAsView.observe())}
-          <button @click=${function(e) {
-            // Safe base name:
-            let languageSuffix = language === null ? '' : '.' + language;
-            let videoIdBaseName = params.videoId + languageSuffix;
-
-            // Friendly base name:
-            let titleBaseName = null;
-            let title = null;
-            try {
-              title = video.player.getVideoData().title;
-            } catch (e) {}
-            if (typeof title === 'string') {
-              titleBaseName = title + languageSuffix;
-            }
-
-            saveAs.value = Object.assign({}, saveAs.value, {
-              editor,
-              videoIdBaseName,
-              titleBaseName,
-              baseName: videoIdBaseName,
-              baseNameState: BaseNameState.PREFILLED,
-            });
-            let dialog = this.parentElement.querySelector('dialog');
-            dialog.showModal();
-          }}><span class="save-icon"></span>Save as</button>
-        </li>
-
-        <li>
-          <button @click=${e => {
-            editor.addCue(video.getCurrentTime(), '');
-            editor.view.focus();
-          }}><span class="add-icon"></span>Add cue</button>
-        </li>
-
-        <li>
-          <button @click=${e => editor.normalize()}><span class="sanitize-icon"></span>Sanitize</button>
-        </li>
-
         <li>
           ${asyncReplace(publishView.observe())}
           <button @click=${function(e) {
@@ -1283,62 +1113,6 @@ if (false) {
             </label>
           </fieldset>
 
-          <fieldset>
-            <legend><span class="sanitize-icon"></span>Sanitization</legend>
-            Remove hidden data to protect reviewers.
-
-            <div>
-              <label>
-                <input type="checkbox" checked required disabled>
-                Remove karaoke (paint-on) animations.
-              </label>
-            </div>
-            <div>
-              <label>
-                <input type="checkbox" checked required disabled>
-                Remove text before the first timestamp.
-              </label>
-            </div>
-            <div>
-              <label>
-                <input type="checkbox" checked required disabled>
-                Prefer well-formed HTML tags.
-              </label>
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend>Receipt</legend>
-            You need your receipt to edit or delete your captions.<br>
-            You can save your receipt to a file, or to ${myReceiptsLink({html})}, which uses cookies to track your receipts.
-            ${initialized ? renderPreview(receipt) : []}
-            <br>
-            Save receipt to:<br>
-            <style>
-              .cookie-icon::before {
-                content: "🍪";
-              }
-            </style>
-            <div class="publish-receipt-choice">
-              <label>
-                <input type="radio" name="receipt" value="file-and-cookie" required ?checked=${receiptType === "file-and-cookie"} @change=${receiptTypeChange}>
-                <span class="cookie-icon"></span>Both a receipt file and ${myReceiptsText({html})}
-              </label>
-            </div>
-            <div class="publish-receipt-choice">
-              <label>
-                <input type="radio" name="receipt" value="file" required ?checked=${receiptType === "file"} @change=${receiptTypeChange}>
-                Only a receipt file
-              </label>
-            </div>
-            <div class="publish-receipt-choice">
-              <label>
-                <input type="radio" name="receipt" value="cookie" required ?checked=${receiptType === "cookie"} @change=${receiptTypeChange}>
-                <span class="cookie-icon"></span>Only ${myReceiptsText({html})}
-              </label>
-            </div>
-          </fieldset>
-
           <label>
             <input type="checkbox" required>
             I have read and agree to the <a href="/terms">terms of service</a>.
@@ -1355,108 +1129,6 @@ if (false) {
       </dialog>
     `;
   });
-
-  const captionsPicker = window.captionsPicker = new CaptionsPicker();
-
-  // Render the page once:
-  let captionsPickerPrompt = document.createElement('DIV');
-  render(html`
-    <style>
-      :root {
-        --touch-target-size: 48px;
-      }
-    </style>
-
-    <nav>
-      <style>
-        ul.navbar {
-          width: 100%;
-          min-width: 0;
-          list-style-type: none;
-          margin: 0;
-          padding: 0;
-          white-space: nowrap;
-          overflow-x: auto;
-        }
-        ul.navbar > * {
-          white-space: normal;
-        }
-        ul.navbar > li {
-          display: inline-block;
-        }
-        ul.navbar > li:not(:first) {
-          margin-inline-start: 0 0 0 1em;
-        }
-        ul.navbar > li > a[href] {
-          display: inline-block;
-          padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
-        }
-        .pencil-icon::before {
-          content: "✏️";
-        }
-        .bug-icon::before {
-          content: "🐛";
-        }
-      </style>
-      <style>
-        h1 {
-          font-size: 1.5em;
-          padding: 0;
-          margin: 0;
-        }
-        h1 select {
-          height: var(--touch-target-size);
-        }
-        h1 label.captions-picker select {
-          flex-grow: 1;
-          min-width: 0;
-        }
-      </style>
-      <h1>
-        <label class="captions-picker" style="width: 100%; display: flex; align-items: center;">
-          <span style="white-space: pre;">Captions: </span>
-          ${captionsPicker.render()}
-        </label>
-      </h1>
-      ${captionsPickerPrompt}
-
-      <ul class="navbar">
-        <li>
-          ${myReceiptsLink({html})}
-        </li>
-
-        <li>
-          <a href="https://studio.youtube.com/video/${params.videoId}/translations"
-              aria-label="Edit in YouTube Studio">
-            <span class="pencil-icon"></span>${youtubeLogo} Studio
-          </a>
-        </li>
-
-        <li>
-          <a href="https://github.com/yingted/ytcc2/issues/new"
-              aria-label="Report bug on GitHub"><span class="bug-icon"></span>Report bug</a>
-        </li>
-
-        <li>
-          <a href="https://youtubexternalcc.netlify.app/video-player.html?videoID=${params.videoId}"
-              aria-label="Edit in youtube external cc"><span class="pencil-icon"></span>youtubexternalcc</a>
-        </li>
-      </ul>
-    </nav>
-
-    <main>
-      ${video.render()}
-      <hr>
-      ${asyncReplace(editorPaneView.observe())}
-    </main>
-
-    ${renderFooter({html})}
-  `, document.body);
-
-  let pickCaptionsDialog = document.querySelector('.pick-captions-dialog');
-  if (pickCaptionsDialog !== null) {
-    pickCaptionsDialog.showModal();
-  }
 
   function confirmOpenUnofficialTrack(unofficial, official) {
     let confirmed = true;
@@ -1506,48 +1178,17 @@ if (false) {
 
   let hashParams = new URLSearchParams(location.hash.substring(1));
 
-  /**
-   * Get the YouTube and unofficial tracks.
-   * @returns {Track[]} tracks
-   * @returns {Track} defaultTrack
-   */
-  async function getCombinedTracks() {
-    // Official tracks:
-    let officialTracks = await listTracks(params.videoId);
-    let defaultOfficialTrack = getDefaultTrack(officialTracks);
-
-    // Unofficial tracks:
-    let unofficialTracks = []
-    for (let track of params.tracks) {
-      unofficialTracks.push(new UnofficialTrack(track));
-    }
-    let requestedUnofficialTrack = (function() {
-      let captionsId = hashParams.get('id');
-      if (captionsId === null) return null;
-      for (let track of unofficialTracks) {
-        if (track.captionsId === captionsId) {
-          return track;
-        }
-      }
-      // If the track has been deleted, silently ignore the captionsId parameter.
-      return null;
-    })();
-
-    // Merged tracks:
-    let tracks = officialTracks.concat(unofficialTracks);
-    let defaultTrack = defaultOfficialTrack;
-    if (requestedUnofficialTrack !== null) {
-      let allowUnofficial = await confirmOpenUnofficialTrack(requestedUnofficialTrack, defaultOfficialTrack);
-      if (allowUnofficial) {
-        defaultTrack = requestedUnofficialTrack;
+  let requestedUnofficialTrack = (function() {
+    let captionsId = hashParams.get('id');
+    if (captionsId === null) return null;
+    for (let track of unofficialTracks) {
+      if (track.captionsId === captionsId) {
+        return track;
       }
     }
-
-    return {
-      tracks,
-      defaultTrack,
-    };
-  }
+    // If the track has been deleted, silently ignore the captionsId parameter.
+    return null;
+  })();
 
   // Main controller, binding everything together:
 
