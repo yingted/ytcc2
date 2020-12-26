@@ -151,12 +151,6 @@ function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSr
         display: inline-block;
         padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
       }
-      .link-icon::before {
-        content: "🔗";
-      }
-      .publish-icon::before {
-        content: "🌐";
-      }
     </style>
     <ul class="more-menu" role="menu" aria-label="More">
       <li role="menuitem">
@@ -568,8 +562,7 @@ function askForCaptions({videoId}) {
                   '0:00 Hello\n' +
                   '0:01 <i>Narrator: Hello</i>'));
               }}>
-                <h3><span class="new-icon"></span>New</h3>
-                Start from scratch.
+                <h3><span class="new-icon"></span>Blank captions</h3>
               </button>
             </li>
           </ul>
@@ -627,25 +620,134 @@ function renderEditorPane({html}, {editor, addCueDisabled}) {
 }
 
 function renderPermalink({html}, {editor}) {
+  let iAgree = render0(html`
+    <input type="checkbox" required>
+  `);
+  let shareButton = render0(html`
+    <button type="submit">
+      <span class="link-icon"></span>Share
+    </button>
+  `);
+  let unshareButton = render0(html`
+    <button type="reset">
+      <span class="cancel-icon"></span>Stop sharing
+    </button>
+  `);
+  let input = render0(html`
+    <input type="url"
+        aria-label="Sharing link"
+        placeholder="${location.origin}/#••••••••••••••••••••••" readonly
+        style="flex-grow: 1; min-width: 0;">
+  `);
+  let statusMessage = render0(html`
+    <div role="alert" aria-live="polite">
+    </div>
+  `);
+
+  (async function() {
+    unshareButton.style.display = 'none';
+    for (;;) {
+      // Share flow:
+      {
+        // Wait for share request:
+        shareButton.style.display = null;
+        shareButton.disabled = false;
+        await new Promise(resolve => shareButton.onclick = function() {
+          if (!iAgree.reportValidity()) {
+            return;
+          }
+
+          shareButton.onclick = null;
+
+          // Show new share state immediately:
+          let readLink = location.origin + '/#' + Math.random().toString().substring(2);
+          let writeLink = readLink + ',' + Math.random().toString().substring(2);
+
+          input.value = readLink;
+          input.select();
+          document.execCommand('copy');
+          window.history.replaceState(null, document.title, writeLink);
+          shareButton.disabled = true;
+          render('Link copied. Uploading captions...', statusMessage);
+
+          resolve();
+        });
+
+        // Wait for share response:
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        shareButton.style.display = 'none';
+        // TODO: set the deadline
+        render('Link copied. Expires in 30 days.', statusMessage);
+      }
+
+      // Unshare flow:
+      {
+        // Wait for unshare request:
+        unshareButton.style.display = null;
+        unshareButton.disabled = false;
+        await new Promise(resolve => unshareButton.onclick = function() {
+          unshareButton.onclick = null;
+
+          input.value = '';
+          let localLink = location.origin + '/';
+          window.history.replaceState(null, document.title, localLink);
+          unshareButton.disabled = true;
+          render('Stopping sharing...', statusMessage);
+
+          resolve();
+        });
+
+        // Wait for unshare response:
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        unshareButton.style.display = 'none';
+        render('Sharing stopped.', statusMessage);
+      }
+    }
+  })();
+
   return html`
     <style>
-      .permalink-container button,
-      .permalink-container input {
+      .permalink-form button,
+      .permalink-form input[type=url] {
         height: var(--touch-target-size);
         box-sizing: border-box;
       }
+      .permalink-form label,
+      .permalink-form a[href] {
+        display: inline-block;
+        padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
+      }
+      .permalink-form a[href] {
+        margin: calc(0.5em - var(--touch-target-size) / 2) 0;
+      }
+
+      .link-icon::before {
+        content: "🔗";
+      }
+      .cancel-icon::before {
+        content: "❌";
+      }
     </style>
-    <div class="permalink-container" style="display: flex;">
-      <button type="button" @click=${function() {
-        // TODO
-      }}>
-        Share
-      </button>
-      <input type="url"
-          aria-label="Sharing link"
-          placeholder="${location.origin}/#••••••••••••••••••••••" readonly
-          style="flex-grow: 1; min-width: 0;">
-    </div>
+    <form class="permalink-form"
+        @submit=${function(e) {
+          e.preventDefault();
+        }}
+        @reset=${function(e) {
+          e.preventDefault();
+        }}>
+      <label>
+        ${iAgree}
+        I agree to the <a href="/terms">terms of service</a>.
+      </label>
+
+      <div style="display: flex;">
+        ${shareButton}
+        ${unshareButton}
+        ${input}
+      </div>
+
+      ${statusMessage}
+    </form>
   `;
 }
 
@@ -668,15 +770,15 @@ function renderDummyEditorPane({html}) {
   let baseName = 'captions';
   let videoId;
 
-  // // TODO:
-  // videoId = 'gKqypLvwd70';
-  // baseName = videoId;
-  // // video = new YouTubeVideo(videoId);
-  // video = new DummyVideo();
-  // render(video.render(), videoPane);
-  // captions = captionsFromText('0:00 [Music]');
-  // document.querySelector('summary[aria-haspopup=true]').click();
-  // if (false)
+  // TODO:
+  videoId = 'gKqypLvwd70';
+  baseName = videoId;
+  // video = new YouTubeVideo(videoId);
+  video = new DummyVideo();
+  render(video.render(), videoPane);
+  captions = captionsFromText('0:00 [Music]');
+  document.querySelector('summary[aria-haspopup=true]').click();
+  if (false)
 
   for (;;) {
     // Clear the video and captions selection:
@@ -740,12 +842,10 @@ function renderDummyEditorPane({html}) {
           updateSrv3: function() {
             updateSrv3();
             resolve();
-            resolve = () => {};
           },
           updateSrt: function() {
             updateSrt();
             resolve();
-            resolve = () => {};
           },
         }), fileMenubar);
       });
