@@ -240,6 +240,9 @@ async function askForYouTubeVideo() {
     }
     let dialog = render0(html`
       <dialog
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="youtube-url-heading"
           @render=${registerDialog}
           @cancel=${function(e) {
             resolve(null);
@@ -248,7 +251,7 @@ async function askForYouTubeVideo() {
             document.body.removeChild(dialog);
           }}
           style="width: calc(min(100%, 25em)); box-sizing: border-box;">
-        <h2><label for="youtube-url">YouTube video URL</label></h2>
+        <h2 id="youtube-url-heading"><label for="youtube-url">YouTube video URL</label></h2>
 
         <style>
           .youtube-url-form input,
@@ -300,6 +303,9 @@ async function askForVideo() {
   return new Promise(resolve => {
     let dialog = render0(html`
       <dialog
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="video-dialog-heading"
           @render=${registerDialog}
           @cancel=${function(e) {
             e.preventDefault();
@@ -307,7 +313,7 @@ async function askForVideo() {
           @close=${function(e) {
             document.body.removeChild(dialog);
           }}>
-        <h2>Open video</h2>
+        <h2 id="video-dialog-heading">Open video</h2>
 
         <form method="dialog">
           <style>
@@ -393,20 +399,21 @@ async function askForVideo() {
  * [Open][Cancel]
  *
  * @param {string} videoId
+ * @param {Track[]} tracks await listTracks(videoId)
+ * @param {Track[]} defaultTrack getDefaultTrack(tracks)
  * @returns {Srt.raw Track.t|null}
  */
-async function askForYouTubeCaptions(videoId) {
+async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
   return new Promise(resolve => {
     let picker = new HomogeneousTrackPicker({id: 'youtube-track-picker'});
-    (async function() {
-      let tracks = await listTracks(videoId);
-      let defaultTrack = getDefaultTrack(tracks);
-      picker.setTracks(tracks);
-      picker.selectTrack(defaultTrack);
-    })();
+    picker.setTracks(tracks);
+    picker.selectTrack(defaultTrack);
 
     let dialog = render0(html`
       <dialog
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="youtube-captions-dialog-heading"
           @render=${registerDialog}
           @cancel=${function(e) {
             resolve(null);
@@ -414,7 +421,7 @@ async function askForYouTubeCaptions(videoId) {
           @close=${function(e) {
             document.body.removeChild(dialog);
           }}>
-        <h2><label for="youtube-track-picker">Open YouTube captions</label></h2>
+        <h2 id="youtube-captions-dialog-heading"><label for="youtube-track-picker">Open YouTube captions</label></h2>
 
         <form method="dialog" class="youtube-track-picker-form"
             @submit=${async function(e) {
@@ -458,7 +465,7 @@ async function askForYouTubeCaptions(videoId) {
             }
           </style>
           <div>
-            ${picker.render()}
+            ${picker.renderOnce()}
           </div>
 
           <p>
@@ -495,6 +502,9 @@ function askForCaptions({videoId}) {
     filePicker.style.display = 'none';
     let dialog = render0(html`
       <dialog
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="captions-dialog-heading"
           @render=${registerDialog}
           @cancel=${function(e) {
             resolve(null);
@@ -502,7 +512,7 @@ function askForCaptions({videoId}) {
           @close=${function(e) {
             document.body.removeChild(dialog);
           }}>
-        <h2>Open captions</h2>
+        <h2 id="captions-dialog-heading">Open captions</h2>
 
         <form method="dialog">
           <style>
@@ -532,9 +542,17 @@ function askForCaptions({videoId}) {
           <ul class="listview">
             <!-- YouTube -->
             <li>
-              <button @click=${async function(e) {
-                e.preventDefault();
-                let captions = await askForYouTubeCaptions(videoId);
+              <button type="button" @click=${async function(e) {
+                this.disabled = true;
+                let tracks;
+                try {
+                  tracks = await listTracks(videoId);
+                } finally {
+                  this.disabled = false;
+                }
+
+                let captions = await askForYouTubeCaptions(
+                    videoId, tracks, getDefaultTrack(tracks));
                 if (captions == null) return;
                 dialog.close();
                 resolve(captions);
@@ -672,8 +690,8 @@ function renderPermalink({html}, {editor}) {
           shareButton.onclick = null;
 
           // Show new share state immediately:
-          readLink = location.origin + '/#' + Math.random().toString().substring(2);
-          writeLink = readLink + ',' + Math.random().toString().substring(2);
+          readLink = location.origin + '/#view=' + Math.random().toString().substring(2);
+          writeLink = location.origin + '/#edit=' + Math.random().toString().substring(2);
 
           input.value = readLink;
           input.select();

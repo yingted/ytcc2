@@ -1,5 +1,6 @@
 import {html} from 'lit-html';
 import {asyncReplace} from 'lit-html/directives/async-replace.js';
+import {until} from 'lit-html/directives/until.js';
 import {ifDefined} from 'lit-html/directives/if-defined';
 import {decodeJson3, decodeJson3FromJson, decodeSrv3, decodeSrt, stripRaw} from 'ytcc2-captions';
 import {youtubeLanguages} from './gen/youtube_languages.js';
@@ -460,6 +461,10 @@ export class HomogeneousTrackPicker {
 
   render() {
     return asyncReplace(this.view.observe());
+  }
+  // For when you need the value there immediately:
+  renderOnce() {
+    return this.view.value;
   }
 }
 
