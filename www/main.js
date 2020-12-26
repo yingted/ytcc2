@@ -638,11 +638,13 @@ function renderEditorPane({html}, {editor, addCueDisabled}) {
 }
 
 async function uploadCaptions(writeLink, text, signal) {
+  // TODO
   console.log({writeLink, text, signal});
   await new Promise(resolve => setTimeout(resolve, 1000));
 }
 
 async function deleteCaptions(writeLink) {
+  // TODO
   console.log({writeLink});
   await new Promise(resolve => setTimeout(resolve, 1000));
 }
@@ -936,57 +938,12 @@ if (false) {
   const video = new YouTubeVideo(params.videoId);
   window.video = video;
 
-  // Editor pane model/view:
-  const editorPane = window.editorPane = new AsyncRef({
-    // Start the editor as null to avoid drawing an empty editor.
-    /** @type {CaptionsEditor|null} */
-    editor: null,
-    /** @type {string|null} */
-    language: null,
-  });
-  const diffBasePicker = window.diffBasePicker = new CaptionsPicker();
   const editorPaneView = editorPane.map(function renderEditorAndToolbar({editor, language}) {
     if (editor === null) {
       return html`Loading captions...`;
     }
     return html`
       <style>
-        ul.toolbar {
-          width: 100%;
-          min-width: 0;
-          list-style-type: none;
-          padding: 0;
-          margin: 0;
-          white-space: nowrap;
-          overflow-x: auto;
-        }
-        ul.toolbar > * {
-          white-space: normal;
-        }
-        ul.toolbar > li {
-          display: inline-block;
-        }
-        ul.toolbar > li > button {
-          height: var(--touch-target-size);
-        }
-        .save-icon::before {
-          content: "💾";
-        }
-        .sanitize-icon::before {
-          content: "🧼";
-        }
-        .publish-icon::before {
-          content: "🌐";
-        }
-        .cancel-icon::before {
-          content: "❌";
-        }
-        .add-icon::before {
-          content: "➕";
-        }
-        .preview-icon::before {
-          content: "🔍";
-        }
         .diff-icon::before {
           content: "@";
           color: white;
@@ -1001,19 +958,6 @@ if (false) {
       </style>
 
       <ul class="toolbar" aria-label="Toolbar">
-        <li>
-          ${asyncReplace(publishView.observe())}
-          <button @click=${function(e) {
-            let dialog = this.parentElement.querySelector('dialog');
-            publish.value = Object.assign({}, publish.value, {
-              initialized: true,
-              language: language ?? 'en',
-              srtBase64: uint8ArrayToBase64(new Uint8Array(editor.getNormalizedSrtCaptions())),
-            });
-            dialog.showModal();
-          }}><span class="publish-icon"></span>Publish</button>
-        </li>
-
         <li>
           <button class="diff-button" @click=${function() {
             let picker = document.querySelector('.diff-picker-container');
@@ -1055,193 +999,6 @@ if (false) {
   function uint8ArrayToBase64(buffer) {
     return window.btoa(String.fromCharCode.apply(String, buffer));
   }
-
-  const previewObjectUrl = new ObjectUrl();
-  function renderPreview(receipt) {
-    return html`
-      <details>
-        <summary><span class="preview-icon"></span>Preview receipt file</summary>
-        <figure style="margin: 0;">
-          <figcaption>
-            Open the receipt file to see your receipt.
-          </figcaption>
-          ${renderBrowser({html}, {
-            url: `file:///receipt-${params.videoId}.html`,
-            doc: renderFileReceipt({html, script}, receipt),
-          })}
-        </figure>
-      </details>
-
-      <details>
-        <summary><span class="preview-icon"></span>Preview ${myReceiptsText({html})}</summary>
-        <figure style="margin: 0;">
-          <figcaption>
-            Go to ${myReceiptsLink({html})} to see your receipt.
-          </figcaption>
-          ${renderBrowser({html}, {
-            url: `${location.origin}/receipts`,
-            doc: renderCookieReceipts({html, script}, [receipt], [previewObjectUrl]),
-          })}
-        </figure>
-      </details>
-    `;
-  }
-
-  const publish = window.publish = new AsyncRef({
-    initialized: false,
-    /** @type {string} */
-    language: 'en',
-    /** @type {string|null} */
-    receiptType: null,
-    /** @type {string} */
-    srtBase64: '',
-  });
-  let publishKeys = null;
-  let published = false;
-  const publishView = publish.map(value => {
-    let {initialized, language, receiptType, srtBase64} = value;
-
-    // Lazy init the receipt preview:
-    let publicKeyBase64 = '';
-    let secretKeyBase64 = '';
-    if (initialized && publishKeys === null) {
-      publishKeys = sign_keyPair();
-    }
-    if (publishKeys !== null) {
-      publicKeyBase64 = uint8ArrayToBase64(publishKeys.publicKey);
-      secretKeyBase64 = uint8ArrayToBase64(publishKeys.secretKey);
-    }
-
-    let receipt = {
-      origin: location.origin,
-      videoId: params.videoId,
-      language,
-      captionsId: 'preview',
-      secretKeyBase64,
-    };
-    let receiptTypeChange = function receiptTypeChange(e) {
-      publish.value = Object.assign({}, value, {
-        receiptType: this.value,
-      });
-    };
-    return html`
-      <dialog class="fixed" @render=${registerDialog} style="
-          width: 25em;
-          max-width: 100%;
-          max-height: 100%;
-          box-sizing: border-box;
-          overflow-y: auto;">
-        <h2><span class="publish-icon"></span>Publish</h2>
-        Publish your captions <b>on this website</b> so anyone can use or copy them.<br>
-        Making the video private or deleting it won't take your captions down.<br>
-        <br>
-        To publish on ${youtubeLogo} YouTube instead, <span class="save-icon"></span>Save and upload the captions to
-        <a href="https://studio.youtube.com/video/${params.videoId}/translations"
-            aria-label="YouTube Studio">${youtubeLogo} Studio</a>.
-
-        <form action="/publish" method="post" @submit=${async function(e) {
-          // Actual submission is done in JavaScript:
-          e.preventDefault();
-          if (published) return;
-          this.querySelectorAll('button[type=submit]').forEach(b => b.disabled = true);
-          published = true;
-          publishKeys = null;
-
-          let data = new FormData(this);
-          let receiptType = data.get('receipt');
-          data.delete('receipt');
-          let {captionsId} = await (await fetch(this.action, {
-            method: this.method,
-            body: data,
-          })).json();
-          let finalReceipt = Object.assign({}, {
-            origin: location.origin,
-            videoId: data.get('videoId'),
-            language: data.get('language'),
-            captionsId,
-            secretKeyBase64,
-          });
-
-          if (receiptType === 'cookie' || receiptType === 'file-and-cookie') {
-            addCookie(finalReceipt);
-          }
-
-          if (receiptType === 'file' || receiptType === 'file-and-cookie') {
-            // Download the file:
-            let receiptString =
-              renderFileReceiptString({html, script}, finalReceipt);
-            let a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = URL.createObjectURL(new Blob([receiptString]));
-            a.download = `receipt-${finalReceipt.videoId}.html`;
-            document.body.appendChild(a);
-            a.click();
-          }
-
-          // Redirect (to avoid reusing things like key material):
-          window.location.href = `/watch?v=${params.videoId}#id=${captionsId}`;
-
-          this.closest('dialog').close();
-        }} class="publish-form">
-          <input name="videoId" type="hidden" value=${params.videoId}>
-          <input name="srtBase64" type="hidden" value=${srtBase64}>
-          <input name="publicKeyBase64" type="hidden" value=${publicKeyBase64}>
-          <style>
-            .publish-input-group {
-              padding: 0.2em 0;
-            }
-            .publish-form > fieldset {
-              width: 100%;
-              min-width: 100%;
-              box-sizing: border-box;
-            }
-            .publish-form select,
-            .publish-input-group button {
-              height: var(--touch-target-size);
-            }
-            .publish-receipt-choice > label {
-              display: inline-block;
-              padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
-            }
-          </style>
-
-          <fieldset>
-            <legend>Language</legend>
-            <label>
-              Captions language:
-              <div>
-                <select name="language" @change=${function updateReceiptLanguage(e) {
-                  publish.value = Object.assign({}, value, {
-                    language: this.value,
-                  });
-                }}>
-                  ${youtubeLanguages.some(lang => lang.id === receipt.language) ? [] :
-                    html`<option value=${receipt.language} selected>Unknown language: ${receipt.language}</option>`
-                  }
-                  ${youtubeLanguages.map(({id, name}) => html`
-                    <option value=${id} ?selected=${id === receipt.language}>${name}</option>
-                  `)}
-                </select>
-              </div>
-            </label>
-          </fieldset>
-
-          <label>
-            <input type="checkbox" required>
-            I have read and agree to the <a href="/terms">terms of service</a>.
-          </label>
-
-          <!-- Publish | Cancel -->
-          <div class="publish-input-group">
-            <button type="submit"><span class="publish-icon"></span>Publish</button>
-            <button type="button" @click=${function(e) {
-              this.closest('dialog').close();
-            }}><span class="cancel-icon"></span>Cancel</button>
-          </div>
-        </form>
-      </dialog>
-    `;
-  });
 
   function confirmOpenUnofficialTrack(unofficial, official) {
     let confirmed = true;
@@ -1306,36 +1063,6 @@ if (false) {
   // Main controller, binding everything together:
 
   (async function main() {
-    return;
-    // Load the tracks:
-    let {tracks, defaultTrack} = await getCombinedTracks();
-    captionsPicker.setTracks(tracks);
-    diffBasePicker.setTracks(tracks);
-    captionsPicker.selectTrack(defaultTrack);
-    window.tracks = tracks;
-
-    // Bind captions picker:
-    let editor = new CaptionsEditor(video);
-    editorPane.value = {
-      editor,
-      language: null,
-    };
-    let setCaptions = async function setCaptions({captions, language}) {
-      if (captions === null) return;
-      let {editor: curEditor, language: curLanguage} = editorPane.value;
-
-      curEditor.setCaptions(captions, /*addToHistory=*/true);
-      curEditor.setSaved();
-      curLanguage = language ?? curLanguage;
-
-      editorPane.value = {editor, language: curLanguage};
-    };
-    captionsPicker.captionsChange.addListener(setCaptions);
-    setCaptions({
-      language: captionsPicker.getLanguage(),
-      captions: await captionsPicker.fetchCaptions(),
-    });
-
     // Diff plugin:
     let diffTag = Symbol('diff');
     editor.view.dispatch({
