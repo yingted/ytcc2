@@ -542,6 +542,7 @@ export class CaptionsEditor {
    */
   addCue(time, text) {
     let offset = timeToCueOffset(this._getPrologue(), this._editableCaptions, time, true);
+    // TODO: handle insert at end
     let insert = captionToText({time, text}) + '\n';
 
     this.view.dispatch(this.view.state.update({

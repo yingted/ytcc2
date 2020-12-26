@@ -52,9 +52,8 @@ async function updateSchema() {
       CREATE TABLE IF NOT EXISTS schema_changes(name varchar(1000));
     `);
 
-    await update(client, '0-create-private-captions', `
-      -- Captions intended for file-sharing use case.
-      CREATE TABLE private_captions(
+    await update(client, '0-create-captions', `
+      CREATE TABLE captions(
         id SERIAL,
 
         -- 32 bytes in base64 is 44 bytes
@@ -71,26 +70,6 @@ async function updateSchema() {
         UNIQUE(encryption_nonce)
       );
     `);
-
-    await update(client, '1-create-public-captions', `
-      CREATE TABLE public_captions(
-        -- 11 bytes (int64 in ~base64?)
-        video_id varchar(100),
-        -- For maintaining insertion order:
-        seq SERIAL,
-
-        -- 32 bytes in base64 is 44 bytes
-        -- Used to authorize deletion.
-        deletion_public_key_base64 varchar(100) NOT NULL,
-
-        -- should be usually 2 or 5 bytes
-        language varchar(10) NOT NULL,
-        -- SRT UTF-8 string. Should be equal to private_captions.encrypted_data's size.
-        srt varchar(1048576) NOT NULL,
-        PRIMARY KEY(video_id, seq),
-        UNIQUE(deletion_public_key_base64)
-      );
-    `);
   } finally {
     client.release();
   }
@@ -98,7 +77,7 @@ async function updateSchema() {
 
 async function gc() {
   await pool.query(`
-    DELETE FROM private_captions AS t
+    DELETE FROM captions AS t
     WHERE t.delete_at <= now();
   `);
 }

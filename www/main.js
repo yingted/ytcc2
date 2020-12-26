@@ -151,6 +151,9 @@ function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSr
         display: inline-block;
         padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
       }
+      .link-icon::before {
+        content: "🔗";
+      }
       .publish-icon::before {
         content: "🌐";
       }
@@ -170,12 +173,6 @@ function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSr
       ${videoId == null ? [] : html`
         <li role="menuitem">
           <a href="https://studio.youtube.com/video/${videoId}/translations">${youtubeLogo}YouTube Studio</a>
-        </li>
-
-        <li role="menuitem">
-          <button>
-            <span class="publish-icon"></span>Publish unofficially
-          </button>
         </li>
       `}
     </ul>
@@ -251,7 +248,6 @@ async function askForYouTubeVideo() {
       <dialog
           @render=${registerDialog}
           @cancel=${function(e) {
-            document.body.removeChild(dialog);
             resolve(null);
           }}
           @close=${function(e) {
@@ -264,6 +260,7 @@ async function askForYouTubeVideo() {
           .youtube-url-form input,
           .youtube-url-form button {
             height: var(--touch-target-size);
+            box-sizing: border-box;
           }
           .cancel-icon::before {
             content: "❌";
@@ -279,7 +276,7 @@ async function askForYouTubeVideo() {
                 autofocus required spellcheck="false">
           </div>
 
-          <button>Open</button>
+          <button><span class="accept-icon"></span><b>Open</b></button>
           <button type="button" @click=${function(e) {
             dialog.close();
             resolve(null);
@@ -344,25 +341,6 @@ async function askForVideo() {
           </style>
 
           <ul class="listview">
-            <!-- File -->
-            <li>
-              <button type="button" @click=${function(e) {
-                let file = this.closest('li').querySelector('input[type=file]');
-                file.value = '';
-                file.click();
-                e.preventDefault();
-              }}>
-                <h3><span class="file-icon"></span>File</h3>
-                Your video file won't be uploaded.
-              </button>
-              <input type="file" accept="video/*" style="display: none;" @change=${function(e) {
-                if (e.target.files.length === 0) return;
-                let video = new Html5Video(videoFileUrl.create({}, () => e.target.files[0]));
-                dialog.close();
-                resolve(video);
-              }}>
-            </li>
-
             <!-- YouTube -->
             <li>
               <button @click=${async function(e) {
@@ -377,13 +355,31 @@ async function askForVideo() {
               </button>
             </li>
 
+            <!-- File -->
+            <li>
+              <button type="button" @click=${function(e) {
+                let file = this.closest('li').querySelector('input[type=file]');
+                file.value = '';
+                file.click();
+                e.preventDefault();
+              }}>
+                <h3><span class="file-icon"></span>Choose video file</h3>
+                Your video file won't be uploaded.
+              </button>
+              <input type="file" accept="video/*" style="display: none;" @change=${function(e) {
+                if (e.target.files.length === 0) return;
+                let video = new Html5Video(videoFileUrl.create({}, () => e.target.files[0]));
+                dialog.close();
+                resolve(video);
+              }}>
+            </li>
+
             <!-- None -->
             <li>
               <button @click=${function(e) {
                 resolve(new DummyVideo());
               }}>
-                <h3><span class="empty-icon"></span>No video</h3>
-                Edit captions without a video.
+                <h3><span class="empty-icon"></span>Blank video</h3>
               </button>
             </li>
           </ul>
@@ -419,7 +415,6 @@ async function askForYouTubeCaptions(videoId) {
       <dialog
           @render=${registerDialog}
           @cancel=${function(e) {
-            document.body.removeChild(dialog);
             resolve(null);
           }}
           @close=${function(e) {
@@ -478,81 +473,7 @@ async function askForYouTubeCaptions(videoId) {
             I'm working on it.
           </p>
 
-          <button>Open</button>
-          <button type="button" @click=${function(e) {
-            dialog.close();
-            resolve(null);
-          }}>
-            <span class="cancel-icon"></span>Cancel
-          </button>
-        </form>
-      </dialog>
-    `);
-    document.body.appendChild(dialog);
-    dialog.showModal();
-  });
-}
-
-/**
- * Ask the user for the unofficial captions. Can be cancelled.
- *
- * Open unofficial captions
- * [Unofficial English (Default) v]
- * [Open][Cancel]
- *
- * @param {string} videoId
- * @returns {Srt.raw Track.t|null}
- */
-async function askForUnofficialCaptions(videoId) {
-  return new Promise(resolve => {
-    let picker = new HomogeneousTrackPicker({id: 'unofficial-track-picker'});
-    (async function() {
-      let result = await window.fetch('/captions?v=' + encodeURIComponent(videoId));
-      if (!result.ok) return;
-      let tracks = await result.json();
-      tracks = tracks.map(track => new UnofficialTrack(track));
-
-      picker.setTracks(tracks);
-    })();
-
-    let dialog = render0(html`
-      <dialog
-          @render=${registerDialog}
-          @cancel=${function(e) {
-            document.body.removeChild(dialog);
-            resolve(null);
-          }}
-          @close=${function(e) {
-            document.body.removeChild(dialog);
-          }}>
-        <h2><label for="unofficial-track-picker">Open unofficial captions</label></h2>
-
-        <form method="dialog" class="unofficial-track-picker-form"
-            @submit=${function(e) {
-              let track = picker.model.value.selectedTrack;
-              if (track === null) {
-                resolve(null);
-                return;
-              }
-              resolve(track.getCaptions());
-            }}>
-          <style>
-            #unofficial-track-picker {
-              height: var(--touch-target-size);
-            }
-            .unofficial-track-picker-form button {
-              min-height: var(--touch-target-size);
-            }
-            .unofficial-track-picker-form a[href] {
-              display: inline-block;
-              padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
-            }
-          </style>
-          <div>
-            ${picker.render()}
-          </div>
-
-          <button>Open</button>
+          <button><b>Open</b></button>
           <button type="button" @click=${function(e) {
             dialog.close();
             resolve(null);
@@ -582,7 +503,6 @@ function askForCaptions({videoId}) {
       <dialog
           @render=${registerDialog}
           @cancel=${function(e) {
-            document.body.removeChild(dialog);
             resolve(null);
           }}
           @close=${function(e) {
@@ -616,17 +536,6 @@ function askForCaptions({videoId}) {
           </style>
 
           <ul class="listview">
-            <!-- File -->
-            <li>
-              <button type="button" @click=${function(e) {
-                filePicker.click();
-              }}>
-                <h3><span class="file-icon"></span>File</h3>
-                Open YouTube srv3 or SRT files.
-              </button>
-              ${filePicker}
-            </li>
-
             <!-- YouTube -->
             <li>
               <button @click=${async function(e) {
@@ -641,18 +550,15 @@ function askForCaptions({videoId}) {
               </button>
             </li>
 
-            <!-- Unofficial -->
+            <!-- File -->
             <li>
-              <button @click=${async function(e) {
-                e.preventDefault();
-                let captions = await askForUnofficialCaptions(videoId);
-                if (captions == null) return;
-                dialog.close();
-                resolve(captions);
-              }} ?disabled=${videoId == null}>
-                <h3><span class="publish-icon"></span>Unofficial</h3>
-                Captions uploaded to this website.
+              <button type="button" @click=${function(e) {
+                filePicker.click();
+              }}>
+                <h3><span class="file-icon"></span>Choose captions file</h3>
+                Open YouTube srv3 or SRT files.
               </button>
+              ${filePicker}
             </li>
 
             <!-- None -->
@@ -716,6 +622,30 @@ function renderEditorPane({html}, {editor, addCueDisabled}) {
       </li>
     </ul>
     ${editor.render()}
+    ${renderPermalink({html}, {editor})}
+  `;
+}
+
+function renderPermalink({html}, {editor}) {
+  return html`
+    <style>
+      .permalink-container button,
+      .permalink-container input {
+        height: var(--touch-target-size);
+        box-sizing: border-box;
+      }
+    </style>
+    <div class="permalink-container" style="display: flex;">
+      <button type="button" @click=${function() {
+        // TODO
+      }}>
+        Share
+      </button>
+      <input type="url"
+          aria-label="Sharing link"
+          placeholder="${location.origin}/#••••••••••••••••••••••" readonly
+          style="flex-grow: 1; min-width: 0;">
+    </div>
   `;
 }
 
@@ -737,6 +667,17 @@ function renderDummyEditorPane({html}) {
   let video, captions;
   let baseName = 'captions';
   let videoId;
+
+  // // TODO:
+  // videoId = 'gKqypLvwd70';
+  // baseName = videoId;
+  // // video = new YouTubeVideo(videoId);
+  // video = new DummyVideo();
+  // render(video.render(), videoPane);
+  // captions = captionsFromText('0:00 [Music]');
+  // document.querySelector('summary[aria-haspopup=true]').click();
+  // if (false)
+
   for (;;) {
     // Clear the video and captions selection:
     render(renderDummyVideo({html}), videoPane);
@@ -1141,7 +1082,7 @@ if (false) {
               box-sizing: border-box;
               overflow-y: auto;"
         @close=${e => resolve(confirmed)}
-        @cancel=${e => resolve(false)}>
+        @cancel=${e => confirmed = false}>
           <h2>Unofficial captions</h2>
 
           <form method="dialog">

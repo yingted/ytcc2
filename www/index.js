@@ -110,25 +110,6 @@ app.get('/captions/:captionsId', asyncHandler(async (req, res) => {
   res.json(tracks[0]);
 }));
 
-// /captions?v=:videoId
-app.get('/captions', asyncHandler(async (req, res) => {
-  let videoId = req.query.v;
-  if (videoId == null) {
-    res.sendStatus(400);
-    return;
-  }
-
-  // Get the captions tracks:
-  let tracks = (await db.query(`
-    SELECT t.language AS language, t.srt AS srt
-    FROM public_captions AS t
-    WHERE t.video_id=$1
-    ORDER BY t.seq ASC
-  `, [videoId])).rows;
-
-  res.json(tracks);
-}));
-
 /**
  * Normalize the SRT in UTF-8.
  * @param {string} srtBase64

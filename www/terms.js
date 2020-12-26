@@ -42,7 +42,7 @@ function renderTerms({html}) {
             <li>This website can be taken down, given to somebody else, or hacked at any time.</li>
           </ul>
 
-          <h2>Uploading captions (Publish button)</h2>
+          <h2>Uploading captions (Share button)</h2>
           <ul>
             <li>Don't upload anything illegal. For example, violating copyright.</li>
             <li>Don't upload personal data.</li>
