@@ -1,5 +1,6 @@
 - share link
 - add cue keymap
+- fix "add cue" bug (last cue)
 
 - review/diff page
 
@@ -10,10 +11,5 @@
   "These captions are getting popular. They're not associated with the creator."
   "Publish your captions for free in minutes."
 
-- /fake_receipt
-- /find_receipt
-- replace-in-publish
-
 - auto timings
 - highlight low asr confidence
-- autosave
