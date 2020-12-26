@@ -619,6 +619,16 @@ function renderEditorPane({html}, {editor, addCueDisabled}) {
   `;
 }
 
+async function uploadCaptions(writeLink, text, signal) {
+  console.log({writeLink, text, signal});
+  await new Promise(resolve => setTimeout(resolve, 1000));
+}
+
+async function deleteCaptions(writeLink) {
+  console.log({writeLink});
+  await new Promise(resolve => setTimeout(resolve, 1000));
+}
+
 function renderPermalink({html}, {editor}) {
   let iAgree = render0(html`
     <input type="checkbox" required>
@@ -647,6 +657,8 @@ function renderPermalink({html}, {editor}) {
   (async function() {
     unshareButton.style.display = 'none';
     for (;;) {
+      let readLink, writeLink, doc;
+
       // Share flow:
       {
         // Wait for share request:
@@ -660,8 +672,8 @@ function renderPermalink({html}, {editor}) {
           shareButton.onclick = null;
 
           // Show new share state immediately:
-          let readLink = location.origin + '/#' + Math.random().toString().substring(2);
-          let writeLink = readLink + ',' + Math.random().toString().substring(2);
+          readLink = location.origin + '/#' + Math.random().toString().substring(2);
+          writeLink = readLink + ',' + Math.random().toString().substring(2);
 
           input.value = readLink;
           input.select();
@@ -673,12 +685,47 @@ function renderPermalink({html}, {editor}) {
           resolve();
         });
 
+        doc = editor.view.state.doc;
+
         // Wait for share response:
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await uploadCaptions(writeLink, doc.toString());
         shareButton.style.display = 'none';
         // TODO: set the deadline
         render('Link copied. Expires in 30 days.', statusMessage);
       }
+
+      // Syncing:
+      let controller = new AbortController();
+      let currentUpload = null;
+      let uploadIfChanged = async function(newDoc) {
+        // Avoid overlapping uploads:
+        if (currentUpload !== null) {
+          if (controller.signal.aborted) return;
+          try {
+            await currentUpload;
+          } catch (e) {}
+        }
+
+        // Wait for idle:
+        if (controller.signal.aborted) return;
+        await new Promise(resolve => window.requestIdleCallback(resolve));
+        if (controller.signal.aborted) return;
+
+        // Debounce:
+        if (doc === editor.view.state.doc) return;
+        doc = editor.view.state.doc;
+
+        // Upload the captions interruptibly:
+        try {
+          currentUpload = uploadCaptions(writeLink, editor.view.state.doc.toString(), controller.signal);
+          await currentUpload;
+        } catch (e) {
+          render(`Upload error: ${e.message}`, statusMessage);
+        } finally {
+          currentUpload = null;
+        }
+      };
+      editor.docChanged.addListener(uploadIfChanged);
 
       // Unshare flow:
       {
@@ -694,11 +741,20 @@ function renderPermalink({html}, {editor}) {
           unshareButton.disabled = true;
           render('Stopping sharing...', statusMessage);
 
+          controller.abort();
+
           resolve();
         });
 
+        // Avoid overlapping upload/delete requests:
+        if (currentUpload !== null) {
+          try {
+            await currentUpload;
+          } catch (e) {}
+        }
+
         // Wait for unshare response:
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await deleteCaptions(writeLink);
         unshareButton.style.display = 'none';
         render('Sharing stopped.', statusMessage);
       }
@@ -731,9 +787,7 @@ function renderPermalink({html}, {editor}) {
     <form class="permalink-form"
         @submit=${function(e) {
           e.preventDefault();
-        }}
-        @reset=${function(e) {
-          e.preventDefault();
+          shareButton.click();
         }}>
       <label>
         ${iAgree}
