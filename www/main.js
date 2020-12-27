@@ -200,12 +200,16 @@ render(html`
 
     <div id="editor-pane">
     </div>
+
+    <div id="share-pane">
+    </div>
   </main>
 `, document.body);
 
 let fileMenubar = document.querySelector('#file-menubar');
 let videoPane = document.querySelector('#video-pane');
 let editorPane = document.querySelector('#editor-pane');
+let sharePane = document.querySelector('#share-pane');
 
 let videoFileUrl = new ObjectUrl();
 
@@ -633,7 +637,6 @@ function renderEditorPane({html}, {editor, addCueDisabled}) {
       </li>
     </ul>
     ${editor.render()}
-    ${renderPermalink({html}, {editor})}
   `;
 }
 
@@ -712,174 +715,236 @@ async function deleteCaptions(writer, signal, lastHash) {
   }
 }
 
-function renderPermalink({html}, {editor}) {
-  let iAgree = render0(html`
-    <input type="checkbox" required>
-  `);
-  let shareButton = render0(html`
-    <button type="submit">
-      <span class="link-icon"></span>Share
-    </button>
-  `);
-  let unshareButton = render0(html`
-    <button type="reset">
-      <span class="cancel-icon"></span>Stop sharing
-    </button>
-  `);
-  let input = render0(html`
-    <input type="url"
-        aria-label="Sharing link"
-        placeholder="${location.origin}/#view=••••••••••••••••••••••••••••••••••" readonly
-        style="flex-grow: 1; min-width: 0;">
-  `);
-  let statusMessage = render0(html`
-    <div role="alert" aria-live="polite">
-    </div>
-  `);
+/**
+ * Autosave thread.
+ */
+class Sync {
+  constructor(doc, uploadHash, statusMessage, writer, editor, delayMs) {
+    this.doc = doc;
+    this.uploadHash = uploadHash;
+    this.statusMessage = statusMessage;
+    this._controller = new AbortController();
+    this._writer = writer;
+    this._editor = editor;
+    this._delayMs = delayMs;
+    this._aborted = new Promise(resolve => this._abort = resolve);
+    this._isAborted = false;
+    this._promise = this._run();
+  }
+  abort() {
+    this._isAborted = true;
+    this._controller.abort();
+    this._abort();
+  }
+  async _waitForChange() {
+    if (this.doc !== this._editor.view.state.doc) return;
+    let thiz = this;
+    return new Promise(resolve => {
+      this._editor.docChanged.addListener(function onDocChanged() {
+        thiz._editor.docChanged.removeListener(onDocChanged);
+        resolve();
+      });
+    });
+  }
+  async _waitForIdle() {
+    await new Promise(resolve => setTimeout(resolve, this._delayMs));
+    if (this._isAborted) return;
+    await new Promise(resolve => window.requestIdleCallback(resolve));
+  }
+  async _uploadWithSignal() {
+    let signal = this._controller.signal;
 
-  (async function() {
-    unshareButton.style.display = 'none';
+    if (this.doc === this._editor.view.state.doc) return;
+    let doc = this._editor.view.state.doc;
+
+    // Upload the captions interruptibly:
+    try {
+      // Update uploadHash and doc on success:
+      this.uploadHash = await uploadCaptions(this._writer, doc.toString(), signal, this.uploadHash);
+      this.doc = doc;
+    } catch (e) {
+      render(`Upload error: ${e.message}`, this.statusMessage);
+      return;
+    }
+
+    if (doc === this._editor.view.state.doc) {
+      this._editor.setSaved();
+      render(`Saved.`, this.statusMessage);
+    }
+  }
+  async _run() {
+    for (;;) {
+      await Promise.race([this._aborted, this._waitForChange()]);
+      if (this._isAborted) return;
+
+      await Promise.race([this._aborted, this._waitForIdle()]);
+      if (this._isAborted) return;
+
+      await this._uploadWithSignal();
+      if (this._isAborted) return;
+    }
+  }
+  async join() {
+    try {
+      await this._promise;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+};
+
+/**
+ * Permalink thread.
+ */
+class Share {
+  constructor(editor) {
+    this._editor = editor;
+
+    this._iAgree = render0(html`
+      <input type="checkbox" required>
+    `);
+    this._permalinkWidget = render0(html`
+      <div style="display: flex;">
+      </div>
+    `);
+    this._statusMessage = render0(html`
+      <div role="alert" aria-live="polite">
+      </div>
+    `);
+    this._shareButton = render0(html`
+      <button type="submit">
+        <span class="link-icon"></span>Share
+      </button>
+    `);
+    this._unshareButton = render0(html`
+      <button type="reset">
+        <span class="cancel-icon"></span>Stop sharing
+      </button>
+    `);
+
+    this._run();
+  }
+  render() {
+    return html`
+      <style>
+        .permalink-form button,
+        .permalink-form input[type=url] {
+          height: var(--touch-target-size);
+          box-sizing: border-box;
+        }
+        .permalink-form label,
+        .permalink-form a[href] {
+          display: inline-block;
+          padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
+        }
+        .permalink-form a[href] {
+          margin: calc(0.5em - var(--touch-target-size) / 2) 0;
+        }
+
+        .link-icon::before {
+          content: "🔗";
+        }
+        .cancel-icon::before {
+          content: "❌";
+        }
+      </style>
+      <form class="permalink-form"
+          @submit=${function(e) {
+            e.preventDefault();
+            shareButton.click();
+          }}>
+        <label>
+          ${this._iAgree}
+          I agree to the <a href="/terms">terms of service</a>.
+        </label>
+        ${this._permalinkWidget}
+        ${this._statusMessage}
+      </form>
+    `;
+  }
+  _updatePermalink(busy, link) {
+    let button = link ? this._unshareButton : this._shareButton;
+    button.disabled = busy;
+    render(html`
+      ${button}
+      <input type="url"
+          aria-label="Sharing link"
+          placeholder="${location.origin}/#view=••••••••••••••••••••••••••••••••••" readonly
+          value=${link}
+          style="flex-grow: 1; min-width: 0;">
+    `, this._permalinkWidget);
+  }
+  async _waitForShare() {
+    let thiz = this;
+    let writer;
+    let readLink;
+
+    // Wait for share request:
+    this._updatePermalink(/*busy=*/false, /*link=*/'');
+    await new Promise(resolve => thiz._shareButton.onclick = function() {
+      if (!thiz._iAgree.reportValidity()) {
+        return;
+      }
+      thiz._shareButton.onclick = null;
+
+      // Show new share state immediately:
+      writer = permissions.Writer.random();
+      readLink = location.origin + '/#view=' + encodeURIComponent(writer.reader.secret);
+      let writeLink = location.origin + '/#edit=' + encodeURIComponent(writer.secret);
+
+      // Update the read link:
+      thiz._updatePermalink(/*busy=*/true, /*link=*/readLink);
+      thiz._permalinkWidget.querySelector('input[type=url]').select();
+      document.execCommand('copy');
+      render('Link copied. Uploading captions...', thiz._statusMessage);
+
+      window.history.replaceState(null, document.title, writeLink);
+
+      resolve();
+    });
+
+    // Wait for share response:
+    let doc = this._editor.view.state.doc;
+    let uploadHash = await uploadCaptions(writer, doc.toString());
+    this._updatePermalink(/*busy=*/false, /*link=*/readLink);
+    // TTL is hard-coded in index.js:
+    render('Link copied. Expires in 30 days.', this._statusMessage);
+
+    return {writer, doc, uploadHash};
+  }
+  async _waitForUnshare({writer, uploadHash, sync}) {
+    let thiz = this;
+
+    // Wait for unshare request:
+    await new Promise(resolve => thiz._unshareButton.onclick = function() {
+      thiz._unshareButton.onclick = null;
+
+      thiz._updatePermalink(/*busy=*/true, /*link=*/'');
+      let localLink = location.origin + '/';
+      window.history.replaceState(null, document.title, localLink);
+      render('Stopping sharing...', thiz._statusMessage);
+
+      sync.abort();
+
+      resolve();
+    });
+
+    // Avoid overlapping upload/delete requests:
+    await sync.join();
+
+    // Wait for unshare response:
+    await deleteCaptions(writer, undefined, uploadHash);
+    this._updatePermalink(/*busy=*/false, /*link=*/'');
+    render('Sharing stopped.', thiz._statusMessage);
+  }
+  async _run() {
     try {
       for (;;) {
-        let writer;
-        let readLink, writeLink, doc;
-        let writerPublic;
-        let uploadHash;
+        let {writer, doc, uploadHash} = await this._waitForShare();
 
-        // Share flow:
-        {
-          // Wait for share request:
-          shareButton.style.display = null;
-          shareButton.disabled = false;
-          await new Promise(resolve => shareButton.onclick = function() {
-            if (!iAgree.reportValidity()) {
-              return;
-            }
+        let sync = new Sync(doc, uploadHash, this._statusMessage, writer, this._editor, 30e3);
 
-            shareButton.onclick = null;
-
-            // Show new share state immediately:
-            writer = permissions.Writer.random();
-            readLink = location.origin + '/#view=' + encodeURIComponent(writer.reader.secret);
-            writeLink = location.origin + '/#edit=' + encodeURIComponent(writer.secret);
-
-            input.value = readLink;
-            input.select();
-            document.execCommand('copy');
-            window.history.replaceState(null, document.title, writeLink);
-            shareButton.disabled = true;
-            render('Link copied. Uploading captions...', statusMessage);
-
-            resolve();
-          });
-
-          doc = editor.view.state.doc;
-
-          // Wait for share response:
-          uploadHash = await uploadCaptions(writer, doc.toString());
-          shareButton.style.display = 'none';
-          // TTL is hard-coded in index.js:
-          render('Link copied. Expires in 30 days.', statusMessage);
-        }
-
-        // Syncing:
-        class Sync {
-          // Also uses doc, uploadHash, and statusMessage from the closure.
-          constructor(writer, editor, delayMs) {
-            this._controller = new AbortController();
-            this._writer = writer;
-            this._editor = editor;
-            this._delayMs = delayMs;
-            this._promise = this._run();
-            this._aborted = new Promise(resolve => this._abort = resolve);
-            this._isAborted = false;
-          }
-          abort() {
-            this._isAborted = true;
-            this._controller.abort();
-            this._abort();
-          }
-          async _waitForChange() {
-            if (doc !== this._editor.view.state.doc) return;
-            let thiz = this;
-            return new Promise(resolve => {
-              this._editor.docChanged.addListener(function onDocChanged() {
-                thiz._editor.docChanged.removeListener(onDocChanged);
-                resolve();
-              });
-            });
-          }
-          async _waitForIdle() {
-            await new Promise(resolve => setTimeout(resolve, this._delayMs));
-            if (this._isAborted) return;
-            await new Promise(resolve => window.requestIdleCallback(resolve));
-          }
-          async _uploadWithSignal() {
-            let signal = this._controller.signal;
-
-            if (doc === this._editor.view.state.doc) return;
-            doc = this._editor.view.state.doc;
-
-            // Upload the captions interruptibly:
-            try {
-              uploadHash = await uploadCaptions(this._writer, doc.toString(), signal, uploadHash);
-            } catch (e) {
-              render(`Upload error: ${e.message}`, statusMessage);
-            }
-
-            if (doc === this._editor.view.state.doc) {
-              this._editor.setSaved();
-            }
-          }
-          async _run() {
-            for (;;) {
-              await Promise.race([this._aborted, this._waitForChange()]);
-              if (this._isAborted) return;
-
-              await Promise.race([this._aborted, this._waitForIdle()]);
-              if (this._isAborted) return;
-
-              await this._uploadWithSignal();
-              if (this._isAborted) return;
-            }
-          }
-          async join() {
-            try {
-              await this._promise;
-            } catch (e) {
-              console.error(e);
-            }
-          }
-        };
-        let sync = new Sync(writer, editor, 30e3);
-
-        // Unshare flow:
-        {
-          // Wait for unshare request:
-          unshareButton.style.display = null;
-          unshareButton.disabled = false;
-          await new Promise(resolve => unshareButton.onclick = function() {
-            unshareButton.onclick = null;
-
-            input.value = '';
-            let localLink = location.origin + '/';
-            window.history.replaceState(null, document.title, localLink);
-            unshareButton.disabled = true;
-            render('Stopping sharing...', statusMessage);
-
-            sync.abort();
-
-            resolve();
-          });
-
-          // Avoid overlapping upload/delete requests:
-          await sync.join();
-
-          // Wait for unshare response:
-          await deleteCaptions(writer, undefined, uploadHash);
-          unshareButton.style.display = 'none';
-          render('Sharing stopped.', statusMessage);
-        }
+        await this._waitForUnshare({writer, uploadHash, sync});
       }
     } catch (e) {
       render(html`
@@ -887,53 +952,10 @@ function renderPermalink({html}, {editor}) {
           <summary>Error, please save your data and reload the page.</summary>
           ${e.toString()}
         </details>
-      `, statusMessage);
+      `, this._statusMessage);
       throw e;
     }
-  })();
-
-  return html`
-    <style>
-      .permalink-form button,
-      .permalink-form input[type=url] {
-        height: var(--touch-target-size);
-        box-sizing: border-box;
-      }
-      .permalink-form label,
-      .permalink-form a[href] {
-        display: inline-block;
-        padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
-      }
-      .permalink-form a[href] {
-        margin: calc(0.5em - var(--touch-target-size) / 2) 0;
-      }
-
-      .link-icon::before {
-        content: "🔗";
-      }
-      .cancel-icon::before {
-        content: "❌";
-      }
-    </style>
-    <form class="permalink-form"
-        @submit=${function(e) {
-          e.preventDefault();
-          shareButton.click();
-        }}>
-      <label>
-        ${iAgree}
-        I agree to the <a href="/terms">terms of service</a>.
-      </label>
-
-      <div style="display: flex;">
-        ${shareButton}
-        ${unshareButton}
-        ${input}
-      </div>
-
-      ${statusMessage}
-    </form>
-  `;
+  }
 }
 
 function renderDummyEditorPane({html}) {
@@ -983,7 +1005,12 @@ function renderDummyEditorPane({html}) {
   for (;;) {
     // Clear the video and captions selection:
     render(renderDummyVideo({html}), videoPane);
-    render(renderDummyEditorPane({html}), editorPane);
+    let dummyEditor = new CaptionsEditor(null, `0:00 [Music]`);
+    render(renderEditorPane({html}, {
+      editor: dummyEditor,
+      addCueDisabled: true,
+    }), editorPane);
+    render(new Share(dummyEditor).render(), sharePane);
 
     // Get the video:
     video = await askForVideo();
@@ -1007,8 +1034,10 @@ function renderDummyEditorPane({html}) {
 
   // Show the captions:
   let editor = new CaptionsEditor(video, captions);
+  let share = new Share(editor);
   window.editor = editor;
   render(renderEditorPane({html}, {editor}), editorPane);
+  render(share.render(), sharePane);
 
   // Get a debounced view of the doc:
   let doc = new AsyncRef(editor.view.state.doc);
