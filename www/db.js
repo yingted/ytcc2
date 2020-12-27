@@ -122,6 +122,7 @@ async function withClient(func) {
     rollback = false;
   } finally {
     if (rollback) await client.query('ROLLBACK');
+    client.release();
   }
 }
 

@@ -150,10 +150,14 @@ app.post('/captions/:captionsId', asyncHandler(async (req, res) => {
       FROM captions AS t
       WHERE t.write_fingerprint=$1
         AND t.delete_at > now()
-      LIMIT 1
+      LIMIT 2
     `, [public.fingerprint]);
     if (cur.rows.length === 0) {
       res.sendStatus(404);
+      return;
+    }
+    if (cur.rows.length > 1) {
+      res.sendStatus(500);
       return;
     }
 
@@ -166,10 +170,9 @@ app.post('/captions/:captionsId', asyncHandler(async (req, res) => {
     // TTL is hard-coded in main.js and above.
     cur = await client.query(`
       UPDATE captions AS t
-      SET t.encrypted_data=$2, t.delete_at=now() + INTERVAL '30 days'
+      SET encrypted_data=$2, delete_at=now() + INTERVAL '30 days'
       WHERE t.write_fingerprint=$1
         AND t.delete_at > now()
-      LIMIT 1
     `, [public.fingerprint, encrypted]);
     res.sendStatus(cur.rowCount === 1 ? 200 : 500);
   });

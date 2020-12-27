@@ -783,37 +783,75 @@ function renderPermalink({html}, {editor}) {
         }
 
         // Syncing:
-        let controller = new AbortController();
-        let currentUpload = null;
-        let uploadIfChanged = async function(newDoc) {
-          // Avoid overlapping uploads:
-          if (currentUpload !== null) {
-            if (controller.signal.aborted) return;
-            try {
-              await currentUpload;
-            } catch (e) {}
+        class Sync {
+          // Also uses doc, uploadHash, and statusMessage from the closure.
+          constructor(writer, editor, delayMs) {
+            this._controller = new AbortController();
+            this._writer = writer;
+            this._editor = editor;
+            this._delayMs = delayMs;
+            this._promise = this._run();
+            this._aborted = new Promise(resolve => this._abort = resolve);
+            this._isAborted = false;
           }
+          abort() {
+            this._isAborted = true;
+            this._controller.abort();
+            this._abort();
+          }
+          async _waitForChange() {
+            if (doc !== this._editor.view.state.doc) return;
+            let thiz = this;
+            return new Promise(resolve => {
+              this._editor.docChanged.addListener(function onDocChanged() {
+                thiz._editor.docChanged.removeListener(onDocChanged);
+                resolve();
+              });
+            });
+          }
+          async _waitForIdle() {
+            await new Promise(resolve => setTimeout(resolve, this._delayMs));
+            if (this._isAborted) return;
+            await new Promise(resolve => window.requestIdleCallback(resolve));
+          }
+          async _uploadWithSignal() {
+            let signal = this._controller.signal;
 
-          // Wait for idle:
-          if (controller.signal.aborted) return;
-          await new Promise(resolve => window.requestIdleCallback(resolve));
-          if (controller.signal.aborted) return;
+            if (doc === this._editor.view.state.doc) return;
+            doc = this._editor.view.state.doc;
 
-          // Debounce:
-          if (doc === editor.view.state.doc) return;
-          doc = editor.view.state.doc;
+            // Upload the captions interruptibly:
+            try {
+              uploadHash = await uploadCaptions(this._writer, doc.toString(), signal, uploadHash);
+            } catch (e) {
+              render(`Upload error: ${e.message}`, statusMessage);
+            }
 
-          // Upload the captions interruptibly:
-          try {
-            currentUpload = uploadCaptions(writer, editor.view.state.doc.toString(), controller.signal, uploadHash);
-            uploadHash = await currentUpload;
-          } catch (e) {
-            render(`Upload error: ${e.message}`, statusMessage);
-          } finally {
-            currentUpload = null;
+            if (doc === this._editor.view.state.doc) {
+              this._editor.setSaved();
+            }
+          }
+          async _run() {
+            for (;;) {
+              await Promise.race([this._aborted, this._waitForChange()]);
+              if (this._isAborted) return;
+
+              await Promise.race([this._aborted, this._waitForIdle()]);
+              if (this._isAborted) return;
+
+              await this._uploadWithSignal();
+              if (this._isAborted) return;
+            }
+          }
+          async join() {
+            try {
+              await this._promise;
+            } catch (e) {
+              console.error(e);
+            }
           }
         };
-        editor.docChanged.addListener(uploadIfChanged);
+        let sync = new Sync(writer, editor, 30e3);
 
         // Unshare flow:
         {
@@ -829,17 +867,13 @@ function renderPermalink({html}, {editor}) {
             unshareButton.disabled = true;
             render('Stopping sharing...', statusMessage);
 
-            controller.abort();
+            sync.abort();
 
             resolve();
           });
 
           // Avoid overlapping upload/delete requests:
-          if (currentUpload !== null) {
-            try {
-              await currentUpload;
-            } catch (e) {}
-          }
+          await sync.join();
 
           // Wait for unshare response:
           await deleteCaptions(writer, undefined, uploadHash);
@@ -1026,10 +1060,6 @@ function renderDummyEditorPane({html}) {
 })();
 
 if (false) {
-  // Video model/view:
-  const video = new YouTubeVideo(params.videoId);
-  window.video = video;
-
   const editorPaneView = editorPane.map(function renderEditorAndToolbar({editor, language}) {
     if (editor === null) {
       return html`Loading captions...`;
@@ -1086,71 +1116,6 @@ if (false) {
       ${editor.render()}
     `;
   });
-
-  // Publish:
-  function uint8ArrayToBase64(buffer) {
-    return window.btoa(String.fromCharCode.apply(String, buffer));
-  }
-
-  function confirmOpenUnofficialTrack(unofficial, official) {
-    let confirmed = true;
-    return new Promise(resolve => {
-      render(html`
-        <dialog class="pick-captions-dialog fixed" @render=${registerDialog} style="
-              width: 25em;
-              max-width: 100%;
-              max-height: 100%;
-              box-sizing: border-box;
-              overflow-y: auto;"
-        @close=${e => resolve(confirmed)}
-        @cancel=${e => confirmed = false}>
-          <h2>Unofficial captions</h2>
-
-          <form method="dialog">
-            <style>
-              .pick-captions-input-group {
-                padding: 0.2em 0;
-              }
-              .pick-captions-input-group button {
-                height: var(--touch-target-size);
-              }
-              .cancel-icon::before {
-                content: "❌";
-              }
-              .accept-icon::before {
-                content: "✔️";
-              }
-            </style>
-
-            Open the unofficial captions instead of the official captions?
-
-            <div class="pick-captions-input-group">
-              <button type="submit"><span class="accept-icon"></span>${unofficial.name}</button>
-              <button type="button" @click=${function() {
-                confirmed = false;
-                this.closest('dialog').close();
-              }}><span class="cancel-icon"></span>${official.name}</button>
-            </div>
-          </form>
-        </dialog>
-        `, captionsPickerPrompt);
-      captionsPickerPrompt.querySelector('dialog').showModal();
-    });
-  }
-
-  let hashParams = new URLSearchParams(location.hash.substring(1));
-
-  let requestedUnofficialTrack = (function() {
-    let captionsId = hashParams.get('id');
-    if (captionsId === null) return null;
-    for (let track of unofficialTracks) {
-      if (track.captionsId === captionsId) {
-        return track;
-      }
-    }
-    // If the track has been deleted, silently ignore the captionsId parameter.
-    return null;
-  })();
 
   // Main controller, binding everything together:
 
