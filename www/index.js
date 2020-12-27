@@ -145,30 +145,12 @@ app.post('/captions/:captionsId', asyncHandler(async (req, res) => {
 
   // Handle overwrite:
   await db.withClient(async client => {
-    let cur = await client.query(`
-      SELECT t.encrypted_data AS encrypted_data
-      FROM captions AS t
-      WHERE t.write_fingerprint=$1
-        AND t.delete_at > now()
-      LIMIT 2
-    `, [public.fingerprint]);
-    if (cur.rows.length === 0) {
-      res.sendStatus(404);
-      return;
-    }
-    if (cur.rows.length > 1) {
-      res.sendStatus(500);
-      return;
-    }
-
-    let expectedLastHash = hashUtf8(cur.rows[0].encrypted_data);
-    if (lastHash !== expectedLastHash) {
-      res.sendStatus(409);
+    if (!await verifyLastHash(client, public.fingerprint, lastHash, res)) {
       return;
     }
 
     // TTL is hard-coded in main.js and above.
-    cur = await client.query(`
+    let cur = await client.query(`
       UPDATE captions AS t
       SET encrypted_data=$2, delete_at=now() + INTERVAL '30 days'
       WHERE t.write_fingerprint=$1
@@ -177,6 +159,29 @@ app.post('/captions/:captionsId', asyncHandler(async (req, res) => {
     res.sendStatus(cur.rowCount === 1 ? 200 : 500);
   });
 }));
+async function verifyLastHash(client, fingerprint, lastHash, res) {
+  let cur = await client.query(`
+    SELECT t.encrypted_data AS encrypted_data
+    FROM captions AS t
+    WHERE t.write_fingerprint=$1
+      AND t.delete_at > now()
+    LIMIT 2
+  `, [fingerprint]);
+  if (cur.rows.length === 0) {
+    res.sendStatus(404);
+    return;
+  }
+  if (cur.rows.length > 1) {
+    res.sendStatus(500);
+    return;
+  }
+
+  let expectedLastHash = hashUtf8(cur.rows[0].encrypted_data);
+  if (lastHash !== expectedLastHash) {
+    res.sendStatus(409);
+    return;
+  }
+}
 
 // Get captions by either the read or write fingerprints:
 app.get('/captions/:captionsId', asyncHandler(async (req, res) => {
@@ -240,20 +245,18 @@ app.delete('/captions/:captionsId', asyncHandler(async (req, res) => {
 
   // This writer wants to publish the encrypted data now (within the last day or so).
   // TTL is hard-coded in main.js.
-  cur = await db.query(`
-    DELETE FROM captions AS t
-    WHERE t.write_fingerprint=$1
-      AND t.delete_at > now()
-  `, [public.fingerprint]);
-  if (cur.rowCount === 0) {
-    res.sendStatus(404);
-    return;
-  }
-  if (cur.rowCount > 1) {
-    res.sendStatus(500);
-    return;
-  }
-  res.sendStatus(200);
+  await db.withClient(async client => {
+    if (!await verifyLastHash(client, public.fingerprint, lastHash, res)) {
+      return;
+    }
+
+    let cur = await db.query(`
+      DELETE FROM captions AS t
+      WHERE t.write_fingerprint=$1
+        AND t.delete_at > now()
+    `, [public.fingerprint]);
+    res.sendStatus(cur.rowCount === 1 ? 200 : 500);
+  });
 }));
 
 (async function() {

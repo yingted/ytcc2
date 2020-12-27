@@ -17,25 +17,19 @@
 // This needs dialog-polyfill.css.
 
 import {html, render} from 'lit-html';
-import {until} from 'lit-html/directives/until.js';
-import {live} from 'lit-html/directives/live.js';
 import {ifDefined} from 'lit-html/directives/if-defined.js';
-import {asyncReplace} from 'lit-html/directives/async-replace.js';
 import {YouTubeVideo} from './youtube.js';
 import {CaptionsEditor, captionsToText, captionsFromText} from './editor.js';
 import {listTracks, getDefaultTrack} from './youtube_captions.js';
 import {onRender, render0, AsyncRef, Signal} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
 import {youtubeLanguages} from './gen/youtube_languages.js';
-import {renderBrowser} from './preview_browser.js';
 import {box, sign, hash, randomBytes} from 'tweetnacl';
-import {script} from './script_web.js';
 import {ObjectUrl} from './object_url.js';
-import {fetchCaptions, makeFileInput, HomogeneousTrackPicker, CaptionsPicker, UnofficialTrack} from './track_picker.js';
+import {fetchCaptions, makeFileInput, HomogeneousTrackPicker} from './track_picker.js';
 import {revertString} from 'codemirror-next-merge';
 import {ChangeSet, tagExtension} from '@codemirror/next/state';
 import {unfoldAll, foldAll} from '@codemirror/next/fold';
-import {renderFooter} from './templates.js';
 import {Html5Video, DummyVideo} from './video.js';
 import * as permissions from './permissions.js';
 
@@ -660,58 +654,92 @@ async function newNonce(signal) {
   return nonce;
 }
 
-async function uploadCaptions(writer, text, signal, lastHash) {
-  let encrypted = writer.encrypt(text);
-  let readerFingerprint = writer.reader.fingerprint;
-  let encryptedSignature = writer.sign(encrypted);
-  let readerFingerprintSignature = writer.sign(readerFingerprint);
-  let lastHashSignature = lastHash === undefined ? undefined : writer.sign(lastHash);
-  let nonce = await newNonce(signal);
-  let res = await fetch('/captions/' + encodeURIComponent(writer.fingerprint), {
-    method: 'POST',
-    referrer: 'no-referrer',
-    signal,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      pubkeys: writer.public.toJSON(),
-      nonce,
-      nonceSignature: writer.sign(nonce),
-      encrypted,
-      encryptedSignature,
-      readerFingerprint,
-      readerFingerprintSignature,
-      lastHash,
-      lastHashSignature,
-    }),
-  });
-  if (!res.ok) {
-    throw new Error('could not upload captions');
+class BaseUploader {
+  serialize(value) {
+    throw new Error('not implemented');
   }
-  return permissions.hashUtf8(encrypted);
+
+  equals(valueA, valueB) {
+    throw new Error('not implemented');
+  }
+
+  /**
+   * (Re)upload captions.
+   * @param {Writer} writer our credentials (which captions to upload to)
+   * @param {Value} value the value to upload
+   * @param {AbortSignal} signal
+   * @param {string|undefined} lastHash if present, reupload overwriting this value
+   * @returns {string} hash
+   */
+  async upload(writer, value, signal, lastHash) {
+    let plaintext = this.serialize(value);
+    let encrypted = writer.encrypt(plaintext);
+    let readerFingerprint = writer.reader.fingerprint;
+    let encryptedSignature = writer.sign(encrypted);
+    let readerFingerprintSignature = writer.sign(readerFingerprint);
+    let lastHashSignature = lastHash === undefined ? undefined : writer.sign(lastHash);
+    let nonce = await newNonce(signal);
+    let res = await fetch('/captions/' + encodeURIComponent(writer.fingerprint), {
+      method: 'POST',
+      referrer: 'no-referrer',
+      signal,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        pubkeys: writer.public.toJSON(),
+        nonce,
+        nonceSignature: writer.sign(nonce),
+        encrypted,
+        encryptedSignature,
+        readerFingerprint,
+        readerFingerprintSignature,
+        lastHash,
+        lastHashSignature,
+      }),
+    });
+    if (!res.ok) {
+      throw new Error('could not upload captions');
+    }
+    return permissions.hashUtf8(encrypted);
+  }
+
+  /**
+   * Delete captions.
+   * @param {Writer} writer our credentials (which captions to upload to)
+   * @param {AbortSignal} signal
+   * @param {string} lastHash current value to delete
+   */
+  async delete(writer, signal, lastHash) {
+    let nonce = await newNonce(signal);
+    let lastHashSignature = writer.sign(lastHash);
+    let res = await fetch('/captions/' + encodeURIComponent(writer.fingerprint), {
+      method: 'DELETE',
+      referrer: 'no-referrer',
+      signal,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        pubkeys: writer.public.toJSON(),
+        nonce,
+        nonceSignature: writer.sign(nonce),
+        lastHash,
+        lastHashSignature,
+      }),
+    });
+    if (!res.ok) {
+      throw new Error('could not delete captions');
+    }
+  }
 }
 
-async function deleteCaptions(writer, signal, lastHash) {
-  let nonce = await newNonce(signal);
-  let lastHashSignature = lastHash === undefined ? undefined : writer.sign(lastHash);
-  let res = await fetch('/captions/' + encodeURIComponent(writer.fingerprint), {
-    method: 'DELETE',
-    referrer: 'no-referrer',
-    signal,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      pubkeys: writer.public.toJSON(),
-      nonce,
-      nonceSignature: writer.sign(nonce),
-      lastHash,
-      lastHashSignature,
-    }),
-  });
-  if (!res.ok) {
-    throw new Error('could not delete captions');
+class DocUploader extends BaseUploader {
+  serialize(value) {
+    return value.toString();
+  }
+  equals(a, b) {
+    return a === b;
   }
 }
 
@@ -719,13 +747,25 @@ async function deleteCaptions(writer, signal, lastHash) {
  * Autosave thread.
  */
 class Sync {
-  constructor(doc, uploadHash, statusMessage, writer, editor, delayMs) {
-    this.doc = doc;
+  /**
+   * @param {{upload: function}} uploader
+   * @param {Value} value the last uploaded value
+   * @param {string} uploadHash the last upload hash
+   * @param {Element} statusMessage the status message container
+   * @param {Writer} writer our credentials
+   * @param {AsyncRef} ref a reference to the current state
+   * @param {function} setSaved called when we're up-to-date
+   * @param {number} delayMs how long to wait before autosaving
+   */
+  constructor(uploader, value, uploadHash, statusMessage, writer, ref, setSaved, delayMs) {
+    this._uploader = uploader
+    this._value = value;
     this.uploadHash = uploadHash;
     this.statusMessage = statusMessage;
     this._controller = new AbortController();
     this._writer = writer;
-    this._editor = editor;
+    this._ref = ref;
+    this._setSaved = setSaved;
     this._delayMs = delayMs;
     this._aborted = new Promise(resolve => this._abort = resolve);
     this._isAborted = false;
@@ -737,14 +777,9 @@ class Sync {
     this._abort();
   }
   async _waitForChange() {
-    if (this.doc !== this._editor.view.state.doc) return;
+    if (this._value !== this._ref.value) return;
     let thiz = this;
-    return new Promise(resolve => {
-      this._editor.docChanged.addListener(function onDocChanged() {
-        thiz._editor.docChanged.removeListener(onDocChanged);
-        resolve();
-      });
-    });
+    return this._ref.nextValue();
   }
   async _waitForIdle() {
     await new Promise(resolve => setTimeout(resolve, this._delayMs));
@@ -754,21 +789,21 @@ class Sync {
   async _uploadWithSignal() {
     let signal = this._controller.signal;
 
-    if (this.doc === this._editor.view.state.doc) return;
-    let doc = this._editor.view.state.doc;
+    if (this._value === this._ref.value) return;
+    let value = this._ref.value;
 
     // Upload the captions interruptibly:
     try {
-      // Update uploadHash and doc on success:
-      this.uploadHash = await uploadCaptions(this._writer, doc.toString(), signal, this.uploadHash);
-      this.doc = doc;
+      // Update uploadHash and value on success:
+      this.uploadHash = await this._uploader.upload(this._writer, value, signal, this.uploadHash);
+      this._value = value;
     } catch (e) {
       render(`Upload error: ${e.message}`, this.statusMessage);
       return;
     }
 
-    if (doc === this._editor.view.state.doc) {
-      this._editor.setSaved();
+    if (this._uploader.equals(value, this._ref.value)) {
+      this._setSaved();
       render(`Saved.`, this.statusMessage);
     }
   }
@@ -794,11 +829,52 @@ class Sync {
 };
 
 /**
+ * Get the permissions from the URL.
+ * @param {Location|URL} location
+ * @returns {Writer|Reader|null} perms
+ */
+function urlToPermissions(location) {
+  let hashParams = new URLSearchParams(location.hash.substring(1));
+
+  let writeSecret = hashParams.get('edit');
+  if (writeSecret !== null) {
+    return new permissions.Writer(writeSecret);
+  }
+
+  let readSecret = hashParams.get('view');
+  if (readSecret !== null) {
+    return new permissions.Reader(readSecret);
+  }
+
+  return null;
+}
+
+/**
+ * Get the permissions from the URL.
+ * @param {Writer|Reader|null} perms
+ * @returns {URL}
+ */
+function permissionsToUrl(perms) {
+  if (perms instanceof permissions.Writer) {
+    return new URL(location.origin + '/#edit=' + encodeURIComponent(perms.secret));
+  }
+  if (perms instanceof permissions.Reader) {
+    return new URL(location.origin + '/#view=' + encodeURIComponent(perms.secret));
+  }
+  if (perms === null) {
+    return new URL(location.origin + '/');
+  }
+  throw new TypeError('invalid perms');
+}
+
+/**
  * Permalink thread.
  */
 class Share {
-  constructor(editor) {
-    this._editor = editor;
+  constructor(uploader, ref, setSaved) {
+    this._uploader = uploader;
+    this._ref = ref;
+    this._setSaved = setSaved;
 
     this._iAgree = render0(html`
       <input type="checkbox" required>
@@ -813,16 +889,32 @@ class Share {
     `);
     this._shareButton = render0(html`
       <button type="submit">
+        <style>
+          .link-icon::before {
+            content: "🔗";
+          }
+        </style>
         <span class="link-icon"></span>Share
       </button>
     `);
     this._unshareButton = render0(html`
       <button type="reset">
+        <style>
+          .cancel-icon::before {
+            content: "❌";
+          }
+        </style>
         <span class="cancel-icon"></span>Stop sharing
       </button>
     `);
 
     this._run();
+  }
+  static fromEditor(editor) {
+    let docRef = new AsyncRef(editor.view.state.doc);
+    // Return the doc to test for equality:
+    editor.docChanged.addListener(doc => docRef.value = doc);
+    return new Share(new DocUploader(), docRef, editor.setSaved.bind(editor));
   }
   render() {
     return html`
@@ -840,18 +932,10 @@ class Share {
         .permalink-form a[href] {
           margin: calc(0.5em - var(--touch-target-size) / 2) 0;
         }
-
-        .link-icon::before {
-          content: "🔗";
-        }
-        .cancel-icon::before {
-          content: "❌";
-        }
       </style>
       <form class="permalink-form"
           @submit=${function(e) {
             e.preventDefault();
-            shareButton.click();
           }}>
         <label>
           ${this._iAgree}
@@ -877,7 +961,6 @@ class Share {
   async _waitForShare() {
     let thiz = this;
     let writer;
-    let readLink;
 
     // Wait for share request:
     this._updatePermalink(/*busy=*/false, /*link=*/'');
@@ -889,28 +972,26 @@ class Share {
 
       // Show new share state immediately:
       writer = permissions.Writer.random();
-      readLink = location.origin + '/#view=' + encodeURIComponent(writer.reader.secret);
-      let writeLink = location.origin + '/#edit=' + encodeURIComponent(writer.secret);
 
       // Update the read link:
-      thiz._updatePermalink(/*busy=*/true, /*link=*/readLink);
+      thiz._updatePermalink(/*busy=*/true, /*link=*/permissionsToUrl(writer.reader));
       thiz._permalinkWidget.querySelector('input[type=url]').select();
       document.execCommand('copy');
       render('Link copied. Uploading captions...', thiz._statusMessage);
 
-      window.history.replaceState(null, document.title, writeLink);
+      window.history.replaceState(null, document.title, permissionsToUrl(writer));
 
       resolve();
     });
 
     // Wait for share response:
-    let doc = this._editor.view.state.doc;
-    let uploadHash = await uploadCaptions(writer, doc.toString());
-    this._updatePermalink(/*busy=*/false, /*link=*/readLink);
+    let value = this._ref.value;
+    let uploadHash = await this._uploader.upload(writer, value);
+    this._updatePermalink(/*busy=*/false, /*link=*/permissionsToUrl(writer.reader));
     // TTL is hard-coded in index.js:
     render('Link copied. Expires in 30 days.', this._statusMessage);
 
-    return {writer, doc, uploadHash};
+    return {writer, value, uploadHash};
   }
   async _waitForUnshare({writer, uploadHash, sync}) {
     let thiz = this;
@@ -920,8 +1001,7 @@ class Share {
       thiz._unshareButton.onclick = null;
 
       thiz._updatePermalink(/*busy=*/true, /*link=*/'');
-      let localLink = location.origin + '/';
-      window.history.replaceState(null, document.title, localLink);
+      window.history.replaceState(null, document.title, permissionsToUrl(null));
       render('Stopping sharing...', thiz._statusMessage);
 
       sync.abort();
@@ -933,16 +1013,16 @@ class Share {
     await sync.join();
 
     // Wait for unshare response:
-    await deleteCaptions(writer, undefined, uploadHash);
+    await this._uploader.delete(writer, undefined, uploadHash);
     this._updatePermalink(/*busy=*/false, /*link=*/'');
     render('Sharing stopped.', thiz._statusMessage);
   }
   async _run() {
     try {
       for (;;) {
-        let {writer, doc, uploadHash} = await this._waitForShare();
+        let {writer, value, uploadHash} = await this._waitForShare();
 
-        let sync = new Sync(doc, uploadHash, this._statusMessage, writer, this._editor, 30e3);
+        let sync = new Sync(this._uploader, value, uploadHash, this._statusMessage, writer, this._ref, this._setSaved, 30e3);
 
         await this._waitForUnshare({writer, uploadHash, sync});
       }
@@ -958,49 +1038,19 @@ class Share {
   }
 }
 
-function renderDummyEditorPane({html}) {
-  return renderEditorPane({html}, {
-    editor: new CaptionsEditor(null, `0:00 [Music]`),
-    addCueDisabled: true,
-  });
-}
-
-(async function main() {
-  // Parse params:
-  let hashParams = new URLSearchParams(location.hash.substring(1));
-  let writer = null;
-  let reader = null;
-  {
-    let writeSecret = hashParams.get('edit');
-    let readSecret = hashParams.get('view');
-    if (writeSecret !== null) {
-      writer = new permissions.Writer(writeSecret);
-    } else if (readSecret !== null) {
-      reader = new permissions.Reader(readSecret);
-    }
-    console.log({writer, reader});  // TODO
-  }
-
+/**
+ * Ask the user for the video and captions.
+ * This takes over the video, editor, and share panes.
+ * After returning, the video pane is updated, but you need to
+ * rerender the editor and share panes.
+ * @returns {{video: object, captions: object}}
+ */
+async function askForVideoAndCaptions() {
   // Render the dummy content:
   render(renderFileMenubar({html}, {
     srv3Url: 'javascript:',
     srtUrl: 'javascript:',
   }), fileMenubar);
-
-  // Get the video and captions:
-  let video, captions;
-  let baseName = 'captions';
-  let videoId;
-
-  // TODO:
-  videoId = 'gKqypLvwd70';
-  baseName = videoId;
-  // video = new YouTubeVideo(videoId);
-  video = new DummyVideo();
-  render(video.render(), videoPane);
-  captions = captionsFromText('0:00 [Music]');
-  document.querySelector('summary[aria-haspopup=true]').click();
-  if (false)
 
   for (;;) {
     // Clear the video and captions selection:
@@ -1010,82 +1060,119 @@ function renderDummyEditorPane({html}) {
       editor: dummyEditor,
       addCueDisabled: true,
     }), editorPane);
-    render(new Share(dummyEditor).render(), sharePane);
+    render(Share.fromEditor(dummyEditor).render(), sharePane);
 
     // Get the video:
-    video = await askForVideo();
-
+    let video = await askForVideo();
     // Show the video early as feedback:
     window.video = video;
     render(video.render(), videoPane);
 
     // Get the captions:
-    videoId = null;
-    if (video instanceof YouTubeVideo) {
-      videoId = video.videoId;
-      baseName = videoId;
-    }
-    captions = await askForCaptions({videoId});
+    let captions = await askForCaptions({
+      videoId: video instanceof YouTubeVideo ? video.videoId : undefined,
+    });
     // Repeat until we have captions:
     if (captions !== null) {
-      break;
+      return {video, captions};
     }
   }
+}
+
+class FileMenu {
+  constructor(video, editor) {
+    this._container = new DocumentFragment();
+    this._isAborted = false;
+    this._done = this._run(video, editor);
+  }
+  render() {
+    return this._container;
+  }
+  join() {
+    return this._done;
+  }
+  async _run(video, editor) {
+    // Get a debounced view of the doc:
+    let doc = new AsyncRef(editor.view.state.doc);
+    let docChanged = async function docChanged(newDoc) {
+      // Avoid updating on every keypress on slow machines:
+      await new Promise(resolve => window.requestIdleCallback(resolve));
+      if (doc.value !== editor.view.state.doc) {
+        doc.value = editor.view.state.doc;
+      }
+    };
+    editor.docChanged.addListener(docChanged);
+
+    try {
+      let srv3Blob = new ObjectUrl();
+      let srtBlob = new ObjectUrl();
+      let srv3Url;
+      let srtUrl;
+      let updateSrv3 = () => srv3Url = srv3Blob.create(editor._rawCaptions, () => new Blob([editor.getSrv3Captions()]));
+      let updateSrt = () => srtUrl = srtBlob.create(editor._rawCaptions, () => new Blob([editor.getSrtCaptions()]));
+      updateSrv3();
+      updateSrt();
+      while (!this._isAborted) {
+        // Update immediately on link clicks:
+        let linkClicked = new Promise(resolve => {
+          let videoId;
+          let baseName = 'captions';
+          if (video instanceof YouTubeVideo) {
+            videoId = video.videoId;
+            baseName = video.videoId + '-' + new Date().toISOString().replace(/:/g, '_')
+          }
+          render(renderFileMenubar({html}, {
+            videoId,
+            baseName,
+            srv3Url,
+            srtUrl,
+            // Avoid resolving multiple times. Not clear if we need this.
+            updateSrv3: function() {
+              updateSrv3();
+              resolve();
+            },
+            updateSrt: function() {
+              updateSrt();
+              resolve();
+            },
+          }), this._container);
+        });
+        // Update eventually on doc changed:
+        let editorChanged = doc.nextValue().then(doc => {
+          updateSrt();
+          updateSrv3();
+        });
+        await Promise.race([linkClicked, editorChanged]);
+      }
+    } finally {
+      editor.docChanged.removeListener(docChanged);
+    }
+  }
+}
+
+(async function main() {
+  // Parse params:
+  let perms = urlToPermissions(window.location);
+
+  // Get the video and captions:
+  // TODO
+  // let {video, captions} = askForVideoAndCaptions();
+  let video = new DummyVideo();
+  let captions = captionsFromText('0:00 [Music]');
+  render(video.render(), videoPane);
 
   // Show the captions:
   let editor = new CaptionsEditor(video, captions);
-  let share = new Share(editor);
   window.editor = editor;
   render(renderEditorPane({html}, {editor}), editorPane);
+
+  // Share pane:
+  let share = Share.fromEditor(editor);
   render(share.render(), sharePane);
 
-  // Get a debounced view of the doc:
-  let doc = new AsyncRef(editor.view.state.doc);
-  editor.docChanged.addListener(async function(newDoc) {
-    // Avoid updating on every keypress on slow machines:
-    await new Promise(resolve => window.requestIdleCallback(resolve));
-    if (doc.value !== editor.view.state.doc) {
-      doc.value = editor.view.state.doc;
-    }
-  });
-
-  // Start a background thread to update the URLs:
-  (async function updateUrl() {
-    let srv3Blob = new ObjectUrl();
-    let srtBlob = new ObjectUrl();
-    let srv3Url;
-    let srtUrl;
-    let updateSrv3 = () => srv3Url = srv3Blob.create(editor._rawCaptions, () => new Blob([editor.getSrv3Captions()]));
-    let updateSrt = () => srtUrl = srtBlob.create(editor._rawCaptions, () => new Blob([editor.getSrtCaptions()]));
-    updateSrv3();
-    updateSrt();
-    for (;;) {
-      // Update immediately on link clicks:
-      let linkClicked = new Promise(resolve => {
-        render(renderFileMenubar({html}, {
-          videoId,
-          baseName: baseName + '-' + new Date().toISOString().replace(/:/g, '_'),
-          srv3Url,
-          srtUrl,
-          // Avoid resolving multiple times. Not clear if we need this.
-          updateSrv3: function() {
-            updateSrv3();
-            resolve();
-          },
-          updateSrt: function() {
-            updateSrt();
-            resolve();
-          },
-        }), fileMenubar);
-      });
-      // Update eventually on doc changed:
-      let editorChanged = doc.nextValue().then(doc => {
-        updateSrt();
-        updateSrv3();
-      });
-      await Promise.race([linkClicked, editorChanged]);
-    }
-  })();
+  // File menu:
+  let fileMenu = new FileMenu(video, editor);
+  render(fileMenu.render(), fileMenubar);
 })();
 
 if (false) {
