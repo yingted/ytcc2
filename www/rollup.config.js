@@ -58,51 +58,8 @@ function generateLanguages() {
     },
   };
 }
-function generateReceiptEmbedded() {
-  return {
-    name: 'generate-receipt-embedded',
-    async buildStart() {
-      let javascript =
-        await fs.readFile(__dirname + '/gen/receipt_embedded.bundle.js', {encoding: 'utf-8'});
-      await setContents(
-        __dirname + '/gen/receipt_embedded_javascript.js',
-        `export const receiptEmbeddedJavascript = Object.freeze(${JSON.stringify({unsafeStaticJavascript: javascript})});`);
-    },
-  };
-}
 
 export default [{
-  input: 'receipt_embedded.js',
-  output: {
-    file: 'gen/receipt_embedded.bundle.js',
-    format: 'iife',
-    sourcemap: false,
-    globals: {
-      crypto: 'undefined',
-    },
-  },
-  plugins: [
-    resolve({
-      browser: true,
-    }),
-    commonjs(),
-    babel({
-      babelHelpers: 'bundled',
-      exclude: [/node_modules/, /_trusted\.js/],
-      presets: [
-        ['@babel/preset-env', {
-          // IE11 already doesn't work with a bunch of stuff, so let's just remove it
-          targets: 'defaults, not ie 11',
-          exclude: ['transform-regenerator'],
-        }],
-      ],
-      plugins: [
-        '@babel/plugin-proposal-class-properties',
-      ],
-    }),
-    production && terser(),
-  ]
-}, {
   input: 'main.js',
   output: {
     file: 'static/main.bundle.js',
@@ -114,7 +71,6 @@ export default [{
   },
   plugins: [
     generateLanguages(),
-    generateReceiptEmbedded(),
     resolve({
       browser: true,
     }),
@@ -142,46 +98,6 @@ export default [{
     production ? execute('precompress static/main.bundle.js') : execute('rm -f static/main.bundle.js.{br,gz}'),
     !production && livereload({
       watch: 'static/main.bundle.js',
-    }),
-  ]
-}, {
-  input: 'my_receipts.js',
-  output: {
-    file: 'static/my_receipts.bundle.js',
-    format: 'iife',
-    sourcemap: true,
-    globals: {
-      crypto: 'undefined',
-    },
-  },
-  plugins: [
-    resolve({
-      browser: true,
-    }),
-    commonjs(),
-    babel({
-      babelHelpers: 'bundled',
-      exclude: [/node_modules/, /_trusted\.js/],
-      presets: [
-        ['@babel/preset-env', {
-          // IE11 already doesn't work with a bunch of stuff, so let's just remove it
-          targets: 'defaults, not ie 11',
-          exclude: ['transform-regenerator'],
-        }],
-      ],
-      plugins: [
-        '@babel/plugin-proposal-class-properties',
-      ],
-    }),
-    copy({
-      targets: [
-        { src: './node_modules/dialog-polyfill/dist/dialog-polyfill.css', dest: 'static/dialog-polyfill/' },
-      ],
-    }),
-    production && terser(),
-    production ? execute('precompress static/my_receipts.bundle.js') : execute('rm -f static/my_receipts.bundle.js.{br,gz}'),
-    !production && livereload({
-      watch: 'static/my_receipts.bundle.js',
     }),
   ]
 }];

@@ -53,22 +53,48 @@ async function updateSchema() {
     `);
 
     await update(client, '0-create-captions', `
-      CREATE TABLE captions(
-        id SERIAL,
+      -- Captions table has 2 permissions: read and write
+      -- Write: insert, update, or delete the captions
+      -- Read: report the captions for abuse
+      -- Anyone can retrieve the encrypted data
 
-        -- 32 bytes in base64 is 44 bytes
-        -- Used to validate deletion:
-        deletion_public_key_base64 varchar(100),
+      -- Every client (reader/writer) can derive 3 keys supported by tweetnacl-js:
+      -- - symmetric
+      -- - asymmetric signing
+      -- - asymmetric encryption
+      -- We store all public keys.
+
+      -- Here's what each operation needs:
+      -- Lookup: public keys
+      -- GC: delete_at
+      -- Report abuse: verify read private keys (they still need to send me a link)
+      -- Update/delete: verify write private keys
+      -- Read: decrypt with write private keys
+
+      CREATE TABLE captions(
+        -- For lookup:
+        write_fingerprint varchar(100),
+        read_fingerprint varchar(100),
+
+        -- All serialized pubkeys (WriterPublic):
+        pubkeys varchar(1000),
 
         -- Encrypted data. It could be garbage or anything really.
-        encryption_nonce varchar(100) NOT NULL,
         encrypted_data varchar(1048576) NOT NULL,
+
         -- Expiration time:
         delete_at timestamp NOT NULL,
-        PRIMARY KEY(id),
-        UNIQUE(deletion_public_key_base64),
-        UNIQUE(encryption_nonce)
-      );
+
+        PRIMARY KEY(write_fingerprint),
+        UNIQUE(read_fingerprint));
+    `);
+
+    await update(client, '1-create-nonces', `
+      -- Randomly-generated values that haven't been used.
+      CREATE TABLE nonces(
+        nonce varchar(100),
+        delete_at timestamp NOT NULL,
+        PRIMARY KEY(nonce));
     `);
   } finally {
     client.release();
@@ -78,6 +104,10 @@ async function updateSchema() {
 async function gc() {
   await pool.query(`
     DELETE FROM captions AS t
+    WHERE t.delete_at <= now();
+  `);
+  await pool.query(`
+    DELETE FROM nonces AS t
     WHERE t.delete_at <= now();
   `);
 }

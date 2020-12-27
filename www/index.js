@@ -17,7 +17,6 @@
 const express = require('express');
 const {html, renderToStream} = require('@popeindustries/lit-html-server');
 const expressStaticGzip = require('express-static-gzip');
-const {decodeSrt, normalizeSrt, encodeSrt, decodeJson3, decodeSrv3, stripRaw} = require('ytcc2-captions');
 const db = require('./db');
 const config = require('./config');
 const crypto = require('crypto');
@@ -25,7 +24,9 @@ const multer  = require('multer');
 const {renderFooter} = require('./templates.js');
 const {renderTerms} = require('./terms.js');
 const upload = multer();
-const {sign_open} = require('tweetnacl-ts');
+const nacl = require('tweetnacl');
+const base52 = require('./base52.js');
+const {WriterPublic, hashUtf8} = require('./permissions.js');
 require('jsdom-global')();
 global.DOMParser = window.DOMParser;
 
@@ -36,13 +37,11 @@ const production = process.env.NODE_ENV === 'production';
 
 const app = express();
 app.use(express.text());
+app.use(express.json());
 app.use(expressStaticGzip('static', {
   enableBrotli: true,
   index: false,
   orderPreference: ['br', 'gz'],
-}));
-app.use(express.urlencoded({
-  extended: true,
 }));
 
 function asyncHandler(handler) {
@@ -79,24 +78,116 @@ app.get('/', (req, res) => {
   `).pipe(res);
 });
 
-app.get('/captions/:captionsId', asyncHandler(async (req, res) => {
+app.post('/nonce', asyncHandler(async (req, res) => {
+  let nonce = base52.encode(192 / 8, nacl.randomBytes(192 / 8));
+
+  // Usually < 30 seconds, as it's javascript doing the request.
+  await db.query(`
+    INSERT INTO nonces(nonce, delete_at)
+      VALUES($1, now() + INTERVAL '24 hours')`,
+    [nonce]);
+
+  res.json({nonce});
+}));
+
+app.post('/captions/:captionsId', asyncHandler(async (req, res) => {
+  // Validate this request:
   let {captionsId} = req.params;
-  captionsId = parseInt(captionsId);
-  if (isNaN(captionsId)) {
-    res.status(400).type('text/plain').send('Invalid captions ID');
+  let {
+    pubkeys,
+    nonce,
+    nonceSignature,
+    lastHash,
+    lastHashSignature,
+    encrypted,
+    encryptedSignature,
+    readerFingerprint,
+    readerFingerprintSignature,
+  } = req.body;
+
+  // First, check nonce:
+  let cur = await db.query(`
+    DELETE FROM nonces AS t
+    WHERE t.nonce=$1
+      AND t.delete_at > now()
+  `, [nonce]);
+  if (cur.rowCount !== 1) {
+    res.sendStatus(404);
     return;
   }
+
+  // Then, check captionsId:
+  let public = WriterPublic.fromJSON(pubkeys);
+  if (public.fingerprint !== captionsId) {
+    res.sendStatus(400);
+    return;
+  }
+
+  // Then, check signatures:
+  public.verify(nonce, nonceSignature);
+  if (lastHash !== undefined) {
+    public.verify(lastHash, lastHashSignature);
+  }
+  public.verify(encrypted, encryptedSignature);
+  public.verify(readerFingerprint, readerFingerprintSignature);
+
+  // Handle new data:
+  // This writer wants to publish the encrypted data now (within the last day or so).
+  // TTL is hard-coded in main.js and below (twice).
+  if (lastHash === undefined) {
+    cur = await db.query(`
+        INSERT INTO captions(write_fingerprint, read_fingerprint, pubkeys, encrypted_data, delete_at)
+          VALUES($1, $2, $3, $4, now() + INTERVAL '30 days')
+      `, [public.fingerprint, readerFingerprint, pubkeys, encrypted]);
+    res.sendStatus(cur.rowCount === 1 ? 200 : 500);
+    return;
+  }
+
+  // Handle overwrite:
+  await db.withClient(async client => {
+    let cur = await client.query(`
+      SELECT t.encrypted_data AS encrypted_data
+      FROM captions AS t
+      WHERE t.write_fingerprint=$1
+        AND t.delete_at > now()
+      LIMIT 1
+    `, [public.fingerprint]);
+    if (cur.rows.length === 0) {
+      res.sendStatus(404);
+      return;
+    }
+
+    let expectedLastHash = hashUtf8(cur.rows[0].encrypted_data);
+    if (lastHash !== expectedLastHash) {
+      res.sendStatus(409);
+      return;
+    }
+
+    // TTL is hard-coded in main.js and above.
+    cur = await client.query(`
+      UPDATE captions AS t
+      SET t.encrypted_data=$2, t.delete_at=now() + INTERVAL '30 days'
+      WHERE t.write_fingerprint=$1
+        AND t.delete_at > now()
+      LIMIT 1
+    `, [public.fingerprint, encrypted]);
+    res.sendStatus(cur.rowCount === 1 ? 200 : 500);
+  });
+}));
+
+// Get captions by either the read or write fingerprints:
+app.get('/captions/:captionsId', asyncHandler(async (req, res) => {
+  let {captionsId} = req.params;
   // Get the captions tracks:
   let tracks = (await db.query(`
-    SELECT t.encrypted_data AS encrypted_data
-    FROM private_captions AS t
-    WHERE t.public_key_base64=$1
+    SELECT t.pubkeys AS pubkeys, t.encrypted_data AS encrypted_data
+    FROM captions AS t
+    WHERE (t.write_fingerprint=$1 OR t.read_fingerprint=$1)
       AND t.delete_at > now()
     LIMIT 2
-  `, [captionsId])).rows.map(({video_id, language, srt}) => ({
-    captionsId: captions_id,
-    language,
-    srt,
+  `, [captionsId])).rows.map(({pubkeys, encrypted_data}) => ({
+    pubkeys,
+    encryptedData: encrypted_data,
   }));
 
   if (tracks.length === 0) {
@@ -110,202 +201,57 @@ app.get('/captions/:captionsId', asyncHandler(async (req, res) => {
   res.json(tracks[0]);
 }));
 
-/**
- * Normalize the SRT in UTF-8.
- * @param {string} srtBase64
- * @returns {string} srt
- * @throws if it can't be parsed
- */
-function srtBase64ToSrt(srtBase64) {
-  try {
-    let srt = Buffer.from(srtBase64, 'base64').toString('utf8');
-    let captions = decodeSrt(srt);
-    captions = normalizeSrt(captions);
-    return Buffer.from(encodeSrt(captions)).toString('utf8');
-  } catch (e) {
-    if (!production) {
-      console.log('error parsing SRT', e);
-    }
-    throw new Error('could not parse SRT');
-  }
-}
-let base52 = (function() {
-  let chars = '';
-  for (let i = 0; i < 256; ++i) {
-    let c = String.fromCharCode(i);
-    // Remove vowels to avoid offensive strings:
-    if (/[0-9a-z]/i.test(c) && !/[aeiou]/i.test(c)) {
-      chars += c;
-    }
-  }
-  return chars;
-})();
-function secureRandomId() {
-  let x = 0n;
-  for (let c of crypto.randomBytes(128 / 8)) {
-    x = x * 256n + BigInt(c);
-  }
-  let id = [];
-  const base = BigInt(base52.length);
-  while (x !== 0n) {
-    id.push(base52[(x % base).valueOf()]);
-    x = x / base;
-  }
-  return id.reverse().join('');
-}
-app.post('/captions', upload.none(), asyncHandler(async (req, res) => {
-  let {videoId, srtBase64, publicKeyBase64, language} = req.body;
-  let srt = srtBase64ToSrt(srtBase64);
+// Delete a specific captions:
+app.delete('/captions/:captionsId', asyncHandler(async (req, res) => {
+  // Validate this request:
+  let {captionsId} = req.params;
+  let {
+    pubkeys,
+    nonce,
+    nonceSignature,
+    lastHash,
+    lastHashSignature,
+  } = req.body;
 
-  let captionsId = secureRandomId();
+  // First, check nonce:
+  let cur = await db.query(`
+    DELETE FROM nonces AS t
+    WHERE t.nonce=$1
+      AND t.delete_at > now()
+  `, [nonce]);
+  if (cur.rowCount !== 1) {
+    res.sendStatus(404);
+    return;
+  }
 
-  await db.withClient(async client => {
-    let {rows: [{max_seq}]} = await client.query(`
-      SELECT COALESCE(MAX(seq), -1) AS max_seq
-      FROM captions
-    `);
-    let seq = max_seq + 1;
+  // Then, check captionsId:
+  let public = WriterPublic.fromJSON(pubkeys);
+  if (public.fingerprint !== captionsId) {
+    res.sendStatus(400);
+    return;
+  }
 
-    await client.query(`
-      INSERT INTO captions(video_id, captions_id, seq, srt, language, public_key_base64)
-        VALUES($1, $2, $3, $4, $5, $6)`,
-      [videoId, captionsId, seq, srt, language, publicKeyBase64]);
+  // Then, check signatures:
+  public.verify(nonce, nonceSignature);
+  public.verify(lastHash, lastHashSignature);
 
-    res.json({captionsId});
-  });
+  // This writer wants to publish the encrypted data now (within the last day or so).
+  // TTL is hard-coded in main.js.
+  cur = await db.query(`
+    DELETE FROM captions AS t
+    WHERE t.write_fingerprint=$1
+      AND t.delete_at > now()
+  `, [public.fingerprint]);
+  if (cur.rowCount === 0) {
+    res.sendStatus(404);
+    return;
+  }
+  if (cur.rowCount > 1) {
+    res.sendStatus(500);
+    return;
+  }
+  res.sendStatus(200);
 }));
-
-class TtlSet {
-  /**
-   * Create a set with a coarse-grained TTL.
-   * Time complexity is numShards and timeout margin is ttl / numShards.
-   * This object cannot be deleted.
-   * @param {number} numShards the number of shards, must be >= 2
-   * @param {number} ttl the minimum time to keep things around
-   */
-  constructor(numShards, ttl) {
-    if (numShards < 2) throw new Error('numShards < 2: ' + numShards);
-    // [newest, second-newest, ..., oldest]
-    this._shards = [];
-    for (let i = 0; i < numShards; ++i) {
-      this._shards.push(new Set());
-    }
-    setInterval(() => {
-      let [deleted] = this._shards.splice(this._shards.length - 1);
-      this._shards.unshift(new Set());
-    }, ttl / (numShards - 1));
-  }
-
-  /**
-   * Add a value if it's not included.
-   * Extends the TTL.
-   */
-  add(value) {
-    this._shards[0].add(value);
-  }
-
-  /**
-   * Deletes a value.
-   */
-  delete(value) {
-    for (let shard of this._shards) {
-      shard.delete(value);
-    }
-  }
-
-  /**
-   * Tests if a value exists.
-   */
-  has(value) {
-    for (let shard of this._shards) {
-      if (shard.has(value)) return true;
-    }
-    return false;
-  }
-}
-// Nonces are non-sensitive data, and the only reason for deleting it is to avoid memory leaks.
-// Security only depends on them being used at most once.
-// WCAG asks for a 20 hours session limit, but I'm increasing it to ~1 week since the cost is low.
-let nonces = new TtlSet(100, 3600 * 24 * 7);
-/**
- * Wrap a handler in signature verification code.
- * Takes trustingHandler(req, res, publicKey, params), where params is trusted.
- * publicKey is base64.
- * Returns verifyingHandler(req, res), where req.body is untrusted.
- */
-let signedHandler = function signedHandler(handler) {
-  return (req, res) => {
-    if (req.body === '') {
-      // This nonce could be MITM'd, so we need to also verify the origin.
-      let untrustedNonce = secureRandomId();
-      nonces.add(untrustedNonce);
-      res.json({untrustedNonce});
-      return;
-    }
-
-    let {publicKey, signedRequest} = req.body;
-    if (!(typeof publicKey === 'string' && typeof signedRequest === 'string')) {
-      res.sendStatus(400);
-      return;
-    }
-
-    // Verify their message:
-    let message = sign_open(
-      new Uint8Array(Buffer.from(signedRequest, 'base64')),
-      new Uint8Array(Buffer.from(publicKey, 'base64')));
-    if (message === null) {
-      res.sendStatus(403);
-      return;
-    }
-    let {url, params, untrustedNonce} = JSON.parse(new TextDecoder().decode(message));
-
-    // Verify the nonce:
-    if (!nonces.has(untrustedNonce)) {
-      res.sendStatus(403);
-      return;
-    }
-    nonces.delete(untrustedNonce);
-
-    // Verify the URL origin:
-    let u = new URL(url);
-    let sentToTrustedOrigin = config.origins_and_trusted_proxy_origins.indexOf(u.origin) !== -1;
-    let sentToThisEndpoint = u.pathname === req.originalUrl.replace(/\?.*/, '');
-    if (!(sentToTrustedOrigin && sentToThisEndpoint)) {
-      res.sendStatus(403);
-      return;
-    }
-
-    return handler(req, res, publicKey, params);
-  };
-};
-app.delete('/captions/:captionsId', signedHandler(asyncHandler(async (req, res, publicKey, params) => {
-  await db.withClient(async client => {
-    // Find the caption whose key was provided:
-    let {rows} = await client.query(`
-      SELECT t.video_id AS video_id, t.captions_id AS captions_id
-      FROM captions AS t
-      WHERE t.public_key_base64=$1
-    `, [publicKey]);
-
-    if (rows.length === 0) {
-      res.sendStatus(404);
-      return;
-    }
-    if (rows.length !== 1) {
-      console.error('duplicate public keys');
-      res.sendStatus(500);
-      return;
-    }
-    let [{video_id, captions_id}] = rows;
-
-    await client.query(`
-      DELETE
-      FROM captions AS t
-      WHERE t.video_id=$1 AND t.captions_id=$2
-    `, [video_id, captions_id]);
-    res.sendStatus(200);
-  });
-})));
 
 (async function() {
   try {
@@ -316,11 +262,11 @@ app.delete('/captions/:captionsId', signedHandler(asyncHandler(async (req, res, 
     process.exit(1);
   }
 
-  // GC old data every 24 hours:
+  // GC old data every ~1 hour:
   (async function() {
     for (;;) {
       await db.gc();
-      await new Promise(resolve => setTimeout(resolve, 1000 * 3600 * 24));
+      await new Promise(resolve => setTimeout(resolve, 1000 * 3600));
     }
   })();
 

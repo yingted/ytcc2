@@ -30,7 +30,7 @@
     "multer": "^1.4.2",
     "pg": "^8.5.1",
     "style-mod": "^3.1.0",
-    "tweetnacl-ts": "^1.0.3",
+    "tweetnacl": "^1.0.3",
     "ytcc2-captions": "file:../captions"
   },
   "devDependencies": {

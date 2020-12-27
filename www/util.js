@@ -17,6 +17,7 @@
 import {render, directive} from 'lit-html';
 
 /**
+ * Generate a non-crypto-secure random UUID.
  * @returns {string} uuid a random UUID in compact hex format
  */
 export function randomUuid() {

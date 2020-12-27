@@ -28,8 +28,7 @@ import {onRender, render0, AsyncRef, Signal} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
 import {youtubeLanguages} from './gen/youtube_languages.js';
 import {renderBrowser} from './preview_browser.js';
-import {myReceiptsText, myReceiptsLink, renderFileReceipt, renderCookieReceipts, addCookie, renderFileReceiptString} from './receipt.js';
-import {sign_keyPair} from 'tweetnacl-ts';
+import {box, sign, hash, randomBytes} from 'tweetnacl';
 import {script} from './script_web.js';
 import {ObjectUrl} from './object_url.js';
 import {fetchCaptions, makeFileInput, HomogeneousTrackPicker, CaptionsPicker, UnofficialTrack} from './track_picker.js';
@@ -38,6 +37,7 @@ import {ChangeSet, tagExtension} from '@codemirror/next/state';
 import {unfoldAll, foldAll} from '@codemirror/next/fold';
 import {renderFooter} from './templates.js';
 import {Html5Video, DummyVideo} from './video.js';
+import * as permissions from './permissions.js';
 
 // Browser workarounds:
 // Remove noscript:
@@ -637,16 +637,79 @@ function renderEditorPane({html}, {editor, addCueDisabled}) {
   `;
 }
 
-async function uploadCaptions(writeLink, text, signal) {
-  // TODO
-  console.log({writeLink, text, signal});
-  await new Promise(resolve => setTimeout(resolve, 1000));
+/**
+ * @params {AbortSignal|undefined} signal
+ * @returns {string} the nonce
+ */
+async function newNonce(signal) {
+  let res = await fetch('/nonce', {
+    method: 'POST',
+    referrer: 'no-referrer',
+    signal,
+  });
+  if (!res.ok) {
+    throw new Error('could not get nonce');
+  }
+  let {nonce} = await res.json();
+  if (typeof nonce !== 'string') {
+    throw new Error('invalid nonce');
+  }
+  return nonce;
 }
 
-async function deleteCaptions(writeLink) {
-  // TODO
-  console.log({writeLink});
-  await new Promise(resolve => setTimeout(resolve, 1000));
+async function uploadCaptions(writer, text, signal, lastHash) {
+  let encrypted = writer.encrypt(text);
+  let readerFingerprint = writer.reader.fingerprint;
+  let encryptedSignature = writer.sign(encrypted);
+  let readerFingerprintSignature = writer.sign(readerFingerprint);
+  let lastHashSignature = lastHash === undefined ? undefined : writer.sign(lastHash);
+  let nonce = await newNonce(signal);
+  let res = await fetch('/captions/' + encodeURIComponent(writer.fingerprint), {
+    method: 'POST',
+    referrer: 'no-referrer',
+    signal,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      pubkeys: writer.public.toJSON(),
+      nonce,
+      nonceSignature: writer.sign(nonce),
+      encrypted,
+      encryptedSignature,
+      readerFingerprint,
+      readerFingerprintSignature,
+      lastHash,
+      lastHashSignature,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error('could not upload captions');
+  }
+  return permissions.hashUtf8(encrypted);
+}
+
+async function deleteCaptions(writer, signal, lastHash) {
+  let nonce = await newNonce(signal);
+  let lastHashSignature = lastHash === undefined ? undefined : writer.sign(lastHash);
+  let res = await fetch('/captions/' + encodeURIComponent(writer.fingerprint), {
+    method: 'DELETE',
+    referrer: 'no-referrer',
+    signal,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      pubkeys: writer.public.toJSON(),
+      nonce,
+      nonceSignature: writer.sign(nonce),
+      lastHash,
+      lastHashSignature,
+    }),
+  });
+  if (!res.ok) {
+    throw new Error('could not delete captions');
+  }
 }
 
 function renderPermalink({html}, {editor}) {
@@ -666,7 +729,7 @@ function renderPermalink({html}, {editor}) {
   let input = render0(html`
     <input type="url"
         aria-label="Sharing link"
-        placeholder="${location.origin}/#••••••••••••••••••••••" readonly
+        placeholder="${location.origin}/#view=••••••••••••••••••••••••••••••••••" readonly
         style="flex-grow: 1; min-width: 0;">
   `);
   let statusMessage = render0(html`
@@ -676,108 +739,122 @@ function renderPermalink({html}, {editor}) {
 
   (async function() {
     unshareButton.style.display = 'none';
-    for (;;) {
-      let readLink, writeLink, doc;
+    try {
+      for (;;) {
+        let writer;
+        let readLink, writeLink, doc;
+        let writerPublic;
+        let uploadHash;
 
-      // Share flow:
-      {
-        // Wait for share request:
-        shareButton.style.display = null;
-        shareButton.disabled = false;
-        await new Promise(resolve => shareButton.onclick = function() {
-          if (!iAgree.reportValidity()) {
-            return;
+        // Share flow:
+        {
+          // Wait for share request:
+          shareButton.style.display = null;
+          shareButton.disabled = false;
+          await new Promise(resolve => shareButton.onclick = function() {
+            if (!iAgree.reportValidity()) {
+              return;
+            }
+
+            shareButton.onclick = null;
+
+            // Show new share state immediately:
+            writer = permissions.Writer.random();
+            readLink = location.origin + '/#view=' + encodeURIComponent(writer.reader.secret);
+            writeLink = location.origin + '/#edit=' + encodeURIComponent(writer.secret);
+
+            input.value = readLink;
+            input.select();
+            document.execCommand('copy');
+            window.history.replaceState(null, document.title, writeLink);
+            shareButton.disabled = true;
+            render('Link copied. Uploading captions...', statusMessage);
+
+            resolve();
+          });
+
+          doc = editor.view.state.doc;
+
+          // Wait for share response:
+          uploadHash = await uploadCaptions(writer, doc.toString());
+          shareButton.style.display = 'none';
+          // TTL is hard-coded in index.js:
+          render('Link copied. Expires in 30 days.', statusMessage);
+        }
+
+        // Syncing:
+        let controller = new AbortController();
+        let currentUpload = null;
+        let uploadIfChanged = async function(newDoc) {
+          // Avoid overlapping uploads:
+          if (currentUpload !== null) {
+            if (controller.signal.aborted) return;
+            try {
+              await currentUpload;
+            } catch (e) {}
           }
 
-          shareButton.onclick = null;
-
-          // Show new share state immediately:
-          readLink = location.origin + '/#view=' + Math.random().toString().substring(2);
-          writeLink = location.origin + '/#edit=' + Math.random().toString().substring(2);
-
-          input.value = readLink;
-          input.select();
-          document.execCommand('copy');
-          window.history.replaceState(null, document.title, writeLink);
-          shareButton.disabled = true;
-          render('Link copied. Uploading captions...', statusMessage);
-
-          resolve();
-        });
-
-        doc = editor.view.state.doc;
-
-        // Wait for share response:
-        await uploadCaptions(writeLink, doc.toString());
-        shareButton.style.display = 'none';
-        // TODO: set the deadline
-        render('Link copied. Expires in 30 days.', statusMessage);
-      }
-
-      // Syncing:
-      let controller = new AbortController();
-      let currentUpload = null;
-      let uploadIfChanged = async function(newDoc) {
-        // Avoid overlapping uploads:
-        if (currentUpload !== null) {
+          // Wait for idle:
           if (controller.signal.aborted) return;
+          await new Promise(resolve => window.requestIdleCallback(resolve));
+          if (controller.signal.aborted) return;
+
+          // Debounce:
+          if (doc === editor.view.state.doc) return;
+          doc = editor.view.state.doc;
+
+          // Upload the captions interruptibly:
           try {
-            await currentUpload;
-          } catch (e) {}
+            currentUpload = uploadCaptions(writer, editor.view.state.doc.toString(), controller.signal, uploadHash);
+            uploadHash = await currentUpload;
+          } catch (e) {
+            render(`Upload error: ${e.message}`, statusMessage);
+          } finally {
+            currentUpload = null;
+          }
+        };
+        editor.docChanged.addListener(uploadIfChanged);
+
+        // Unshare flow:
+        {
+          // Wait for unshare request:
+          unshareButton.style.display = null;
+          unshareButton.disabled = false;
+          await new Promise(resolve => unshareButton.onclick = function() {
+            unshareButton.onclick = null;
+
+            input.value = '';
+            let localLink = location.origin + '/';
+            window.history.replaceState(null, document.title, localLink);
+            unshareButton.disabled = true;
+            render('Stopping sharing...', statusMessage);
+
+            controller.abort();
+
+            resolve();
+          });
+
+          // Avoid overlapping upload/delete requests:
+          if (currentUpload !== null) {
+            try {
+              await currentUpload;
+            } catch (e) {}
+          }
+
+          // Wait for unshare response:
+          await deleteCaptions(writer, undefined, uploadHash);
+          unshareButton.style.display = 'none';
+          render('Sharing stopped.', statusMessage);
         }
-
-        // Wait for idle:
-        if (controller.signal.aborted) return;
-        await new Promise(resolve => window.requestIdleCallback(resolve));
-        if (controller.signal.aborted) return;
-
-        // Debounce:
-        if (doc === editor.view.state.doc) return;
-        doc = editor.view.state.doc;
-
-        // Upload the captions interruptibly:
-        try {
-          currentUpload = uploadCaptions(writeLink, editor.view.state.doc.toString(), controller.signal);
-          await currentUpload;
-        } catch (e) {
-          render(`Upload error: ${e.message}`, statusMessage);
-        } finally {
-          currentUpload = null;
-        }
-      };
-      editor.docChanged.addListener(uploadIfChanged);
-
-      // Unshare flow:
-      {
-        // Wait for unshare request:
-        unshareButton.style.display = null;
-        unshareButton.disabled = false;
-        await new Promise(resolve => unshareButton.onclick = function() {
-          unshareButton.onclick = null;
-
-          input.value = '';
-          let localLink = location.origin + '/';
-          window.history.replaceState(null, document.title, localLink);
-          unshareButton.disabled = true;
-          render('Stopping sharing...', statusMessage);
-
-          controller.abort();
-
-          resolve();
-        });
-
-        // Avoid overlapping upload/delete requests:
-        if (currentUpload !== null) {
-          try {
-            await currentUpload;
-          } catch (e) {}
-        }
-
-        // Wait for unshare response:
-        await deleteCaptions(writeLink);
-        unshareButton.style.display = 'none';
-        render('Sharing stopped.', statusMessage);
       }
+    } catch (e) {
+      render(html`
+        <details>
+          <summary>Error, please save your data and reload the page.</summary>
+          ${e.toString()}
+        </details>
+      `, statusMessage);
+      throw e;
     }
   })();
 
@@ -833,6 +910,21 @@ function renderDummyEditorPane({html}) {
 }
 
 (async function main() {
+  // Parse params:
+  let hashParams = new URLSearchParams(location.hash.substring(1));
+  let writer = null;
+  let reader = null;
+  {
+    let writeSecret = hashParams.get('edit');
+    let readSecret = hashParams.get('view');
+    if (writeSecret !== null) {
+      writer = new permissions.Writer(writeSecret);
+    } else if (readSecret !== null) {
+      reader = new permissions.Reader(readSecret);
+    }
+    console.log({writer, reader});  // TODO
+  }
+
   // Render the dummy content:
   render(renderFileMenubar({html}, {
     srv3Url: 'javascript:',
