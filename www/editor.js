@@ -504,8 +504,12 @@ export class CaptionsEditor {
   hasUnsavedChanges() {
     return this._unsavedChanges.get();
   }
-  setSaved() {
-    this._unsavedChanges.clear();
+  setSaved(saved = true) {
+    if (saved) {
+      this._unsavedChanges.clear();
+    } else {
+      this._unsavedChanges.set();
+    }
   }
 
   /**

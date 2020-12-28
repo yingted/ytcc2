@@ -1118,6 +1118,7 @@ class Share {
       thiz._updatePermalink(/*busy=*/true, /*link=*/'');
       window.history.replaceState(null, document.title, permissionsToUrl(null));
       render('Stopping sharing...', thiz._statusMessage);
+      thiz._setSaved(false);
 
       sync.abort();
 
