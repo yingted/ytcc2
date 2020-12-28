@@ -1138,7 +1138,7 @@ class Share {
 
         let {writer, value, lastHash} = share;
 
-        let sync = new Sync(this._uploader, value, lastHash, this._statusMessage, writer, this._ref, this._setSaved, 30e3);
+        let sync = new Sync(this._uploader, value, lastHash, this._statusMessage, writer, this._ref, this._setSaved, 5e3);
 
         await this._waitForUnshare({writer, lastHash: sync.lastHash, sync});
       }
