@@ -1322,6 +1322,10 @@ class FileMenu {
   render(fileMenu.render(), fileMenubar);
   render(renderEditorPane({html}, editor), editorPane);
   render(share.render(), sharePane);
+
+  if (editor.readOnly) {
+    document.querySelector('h1').textContent = 'View captions';
+  }
 })();
 
 if (false) {
