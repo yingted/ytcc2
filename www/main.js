@@ -1024,8 +1024,12 @@ class Share {
       };
     }
     if (perms instanceof permissions.Reader) {
+      let editor = new CaptionsEditor(video, captions, {readOnly: true});
+      editor.setCaptions(captions, /*addToHistory=*/false);
+      editor.setText(doc, /*addToHistory=*/false);
+      editor.setSaved();
       return {
-        editor: new CaptionsEditor(video, captions, {readOnly: true}),
+        editor,
         share: Share.readonly(perms),
       };
     }
