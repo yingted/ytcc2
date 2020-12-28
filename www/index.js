@@ -169,18 +169,20 @@ async function verifyLastHash(client, fingerprint, lastHash, res) {
   `, [fingerprint]);
   if (cur.rows.length === 0) {
     res.sendStatus(404);
-    return;
+    return false;
   }
   if (cur.rows.length > 1) {
     res.sendStatus(500);
-    return;
+    return false;
   }
 
   let expectedLastHash = hashUtf8(cur.rows[0].encrypted_data);
   if (lastHash !== expectedLastHash) {
     res.sendStatus(409);
-    return;
+    return false;
   }
+
+  return true;
 }
 
 // Get captions by either the read or write fingerprints:

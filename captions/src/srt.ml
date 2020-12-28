@@ -172,6 +172,34 @@ module Styles = struct
             raise Assertion_error)
 end
 
+let merge collapse items =
+  let merged = ref [] in
+  items |> List.iter (fun x ->
+    merged := (
+      match !merged with
+      | prev_x :: tail ->
+          (match collapse prev_x x with
+          | Some x' -> x' :: tail
+          | None -> x :: prev_x :: tail)
+      | tail -> x :: tail));
+  List.rev !merged
+
+let merge_tokens (tokens : (Track.token * string option) list) : (Track.token * string option) list =
+  tokens
+  |> merge (fun (prev_token, prev_raw) (token, raw) ->
+      let open Track in
+      match prev_token, token with
+      | Append a, Append b ->
+          Some (Append (a ^ b), Option.map2 (^) prev_raw raw)
+      | Set_style a, Set_style b ->
+          Some (Set_style b, Option.map2 (^) prev_raw raw)
+      | Wait_until a, Wait_until b ->
+          Some (Wait_until (max a b), Option.map2 (^) prev_raw raw)
+      | _ -> None)
+
+let split_tokens (tokens : (Track.token * string option) list) : (Track.token * string option) list =
+  tokens
+
 let text_parser: text Parser.t =
   let ( * ) = Parser.pair in
   let tag: (Style.t, string) result Parser.t =
@@ -214,7 +242,8 @@ let text_parser: text Parser.t =
                   styles := Styles.pop_html name !styles;);
               Set_style (Styles.style !styles)
           (* Plain text *)
-          | Error (Error text) -> Append text))
+          | Error (Error text) -> Append text)
+      |> merge_tokens)
     ~encode:(fun xs ->
       (* The most recent style *)
       let last_set_style = ref Styles.empty in
@@ -223,6 +252,7 @@ let text_parser: text Parser.t =
       (* List of text and styles, some of which have a raw repr. *)
       (* Preserve the raw reprs, but possibly add styles around them. *)
       xs
+      |> split_tokens
       (* Ensure we close all our tags *)
       |> (fun x -> x @ [(Set_style Style.empty, None); (Append "", None)])
       |> List.map (fun ((x : Track.token), (raw : string option)) : ((_, _) result * string option) list ->
