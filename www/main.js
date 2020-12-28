@@ -1215,6 +1215,7 @@ class FileMenu {
   join() {
     return this._done;
   }
+  static EMPTY_CAPTIONS = {};
   async _run(video, editor) {
     // Get a debounced view of the doc:
     let doc = new AsyncRef(editor.view.state.doc);
@@ -1232,8 +1233,9 @@ class FileMenu {
       let srtBlob = new ObjectUrl();
       let srv3Url;
       let srtUrl;
-      let updateSrv3 = () => srv3Url = srv3Blob.create(editor._rawCaptions, () => new Blob([editor.getSrv3Captions()]));
-      let updateSrt = () => srtUrl = srtBlob.create(editor._rawCaptions, () => new Blob([editor.getSrtCaptions()]));
+      let key = editor._rawCaptions === empty ? FileMenu.EMPTY_CAPTIONS : editor._rawCaptions;
+      let updateSrv3 = () => srv3Url = srv3Blob.create(key, () => new Blob([editor.getSrv3Captions()]));
+      let updateSrt = () => srtUrl = srtBlob.create(key, () => new Blob([editor.getSrtCaptions()]));
       updateSrv3();
       updateSrt();
       while (!this._isAborted) {

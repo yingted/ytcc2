@@ -561,8 +561,23 @@ export class CaptionsEditor {
    */
   addCue(time, text) {
     let offset = timeToCueOffset(this._getPrologue(), this._editableCaptions, time, true);
-    // TODO: handle insert at end
-    let insert = captionToText({time, text}) + '\n';
+    let length = this.view.state.doc.length;
+    let line = captionToText({time, text});
+
+    let insert;
+    let eolOffset;
+    if (length === 0) {
+      insert = line;
+      offset = 0;
+      eolOffset = offset + insert.length;
+    } else if (offset > length) {
+      insert = '\n' + line;
+      offset = length;
+      eolOffset = offset + insert.length;
+    } else {
+      insert = line + '\n';
+      eolOffset = offset + line.length;
+    }
 
     this.view.dispatch(this.view.state.update({
       changes: {
@@ -570,7 +585,7 @@ export class CaptionsEditor {
         to: offset,
         insert,
       },
-      selection: EditorSelection.single(offset + insert.length - 1),
+      selection: EditorSelection.single(eolOffset),
       scrollIntoView: true,
     }));
   }

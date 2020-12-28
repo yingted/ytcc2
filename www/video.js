@@ -13,11 +13,19 @@ export class DummyVideo {
     options = options || {};
     this._time = 0;
     this._update = new Signal();
-    this.captions = options.captions || empty;
+    this._captions = options.captions || empty;
     this.captionsRegion = null;
     // Duplicate suppression:
     this._lastUpdateCaptions = null;
     this._lastUpdateTime = null;
+  }
+  get captions() {
+    return this._captions;
+  }
+  set captions(captions) {
+    this._captions = captions;
+    // Run later:
+    Promise.resolve().then(this._onUpdate.bind(this));
   }
 
   /**
