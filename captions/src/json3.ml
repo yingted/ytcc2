@@ -349,7 +349,8 @@ let codec' : (track, raw Track.t) Codec.t =
               |> Option.map (fun i -> track.wsWinStyles.(i))
               |> Option.value ~default:empty_window.style;
         } in
-        let rec convert_seg now segs acc =
+        (* Parse json3 text to our format: *)
+        let rec convert_seg now last_style segs acc =
           match segs with
           | [] -> acc
           | seg :: segs ->
@@ -358,6 +359,7 @@ let codec' : (track, raw Track.t) Codec.t =
               let text = Option.value ~default:"" seg.utf8 in
               let pen = seg.pPenId |> Option.map (fun i -> pens.(i)) in
               let style =
+                (* Get the new style. json3 styles are reset for every span *)
                 match pen with
                 | None -> Style.empty
                 | Some (lazy style) -> style
@@ -367,18 +369,23 @@ let codec' : (track, raw Track.t) Codec.t =
                 then acc
                 else (Track.Wait_until (start +. now'), None) :: acc
               in
-              let acc = (Track.Set_style style, Some win) :: acc in
+              let acc =
+                (* If the style changed, add a Set_style *)
+                if style = last_style
+                then acc
+                else (Track.Set_style style, Some win) :: acc
+              in
               let acc =
                 if text = ""
                 then acc
                 else (Append text, None) :: acc
               in
-              convert_seg now' segs acc;
+              convert_seg now' style segs acc;
         in
         ({
           start;
           end_;
-          text = convert_seg 0. (Array.to_list event.segs) [] |> List.rev;
+          text = convert_seg 0. Style.empty (Array.to_list event.segs) [] |> List.rev;
         } : raw Track.cue)
       )
       |> (fun x -> Ok x)

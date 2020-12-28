@@ -42,6 +42,12 @@ let roundtrip codec data =
   |> Codec.try_decode codec
   |> Result.map ~f:(Codec.encode codec)
 
+let normalize_json : 'a -> 'a = [%raw {|
+  function normalize_json(obj) {
+    return JSON.parse(JSON.stringify(obj));
+  }
+|}]
+
 let _ =
 describe "stabilizes" (fun () ->
   listFiles (([%raw "__dirname"]) ^ "/data/YTSubConverter/*.json3.json")
@@ -60,4 +66,106 @@ describe "stabilizes" (fun () ->
       let decode_utf8 x = Result.ok x |> Option.map (Codec.decode_exn Encoding.prefer_utf8) in
       expect (Result.error data1, decode_utf8 data2)
       |> toEqual (None, decode_utf8 data1)));
+);
+
+describe "roundtrips" (fun () ->
+  let test_encodes name (track : Json3.raw Track.t) json3 =
+    test (name ^ " encodes") (fun () ->
+      track
+      |> Codec.encode Json3.json_codec
+      |> normalize_json
+      |> expect
+      |> toEqual json3
+    );
+
+    test (name ^ " decodes") (fun () ->
+      json3
+      |> Codec.decode_exn Json3.json_codec
+      |> List.map (fun (cue : Json3.raw Track.cue) ->
+          { cue with text =
+            cue.text |> List.map (fun (token, _raw) -> (token, None)) })
+      |> expect
+      |> toEqual track
+    );
+  in
+
+  let no_raw (tokens : Track.token list) =
+    tokens |> List.map (fun token -> (token, None))
+  in
+  let b1 = Style.singleton Bold @@ Some true in
+  let b0 = Style.singleton Bold @@ Some false in
+
+  test_encodes "empty"
+    []
+    [%raw {|
+      {
+        wireMagic: 'pb3',
+        pens: [],
+        wsWinStyles: [],
+        wpWinPositions: [],
+        events: [],
+      }
+    |}];
+
+  test_encodes "single char"
+    [
+      {
+        start = 1.23; end_ = 2.34;
+        text = no_raw [
+          Append "a";
+        ];
+      };
+    ]
+    [%raw {|{
+      wireMagic: 'pb3',
+      pens: [],
+      wsWinStyles: [],
+      wpWinPositions: [],
+      events: [{
+        tStartMs: 1230, dDurationMs: 1110,
+        segs: [{utf8: 'a'}],
+      }],
+    }|}];
+
+  test_encodes "multiple chars together"
+    [
+      {
+        start = 1.23; end_ = 2.34;
+        text = no_raw [
+          Append "abc";
+        ];
+      };
+    ]
+    [%raw {|{
+      wireMagic: 'pb3',
+      pens: [],
+      wsWinStyles: [],
+      wpWinPositions: [],
+      events: [{
+        tStartMs: 1230, dDurationMs: 1110,
+        segs: [{utf8: 'abc'}],
+      }],
+    }|}];
+
+  test_encodes "multiple chars separated"
+    [
+      {
+        start = 1.23; end_ = 2.34;
+        text = no_raw [
+          Append "a";
+          Append "b";
+          Append "c";
+        ];
+      };
+    ]
+    [%raw {|{
+      wireMagic: 'pb3',
+      pens: [],
+      wsWinStyles: [],
+      wpWinPositions: [],
+      events: [{
+        tStartMs: 1230, dDurationMs: 1110,
+        segs: [{utf8: 'a'}, {utf8: 'b'}, {utf8: 'c'}],
+      }],
+    }|}];
 );
