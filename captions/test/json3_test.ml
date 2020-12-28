@@ -147,6 +147,7 @@ describe "roundtrips" (fun () ->
       }],
     }|}];
 
+  (* json3 isn't as smart as SRT, so we end up with junk markup *)
   test_encodes "multiple chars separated"
     [
       {
@@ -166,6 +167,59 @@ describe "roundtrips" (fun () ->
       events: [{
         tStartMs: 1230, dDurationMs: 1110,
         segs: [{utf8: 'a'}, {utf8: 'b'}, {utf8: 'c'}],
+      }],
+    }|}];
+
+  test_encodes "formatting b1 and b0"
+    [
+      {
+        start = 1.23; end_ = 2.34;
+        text = no_raw [
+          Append "ab";
+          Set_style b1;
+          Append "cd";
+          Set_style b0;
+          Append "ef";
+        ];
+      };
+    ]
+    [%raw {|{
+      wireMagic: 'pb3',
+      pens: [
+        {bAttr: 1},
+        {bAttr: 0},
+      ],
+      wsWinStyles: [],
+      wpWinPositions: [],
+      events: [{
+        tStartMs: 1230, dDurationMs: 1110,
+        segs: [{utf8: 'ab'}, {pPenId: 0, utf8: 'cd'}, {pPenId: 1, utf8: 'ef'}],
+      }],
+    }|}];
+
+  test_encodes "formatting b1 and empty"
+    [
+      {
+        start = 1.23; end_ = 2.34;
+        text = no_raw [
+          Append "ab";
+          Set_style b1;
+          Append "cd";
+          Set_style Style.empty;
+          Append "ef";
+        ];
+      };
+    ]
+    [%raw {|{
+      wireMagic: 'pb3',
+      pens: [
+        {bAttr: 1},
+      ],
+      wsWinStyles: [],
+      wpWinPositions: [],
+      events: [{
+        tStartMs: 1230, dDurationMs: 1110,
+        segs: [{utf8: 'ab'}, {pPenId: 0, utf8: 'cd'}, {utf8: 'ef'}],
       }],
     }|}];
 );

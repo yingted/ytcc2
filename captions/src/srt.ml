@@ -186,12 +186,19 @@ let merge collapse items =
 
 let merge_tokens (tokens : (Track.token * string option) list) : (Track.token * string option) list =
   tokens
+  |> List.filter (fun (token, _raw) -> token != Track.Append "")
   |> merge (fun (prev_token, prev_raw) (token, raw) ->
+      match prev_raw with
+      | Some "\\n" | Some "\\N" | Some "\\h" -> None
+      | _ ->
+      match raw with
+      | Some "\\n" | Some "\\N" | Some "\\h" -> None
+      | _ ->
       let open Track in
       match prev_token, token with
       | Append a, Append b ->
           Some (Append (a ^ b), Option.map2 (^) prev_raw raw)
-      | Set_style a, Set_style b ->
+      | Set_style _a, Set_style b ->
           Some (Set_style b, Option.map2 (^) prev_raw raw)
       | Wait_until a, Wait_until b ->
           Some (Wait_until (max a b), Option.map2 (^) prev_raw raw)
@@ -199,6 +206,16 @@ let merge_tokens (tokens : (Track.token * string option) list) : (Track.token * 
 
 let split_tokens (tokens : (Track.token * string option) list) : (Track.token * string option) list =
   tokens
+  |> List.map (fun (token, raw) ->
+      match token with
+      | Track.Append s when String.length s > 1 ->
+          let a = [||] in
+          s |> String.iter (fun c ->
+            let _ = Js.Array.push (Track.Append (String.make 1 c), None) a in
+            ());
+          a |> Array.to_list
+      | _ -> [(token, raw)])
+  |> List.flatten
 
 let text_parser: text Parser.t =
   let ( * ) = Parser.pair in

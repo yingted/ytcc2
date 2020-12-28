@@ -202,3 +202,57 @@ describe "parses tags" (fun () ->
   (* t "p2"; *)
   (* t "pbo-4"; *)
 );
+
+describe "encodes and decodes text" (fun () ->
+  let test_encodes name (tokens : Track.token list) markup =
+    test (name ^ " encodes") (fun () ->
+      tokens
+      |> List.map (fun token -> (token, None))
+      |> Codec.encode Srt.text_codec
+      |> expect
+      |> toEqual markup
+    );
+
+    test (name ^ " decodes") (fun () ->
+      markup
+      |> Codec.decode_exn Srt.text_codec
+      |> List.map fst
+      |> expect
+      |> toEqual tokens
+    );
+  in
+
+  let b1 = Style.singleton Bold @@ Some true in
+
+  test_encodes "empty"
+    []
+    "";
+
+  test_encodes "single char"
+    [
+      Append "a";
+    ]
+    "a";
+
+  test_encodes "multiple chars together"
+    [
+      Append "abc";
+    ]
+    "abc";
+
+  test_encodes "html"
+    [
+      Append "<&amp;>";
+    ]
+    "&lt;&amp;amp;&gt;";
+
+  test_encodes "formatting"
+    [
+      Append "ab";
+      Set_style b1;
+      Append "cd";
+      Set_style Style.empty;
+      Append "ef";
+    ]
+    "ab<b>cd</b>ef";
+);
