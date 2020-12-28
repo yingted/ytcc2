@@ -388,7 +388,7 @@ export class CaptionsEditor {
    */
   constructor(video, captions, options) {
     options = options || {};
-    let readOnly = options.readOnly ?? false;
+    this.readOnly = options.readOnly ?? false;
 
     // Widgets:
     this.video = video || new DummyVideo();
@@ -431,7 +431,7 @@ export class CaptionsEditor {
           }),
           // Force dark theme for now:
           oneDark,
-          EditorView.editable.of(!readOnly),
+          EditorView.editable.of(!this.readOnly),
         ],
       }),
     });

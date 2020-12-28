@@ -604,7 +604,7 @@ function renderDummyVideo({html}) {
   `;
 }
 
-function renderEditorPane({html}, {editor, addCueDisabled}) {
+function renderEditorPane({html}, editor) {
   return html`
     <ul class="toolbar">
       <li>
@@ -621,7 +621,7 @@ function renderEditorPane({html}, {editor, addCueDisabled}) {
               editor.addCue(editor.video.getCurrentTime(), '');
               editor.view.focus();
             }}
-            ?disabled=${addCueDisabled}>
+            ?disabled=${editor.readOnly}>
           <span class="add-icon"></span>Add cue
         </button>
       </li>
@@ -1205,10 +1205,10 @@ function renderDummyContent({fileMenubar, videoPane, editorPane, sharePane}) {
     srtUrl: 'javascript:',
   }), fileMenubar);
   render(renderDummyVideo({html}), videoPane);
-  render(renderEditorPane({html}, {
-    editor: new CaptionsEditor(null, `0:00 [Music]`),
-    addCueDisabled: true,
-  }), editorPane);
+  render(renderEditorPane(
+      {html},
+      new CaptionsEditor(null, `0:00 [Music]`, {readOnly: true})),
+    editorPane);
   render(Share.disabled().render(), sharePane);
 }
 
@@ -1320,7 +1320,7 @@ class FileMenu {
   // Render the real content:
   let fileMenu = new FileMenu(video, editor);
   render(fileMenu.render(), fileMenubar);
-  render(renderEditorPane({html}, {editor}), editorPane);
+  render(renderEditorPane({html}, editor), editorPane);
   render(share.render(), sharePane);
 })();
 
