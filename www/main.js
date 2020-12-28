@@ -200,11 +200,6 @@ render(html`
   </main>
 `, document.body);
 
-let fileMenubar = document.querySelector('#file-menubar');
-let videoPane = document.querySelector('#video-pane');
-let editorPane = document.querySelector('#editor-pane');
-let sharePane = document.querySelector('#share-pane');
-
 let videoFileUrl = new ObjectUrl();
 
 /**
@@ -656,11 +651,11 @@ async function newNonce(signal) {
 
 class BaseUploader {
   serialize(value) {
-    throw new Error('not implemented');
+    throw new Error('must be overridden');
   }
 
   equals(valueA, valueB) {
-    throw new Error('not implemented');
+    throw new Error('must be overridden');
   }
 
   /**
@@ -734,12 +729,12 @@ class BaseUploader {
   }
 }
 
-class DocUploader extends BaseUploader {
+class JsonUploader extends BaseUploader {
   serialize(value) {
-    return value.toString();
+    return JSON.stringify(value);
   }
   equals(a, b) {
-    return a === b;
+    return a === b || this.serialize(a) === this.serialize(b);
   }
 }
 
@@ -908,13 +903,65 @@ class Share {
       </button>
     `);
 
-    this._run();
+    if (this._uploader) {
+      this._run();
+    }
   }
-  static fromEditor(editor) {
-    let docRef = new AsyncRef(editor.view.state.doc);
+  /**
+   * A disabled (empty) permalink.
+   */
+  static disabled() {
+    let share = new Share();
+    share._updatePermalink(/*busy=*/true, /*link=*/'');
+    return share;
+  }
+  /**
+   * A read-only permalink.
+   */
+  static readonly(reader) {
+    let share = new Share();
+    share._updatePermalink(/*busy=*/true, /*link=*/permissionsToUrl(reader));
+    return share;
+  }
+  static _stateFromEditor(editor) {
+    return {
+      version: 1,
+      videoId: editor.video instanceof YouTubeVideo ? editor.video.videoId : undefined,
+      doc: editor.view.state.doc.toString(),
+      captions: editor._rawCaptions,
+    };
+  }
+  /**
+   * Share a doc in "unsaved" state.
+   */
+  static fromNewEditor(editor) {
+    let stateRef = new AsyncRef(this._stateFromEditor(editor));
     // Return the doc to test for equality:
-    editor.docChanged.addListener(doc => docRef.value = doc);
-    return new Share(new DocUploader(), docRef, editor.setSaved.bind(editor));
+    editor.docChanged.addListener(doc =>
+        stateRef.value = this._stateFromEditor(editor));
+    return new Share(new JsonUploader(), stateRef, editor.setSaved.bind(editor));
+  }
+  /**
+   * Load an editor from the server. editor.video will be set as well.
+   * @param {Writer|Reader} perms
+   * @returns {{editor: CaptionsEditor, share: Share}}
+   */
+  static async loadWithEditor(perms) {
+    let uploader = new JsonUploader();
+    debugger;
+    throw new Error('not implemented');
+    let {state, uploadHash} = await uploader.download(perms);
+    if (perms instanceof permissions.Writer) {
+    }
+    if (perms instanceof permissions.Reader) {
+      let video = 0();
+      let captions = 0();
+      return {
+        editor: new CaptionsEditor(video, captions, {readOnly: true}),
+        share: Share.readonly(perms),
+      };
+    }
+    throw new Error('invalid perms');
   }
   render() {
     return html`
@@ -1040,27 +1087,13 @@ class Share {
 
 /**
  * Ask the user for the video and captions.
- * This takes over the video, editor, and share panes.
- * After returning, the video pane is updated, but you need to
- * rerender the editor and share panes.
+ * After returning, the video pane is updated.
  * @returns {{video: object, captions: object}}
  */
-async function askForVideoAndCaptions() {
-  // Render the dummy content:
-  render(renderFileMenubar({html}, {
-    srv3Url: 'javascript:',
-    srtUrl: 'javascript:',
-  }), fileMenubar);
-
+async function askForVideoAndCaptions(videoPane) {
   for (;;) {
     // Clear the video and captions selection:
     render(renderDummyVideo({html}), videoPane);
-    let dummyEditor = new CaptionsEditor(null, `0:00 [Music]`);
-    render(renderEditorPane({html}, {
-      editor: dummyEditor,
-      addCueDisabled: true,
-    }), editorPane);
-    render(Share.fromEditor(dummyEditor).render(), sharePane);
 
     // Get the video:
     let video = await askForVideo();
@@ -1077,6 +1110,22 @@ async function askForVideoAndCaptions() {
       return {video, captions};
     }
   }
+}
+
+/**
+ * Render "empty" content into all the widgets.
+ */
+function renderDummyContent({fileMenubar, videoPane, editorPane, sharePane}) {
+  render(renderFileMenubar({html}, {
+    srv3Url: 'javascript:',
+    srtUrl: 'javascript:',
+  }), fileMenubar);
+  render(renderDummyVideo({html}), videoPane);
+  render(renderEditorPane({html}, {
+    editor: new CaptionsEditor(null, `0:00 [Music]`),
+    addCueDisabled: true,
+  }), editorPane);
+  render(Share.disabled().render(), sharePane);
 }
 
 class FileMenu {
@@ -1151,28 +1200,44 @@ class FileMenu {
 }
 
 (async function main() {
-  // Parse params:
+  let fileMenubar = document.querySelector('#file-menubar');
+  let videoPane = document.querySelector('#video-pane');
+  let editorPane = document.querySelector('#editor-pane');
+  let sharePane = document.querySelector('#share-pane');
+  renderDummyContent({fileMenubar, videoPane, editorPane, sharePane});
+
+  // Parse the URL:
   let perms = urlToPermissions(window.location);
 
-  // Get the video and captions:
-  // TODO
-  // let {video, captions} = askForVideoAndCaptions();
-  let video = new DummyVideo();
-  let captions = captionsFromText('0:00 [Music]');
-  render(video.render(), videoPane);
+  let video, editor, share;
+  if (perms === null) {
+    // First load, get the video and editor:
 
-  // Show the captions:
-  let editor = new CaptionsEditor(video, captions);
+    // TODO: after debugging, actually ask
+    // let captions;
+    // {video, captions} = askForVideoAndCaptions(videoPane);
+    video = new DummyVideo();
+    let captions = captionsFromText('0:00 [Music]');
+    render(video.render(), videoPane);
+
+    editor = new CaptionsEditor(video, captions);
+    share = Share.fromNewEditor(editor);
+  } else {
+    // Restore the Share state:
+    let shareEditor = Share.loadWithEditor(perms);
+    share = shareEditor.share;
+    editor = shareEditor.editor;
+    video = editor.video;
+  }
+
   window.editor = editor;
-  render(renderEditorPane({html}, {editor}), editorPane);
+  window.share = share;
 
-  // Share pane:
-  let share = Share.fromEditor(editor);
-  render(share.render(), sharePane);
-
-  // File menu:
+  // Render the real content:
   let fileMenu = new FileMenu(video, editor);
   render(fileMenu.render(), fileMenubar);
+  render(renderEditorPane({html}, {editor}), editorPane);
+  render(share.render(), sharePane);
 })();
 
 if (false) {

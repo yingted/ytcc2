@@ -384,8 +384,12 @@ export class CaptionsEditor {
    * Create a captions editor for a video.
    * @param {YouTubeVideo} video 
    * @param {Srt.raw Track.t option} captions the initial captions, or undefined for empty
+   * @param {boolean} [options.readOnly=false] if it's readonly
    */
-  constructor(video, captions) {
+  constructor(video, captions, options) {
+    options = options || {};
+    let readOnly = options.readOnly ?? false;
+
     // Widgets:
     this.video = video || new DummyVideo();
     this.docChanged = new Signal();
@@ -427,6 +431,7 @@ export class CaptionsEditor {
           }),
           // Force dark theme for now:
           oneDark,
+          EditorView.editable.of(!readOnly),
         ],
       }),
     });
