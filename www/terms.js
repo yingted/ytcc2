@@ -36,6 +36,7 @@ function renderTerms({html}) {
 
           <h2>Don't rely on this website</h2>
           <ul>
+            <li>This website can delete your captions at any time.</li>
             <li>There is no guarantee this website can do anything useful, or does not do anything harmful.</li>
             <li>The website admin can change anything at any time.</li>
             <li>This website can have bugs, errors, omissions, and other problems.</li>
@@ -61,7 +62,8 @@ function renderTerms({html}) {
           <h2>Your copyrights</h2>
           <ul>
             <li>Only upload data you have copyright to.</li>
-            <li>You give this website the right to publish your uploads forever, until you delete it.</li>
+            <li>You give this website the right to publish your uploads until you stop sharing.</li>
+            <li>If you give someone the sharing link, you also give them the right to use the captions how they want, forever.</li>
             <li>Even if you delete your upload, someone else could have copied it.</li>
             <li>If someone else uploaded your stuff, contact the website to take it down.</li>
           </ul>
@@ -79,10 +81,15 @@ function renderTerms({html}) {
               The YouTube enables YouTube tracking when you play the video.
               You can still use the captions editor without playing the video.
             </li>
-            <li>The captions editor uses your browser language to pick the captions to load and the language to publish in.</li>
+            <li>The captions editor uses your browser language to pick the captions to load.</li>
             <li>
-              The captions editor uses cookies to let you delete your captions after uploading them.
-              If you clear your cookies, you lose this ability.
+              Your captions will be available to anyone either of the links ("view=" and "edit=") after sharing.
+              They can download a copy.
+            </li>
+            <li>
+              Your captions are end-to-end encrypted, meaning that the website can't access the caption contents, or the YouTube video URL.
+              The website can see the size of the uploaded captions.
+              The website can see when and how often each captions was opened, but it doesn't record this.
             </li>
           </ul>
 
