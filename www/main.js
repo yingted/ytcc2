@@ -704,11 +704,11 @@ class BaseUploader {
    * Delete captions.
    * @param {Writer} writer our credentials (which captions to upload to)
    * @param {AbortSignal} signal
-   * @param {string} lastHash current value to delete
+   * @param {string|undefined} lastHash current value to delete
    */
   async delete(writer, signal, lastHash) {
     let nonce = await newNonce(signal);
-    let lastHashSignature = writer.sign(lastHash);
+    let lastHashSignature = lastHash === undefined ? undefined : writer.sign(lastHash);
     let res = await fetch('/captions/' + encodeURIComponent(writer.fingerprint), {
       method: 'DELETE',
       referrer: 'no-referrer',
@@ -961,7 +961,7 @@ class Share {
       videoId: editor.video instanceof YouTubeVideo ? editor.video.videoId : undefined,
       videoIsUnavailable: editor.video instanceof Html5Video,
       // For prologue:
-      doc: editor.view.state.doc.toString(),
+      doc: editor.getText(),
       // For karaoke:
       json3: JSON.parse(new TextDecoder().decode(editor.getJson3Captions())),
     };
@@ -971,6 +971,12 @@ class Share {
    */
   static fromNewEditor(editor, initialShare) {
     let stateRef = new AsyncRef(this._stateFromEditor(editor));
+    // Make sure we're synced up:
+    // TODO: avoid the two history entries:
+    let hasUnsavedChanges = editor.hasUnsavedChanges();
+    editor.setCaptions(decodeJson3FromJson(stateRef.value.json3), /*addToHistory=*/true);
+    editor.setText(stateRef.value.doc, /*addToHistory=*/true);
+    if (!hasUnsavedChanges) editor.setSaved();
     // Return the doc to test for equality:
     editor.docChanged.addListener(doc =>
         stateRef.value = this._stateFromEditor(editor));
@@ -1005,6 +1011,9 @@ class Share {
     // Get the editor:
     if (perms instanceof permissions.Writer) {
       let editor = new CaptionsEditor(video, captions);
+      editor.setCaptions(captions, /*addToHistory=*/false);
+      editor.setText(doc, /*addToHistory=*/false);
+      editor.setSaved();
       return {
         editor,
         share: Share.fromNewEditor(editor, {
@@ -1140,7 +1149,8 @@ class Share {
 
         let sync = new Sync(this._uploader, value, lastHash, this._statusMessage, writer, this._ref, this._setSaved, 5e3);
 
-        await this._waitForUnshare({writer, lastHash: sync.lastHash, sync});
+        // await this._waitForUnshare({writer, lastHash: sync.lastHash, sync});
+        await this._waitForUnshare({writer, sync});
       }
     } catch (e) {
       render(html`
@@ -1294,6 +1304,9 @@ class FileMenu {
     share = shareEditor.share;
     editor = shareEditor.editor;
     video = editor.video;
+
+    // Also render the video:
+    render(video.render(), videoPane);
   }
 
   window.editor = editor;

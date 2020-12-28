@@ -243,12 +243,15 @@ app.delete('/captions/:captionsId', asyncHandler(async (req, res) => {
 
   // Then, check signatures:
   public.verify(nonce, nonceSignature);
-  public.verify(lastHash, lastHashSignature);
+  if (lastHash !== undefined) {
+    public.verify(lastHash, lastHashSignature);
+  }
 
   // This writer wants to publish the encrypted data now (within the last day or so).
   // TTL is hard-coded in main.js.
   await db.withClient(async client => {
-    if (!await verifyLastHash(client, public.fingerprint, lastHash, res)) {
+    if (lastHash !== undefined &&
+        !await verifyLastHash(client, public.fingerprint, lastHash, res)) {
       return;
     }
 

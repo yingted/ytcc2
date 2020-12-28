@@ -19,6 +19,7 @@ class UnsavedChanges {
   constructor() {
     this._isSet = false;
   }
+  get() { return this._isSet; }
   set() {
     if (this._isSet) return;
     this._isSet = true;

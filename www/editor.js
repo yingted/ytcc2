@@ -445,20 +445,27 @@ export class CaptionsEditor {
     // Initialize the captions:
     if (typeof captions === 'string') {
       this.setCaptions(empty, /*addToHistory=*/false);
-      this.view.dispatch(this.view.state.update({
-        changes: {
-          from: 0,
-          to: this.view.state.doc.length,
-          insert: captions,
-        },
-        annotations: [
-          Transaction.addToHistory.of(false),
-        ],
-      }));
+      this.setText(captions, /*addToHistory=*/false);
     } else {
       this.setCaptions(captions, /*addToHistory=*/false);
     }
     this.setSaved();
+  }
+
+  getText() {
+    return this.view.state.doc.toString();
+  }
+  setText(text, addToHistory) {
+    this.view.dispatch(this.view.state.update({
+      changes: {
+        from: 0,
+        to: this.view.state.doc.length,
+        insert: text,
+      },
+      annotations: [
+        Transaction.addToHistory.of(addToHistory),
+      ],
+    }));
   }
 
   /**
@@ -494,6 +501,9 @@ export class CaptionsEditor {
     this._inSetCaptions = false;
   }
 
+  hasUnsavedChanges() {
+    return this._unsavedChanges.get();
+  }
   setSaved() {
     this._unsavedChanges.clear();
   }
