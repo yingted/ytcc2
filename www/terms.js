@@ -70,7 +70,7 @@ function renderTerms({html}) {
 
           <h2>This website's copyrights</h2>
           <ul>
-            <li>The code for this website is <a href="https://github.com/yingted/ytcc2">available on GitHub</a>.</li>
+            <li>Most of the code for this website is <a href="https://github.com/yingted/ytcc2">available on GitHub</a>.</li>
             <li>The license is in the link.</li>
             <li>This website's copyrights don't apply to the embedded videos, uploaded captions, or other linked websites.</li>
           </ul>
@@ -78,13 +78,13 @@ function renderTerms({html}) {
           <h2>Your privacy</h2>
           <ul>
             <li>
-              The YouTube enables YouTube tracking when you play the video.
+              The YouTube player enables YouTube tracking when you play the video.
               You can still use the captions editor without playing the video.
             </li>
             <li>The captions editor uses your browser language to pick the captions to load.</li>
             <li>
-              Your captions will be available to anyone either of the links ("view=" and "edit=") after sharing.
-              They can download a copy.
+              Your captions are available anyone with either of the links ("view=" and "edit=") when sharing.
+              They can download a copy and keep it forever, even if you stop sharing.
             </li>
             <li>
               Your captions are end-to-end encrypted, meaning that the website can't access the caption contents, or the YouTube video URL.
@@ -97,7 +97,7 @@ function renderTerms({html}) {
           <ul>
             <li>
               The website admin can do anything to enforce these terms.
-              For example, delete content that looks like it's violating these terms, or just down the whole website.
+              For example, delete content that looks like it's violating these terms, or just shut down the whole website.
             </li>
           </ul>
         </main>
