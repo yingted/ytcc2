@@ -21,7 +21,7 @@ import {ifDefined} from 'lit-html/directives/if-defined.js';
 import {YouTubeVideo} from './youtube.js';
 import {CaptionsEditor, captionsToText, captionsFromText} from './editor.js';
 import {listTracks, getDefaultTrack} from './youtube_captions.js';
-import {decodeJson3FromJson} from 'ytcc2-captions';
+import {decodeJson3FromJson, empty} from 'ytcc2-captions';
 import {onRender, render0, AsyncRef, Signal} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
 import {youtubeLanguages} from './gen/youtube_languages.js';
@@ -1282,12 +1282,9 @@ class FileMenu {
   if (perms === null) {
     // First load, get the video and editor:
 
-    // TODO: after debugging, actually ask
-    // let captions;
-    // {video, captions} = askForVideoAndCaptions(videoPane);
-    video = new DummyVideo();
-    let captions = captionsFromText('0:00 [Music]');
-    render(video.render(), videoPane);
+    let choice = await askForVideoAndCaptions(videoPane);
+    let captions = choice.captions;
+    video = choice.video;
 
     editor = new CaptionsEditor(video, captions);
     share = Share.fromNewEditor(editor);
