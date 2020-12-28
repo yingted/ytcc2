@@ -49,6 +49,11 @@ function renderTerms({html}) {
             <li>Don't upload personal data.</li>
             <li>Opening a captions file doesn't upload your captions.</li>
             <li>Uploading is optional. You can also save your captions to a file you can send privately.</li>
+            <li>
+              Uploads are end-to-end encrypted.
+              This website can see the size and time of uploading/downloading captions, but not the contents.
+              The YouTube video URL is also encrypted.
+            </li>
           </ul>
 
           <h2>Other people's videos, captions, and websites</h2>
@@ -65,7 +70,10 @@ function renderTerms({html}) {
             <li>You give this website the right to publish your uploads until you stop sharing.</li>
             <li>If you give someone the sharing link, you also give them the right to use the captions how they want, forever.</li>
             <li>Even if you delete your upload, someone else could have copied it.</li>
-            <li>If someone else uploaded your stuff, contact the website to take it down.</li>
+            <li>
+              If someone else uploaded your stuff, contact the website to take it down.
+              You need to provide a link.
+            </li>
           </ul>
 
           <h2>This website's copyrights</h2>
