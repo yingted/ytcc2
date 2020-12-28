@@ -27,6 +27,12 @@ describe('writer', () => {
   it('has a fingerprint', () => {
     expect(typeof writer.fingerprint).toBe('string');
   });
+
+  it('verifies itself', () => {
+    writer.setWriterPublic(permissions.WriterPublic.fromJSON(
+      JSON.parse(JSON.stringify(
+        writer.public.toJSON()))));
+  });
 });
 
 describe('reader', () => {

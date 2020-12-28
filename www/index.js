@@ -138,7 +138,7 @@ app.post('/captions/:captionsId', asyncHandler(async (req, res) => {
     cur = await db.query(`
         INSERT INTO captions(write_fingerprint, read_fingerprint, pubkeys, encrypted_data, delete_at)
           VALUES($1, $2, $3, $4, now() + INTERVAL '30 days')
-      `, [public.fingerprint, readerFingerprint, pubkeys, encrypted]);
+      `, [public.fingerprint, readerFingerprint, JSON.stringify(pubkeys), encrypted]);
     res.sendStatus(cur.rowCount === 1 ? 200 : 500);
     return;
   }
@@ -196,7 +196,7 @@ app.get('/captions/:captionsId', asyncHandler(async (req, res) => {
       AND t.delete_at > now()
     LIMIT 2
   `, [captionsId])).rows.map(({pubkeys, encrypted_data}) => ({
-    pubkeys,
+    pubkeys: JSON.parse(pubkeys),
     encryptedData: encrypted_data,
   }));
 

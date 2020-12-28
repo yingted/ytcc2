@@ -21,6 +21,7 @@ import {ifDefined} from 'lit-html/directives/if-defined.js';
 import {YouTubeVideo} from './youtube.js';
 import {CaptionsEditor, captionsToText, captionsFromText} from './editor.js';
 import {listTracks, getDefaultTrack} from './youtube_captions.js';
+import {decodeJson3FromJson} from 'ytcc2-captions';
 import {onRender, render0, AsyncRef, Signal} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
 import {youtubeLanguages} from './gen/youtube_languages.js';
@@ -727,11 +728,42 @@ class BaseUploader {
       throw new Error('could not delete captions');
     }
   }
+
+  /**
+   * Download captions
+   * @param {Writer|Reader} perms
+   * @param {AbortSignal} signal
+   * @returns {{value: Value, lastHash: string}}
+   */
+  async download(perms, signal) {
+    // Note that we're fetching with either the reader or writer fingerprint.
+    // The server accepts both.
+    let res = await fetch('/captions/' + encodeURIComponent(perms.fingerprint), {
+      method: 'GET',
+      referrer: 'no-referrer',
+      signal,
+    });
+    if (!res.ok) {
+      throw new Error('could not get captions');
+    }
+    let {pubkeys, encryptedData} = await res.json();
+
+    // Verify everything:
+    perms.setWriterPublic(permissions.WriterPublic.fromJSON(pubkeys));
+
+    return {
+      value: this.deserialize(perms.decrypt(encryptedData)),
+      lastHash: permissions.hashUtf8(encryptedData),
+    };
+  }
 }
 
 class JsonUploader extends BaseUploader {
   serialize(value) {
     return JSON.stringify(value);
+  }
+  deserialize(serialized) {
+    return JSON.parse(serialized);
   }
   equals(a, b) {
     return a === b || this.serialize(a) === this.serialize(b);
@@ -745,17 +777,17 @@ class Sync {
   /**
    * @param {{upload: function}} uploader
    * @param {Value} value the last uploaded value
-   * @param {string} uploadHash the last upload hash
+   * @param {string} lastHash the last upload hash
    * @param {Element} statusMessage the status message container
    * @param {Writer} writer our credentials
    * @param {AsyncRef} ref a reference to the current state
    * @param {function} setSaved called when we're up-to-date
    * @param {number} delayMs how long to wait before autosaving
    */
-  constructor(uploader, value, uploadHash, statusMessage, writer, ref, setSaved, delayMs) {
+  constructor(uploader, value, lastHash, statusMessage, writer, ref, setSaved, delayMs) {
     this._uploader = uploader
     this._value = value;
-    this.uploadHash = uploadHash;
+    this.lastHash = lastHash;
     this.statusMessage = statusMessage;
     this._controller = new AbortController();
     this._writer = writer;
@@ -789,8 +821,8 @@ class Sync {
 
     // Upload the captions interruptibly:
     try {
-      // Update uploadHash and value on success:
-      this.uploadHash = await this._uploader.upload(this._writer, value, signal, this.uploadHash);
+      // Update lastHash and value on success:
+      this.lastHash = await this._uploader.upload(this._writer, value, signal, this.lastHash);
       this._value = value;
     } catch (e) {
       render(`Upload error: ${e.message}`, this.statusMessage);
@@ -866,7 +898,7 @@ function permissionsToUrl(perms) {
  * Permalink thread.
  */
 class Share {
-  constructor(uploader, ref, setSaved) {
+  constructor(uploader, ref, setSaved, initialShare) {
     this._uploader = uploader;
     this._ref = ref;
     this._setSaved = setSaved;
@@ -904,7 +936,7 @@ class Share {
     `);
 
     if (this._uploader) {
-      this._run();
+      this._run(initialShare);
     }
   }
   /**
@@ -927,19 +959,22 @@ class Share {
     return {
       version: 1,
       videoId: editor.video instanceof YouTubeVideo ? editor.video.videoId : undefined,
+      videoIsUnavailable: editor.video instanceof Html5Video,
+      // For prologue:
       doc: editor.view.state.doc.toString(),
-      captions: editor._rawCaptions,
+      // For karaoke:
+      json3: JSON.parse(new TextDecoder().decode(editor.getJson3Captions())),
     };
   }
   /**
    * Share a doc in "unsaved" state.
    */
-  static fromNewEditor(editor) {
+  static fromNewEditor(editor, initialShare) {
     let stateRef = new AsyncRef(this._stateFromEditor(editor));
     // Return the doc to test for equality:
     editor.docChanged.addListener(doc =>
         stateRef.value = this._stateFromEditor(editor));
-    return new Share(new JsonUploader(), stateRef, editor.setSaved.bind(editor));
+    return new Share(new JsonUploader(), stateRef, editor.setSaved.bind(editor), initialShare);
   }
   /**
    * Load an editor from the server. editor.video will be set as well.
@@ -948,14 +983,38 @@ class Share {
    */
   static async loadWithEditor(perms) {
     let uploader = new JsonUploader();
-    debugger;
-    throw new Error('not implemented');
-    let {state, uploadHash} = await uploader.download(perms);
+    let {value, lastHash} = await uploader.download(perms);
+
+    // Decode the state:
+    if (value.version !== 1) {
+      throw new Error('unsupported version');
+    }
+    let {doc, videoId, videoIsUnavailable} = value;
+    let captions = decodeJson3FromJson(value.json3);
+
+    // Get the video
+    let video;
+    if (videoId !== undefined) {
+      video = new YouTubeVideo(videoId);
+    } else if (videoIsUnavailable) {
+      video = new DummyVideo('Video is unavailable.');
+    } else {
+      video = new DummyVideo();
+    }
+
+    // Get the editor:
     if (perms instanceof permissions.Writer) {
+      let editor = new CaptionsEditor(video, captions);
+      return {
+        editor,
+        share: Share.fromNewEditor(editor, {
+          writer: perms,
+          value,
+          lastHash,
+        }),
+      };
     }
     if (perms instanceof permissions.Reader) {
-      let video = 0();
-      let captions = 0();
       return {
         editor: new CaptionsEditor(video, captions, {readOnly: true}),
         share: Share.readonly(perms),
@@ -1033,14 +1092,14 @@ class Share {
 
     // Wait for share response:
     let value = this._ref.value;
-    let uploadHash = await this._uploader.upload(writer, value);
+    let lastHash = await this._uploader.upload(writer, value);
     this._updatePermalink(/*busy=*/false, /*link=*/permissionsToUrl(writer.reader));
     // TTL is hard-coded in index.js:
     render('Link copied. Expires in 30 days.', this._statusMessage);
 
-    return {writer, value, uploadHash};
+    return {writer, value, lastHash};
   }
-  async _waitForUnshare({writer, uploadHash, sync}) {
+  async _waitForUnshare({writer, lastHash, sync}) {
     let thiz = this;
 
     // Wait for unshare request:
@@ -1060,18 +1119,28 @@ class Share {
     await sync.join();
 
     // Wait for unshare response:
-    await this._uploader.delete(writer, undefined, uploadHash);
+    await this._uploader.delete(writer, undefined, lastHash);
     this._updatePermalink(/*busy=*/false, /*link=*/'');
     render('Sharing stopped.', thiz._statusMessage);
   }
-  async _run() {
+  async _run(initialShare) {
     try {
       for (;;) {
-        let {writer, value, uploadHash} = await this._waitForShare();
+        let share;
+        if (initialShare) {
+          share = initialShare;
+          initialShare = undefined;
+          render('Opened captions.', this._statusMessage);
+          this._updatePermalink(/*busy=*/false, /*link=*/permissionsToUrl(share.writer.reader));
+        } else {
+          share = await this._waitForShare();
+        }
 
-        let sync = new Sync(this._uploader, value, uploadHash, this._statusMessage, writer, this._ref, this._setSaved, 30e3);
+        let {writer, value, lastHash} = share;
 
-        await this._waitForUnshare({writer, uploadHash, sync});
+        let sync = new Sync(this._uploader, value, lastHash, this._statusMessage, writer, this._ref, this._setSaved, 30e3);
+
+        await this._waitForUnshare({writer, lastHash: sync.lastHash, sync});
       }
     } catch (e) {
       render(html`
@@ -1224,7 +1293,7 @@ class FileMenu {
     share = Share.fromNewEditor(editor);
   } else {
     // Restore the Share state:
-    let shareEditor = Share.loadWithEditor(perms);
+    let shareEditor = await Share.loadWithEditor(perms);
     share = shareEditor.share;
     editor = shareEditor.editor;
     video = editor.video;

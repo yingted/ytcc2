@@ -8,8 +8,8 @@ import {empty, toHtml} from 'ytcc2-captions';
  * Dummy video element.
  */
 export class DummyVideo {
-  constructor(url, options) {
-    this.url = url;
+  constructor(title, options) {
+    this._title = title || '';
     options = options || {};
     this._time = 0;
     this._update = new Signal();
@@ -65,6 +65,7 @@ export class DummyVideo {
         </div>
       </div>
       <div style="width: 100%; height: 100%; background-color: #ccc;">
+        ${this._title}
       </div>
     `;
   }

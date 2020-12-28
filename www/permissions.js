@@ -398,6 +398,16 @@ class Writer {
     this._reader._writerPublic = this._public;
   }
 
+  /**
+   * @param {WriterPublic} writer
+   * @throws if the writer could not be verified
+   */
+  setWriterPublic(writer) {
+    if (this.fingerprint !== writer.fingerprint) {
+      throw new TypeError('could not verify writer');
+    }
+  }
+
   static random() {
     return new Writer(randomSecret());
   }
