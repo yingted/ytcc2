@@ -903,9 +903,6 @@ class Share {
     this._ref = ref;
     this._setSaved = setSaved;
 
-    this._iAgree = render0(html`
-      <input type="checkbox" required>
-    `);
     this._permalinkWidget = render0(html`
       <div style="display: flex;">
       </div>
@@ -1056,10 +1053,7 @@ class Share {
           @submit=${function(e) {
             e.preventDefault();
           }}>
-        <label>
-          ${this._iAgree}
-          I agree to the <a href="/terms">terms of service</a>.
-        </label>
+        By clicking "Share", I agree to the <a href="/terms">terms of service</a>.
         ${this._permalinkWidget}
         ${this._statusMessage}
       </form>
@@ -1084,9 +1078,6 @@ class Share {
     // Wait for share request:
     this._updatePermalink(/*busy=*/false, /*link=*/'');
     await new Promise(resolve => thiz._shareButton.onclick = function() {
-      if (!thiz._iAgree.reportValidity()) {
-        return;
-      }
       thiz._shareButton.onclick = null;
 
       // Show new share state immediately:
