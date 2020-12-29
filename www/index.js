@@ -246,7 +246,7 @@ app.post('/ytasr_proxy/:videoId', asyncHandler(async (req, res) => {
 
   // Verify the proof of work:
   try {
-    await verifyAsync(nonce, /*iters=*/1000, /*length=*/8192, pow);
+    await verifyAsync(nonce, /*iters=*/100, /*length=*/8192, pow);
   } catch (e) {
     if (e.message === 'PoW is invalid') {
       res.sendStatus(400);

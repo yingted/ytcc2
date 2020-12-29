@@ -6,6 +6,21 @@ function encodeUtf8(s) {
   return new TextEncoder().encode(s);
 }
 
+function toBase64(bytes) {
+  if (isNode) {
+    return Buffer.from(bytes).toString('base64');
+  } else {
+    return window.btoa(String.fromCharCode.apply(String, bytes));
+  }
+}
+function fromBase64(b64) {
+  if (isNode) {
+    return Buffer.from(b64, 'base64');
+  } else {
+    return window.atob(b64).split('').map(c => c.charCodeAt(0));
+  }
+}
+
 /**
  * Generate a proof of work.
  * @param {string} nonce a unicode string
@@ -37,7 +52,7 @@ async function generateAsync(nonce, iters, length) {
     }
     bytes[i] = b;
   }
-  return window.btoa(String.fromCharCode.apply(String, bytes));
+  return toBase64(bytes);
 }
 
 /**
@@ -64,7 +79,7 @@ function ceil_ilog2(x) {
  * @throws if it's invalid
  */
 async function verifyAsync(nonce, iters, length, pow) {
-  let bytes = Buffer.from(pow, 'base64');
+  let bytes = fromBase64(pow);
   if (bytes.length !== (length + 7) >> 3) {
     throw new Error('PoW is invalid');
   }

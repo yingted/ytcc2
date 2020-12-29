@@ -452,7 +452,7 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
                     // Solve the PoW:
                     render(`Removing robots...`, proxyStatus);
                     let nonce = await newNonce();
-                    let pow = await generateAsync(nonce, /*iters=*/1000, /*length=*/8192);
+                    let pow = await generateAsync(nonce, /*iters=*/100, /*length=*/8192);
 
                     render(`Checking captions...`, proxyStatus);
                     let res;
