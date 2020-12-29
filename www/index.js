@@ -33,6 +33,7 @@ const tmp = require('tmp-promise');
 const {spawn} = require('child_process');
 const fs = require('fs').promises;
 const path = require('path');
+const morgan = require('morgan');
 require('jsdom-global')();
 global.DOMParser = window.DOMParser;
 tmp.setGracefulCleanup();
@@ -50,6 +51,14 @@ app.use(expressStaticGzip('static', {
   index: false,
   orderPreference: ['br', 'gz'],
 }));
+if (!production) {
+  app.use(morgan('combined', {
+    skip: function (req, res) {
+      if (req.path === '/favicon.ico') return true;
+      return res.statusCode < 400;
+    },
+  }));
+}
 
 function asyncHandler(handler) {
   return function(req, res) {
@@ -64,6 +73,14 @@ app.get('/terms', (req, res) => {
   renderToStream(renderTerms({html})).pipe(res);
 });
 
+if (!production) {
+  app.post('/log_debug_error', (req, res) => {
+    let {message, source, lineno, colno, stack} = req.body;
+    let where = source ? ` at ${source}:${lineno}:${colno}` : '';
+    console.error(`Frontend error${where}: ${message}\n${stack}`);
+  });
+}
+
 app.get('/', (req, res) => {
   renderToStream(html`
     <!DOCTYPE html>
@@ -77,6 +94,43 @@ app.get('/', (req, res) => {
       </head>
       <body style="margin: 0 auto; max-width: 640px;">
         <noscript>You need JavaScript to view this page.</noscript>
+        ${production ? [] : html`
+          <h2>
+            <font color="red">Internal: recording activity and errors</font>
+          </h2>
+          <script>
+            window.onerror = function(message, source, lineno, colno, error) {
+              fetch('/log_debug_error', {
+                method: 'POST',
+                referrer: 'no-referrer',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  message, source, lineno, colno,
+                  stack: error.stack,
+                }),
+              });
+            };
+            window.onunhandledrejection = function(event) {
+              var e = (event || {}).reason || {message: event + ''};
+              fetch('/log_debug_error', {
+                method: 'POST',
+                referrer: 'no-referrer',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  message: (e.name || 'Error') + ': ' + (e.message || ''),
+                  source: e.fileName,
+                  lineno: e.lineNumber,
+                  colno: e.columnNumber,
+                  stack: e.stack,
+                }),
+              });
+            };
+          </script>
+        `}
         <script src="/main.bundle.js"></script>
 
         ${renderFooter({html})}

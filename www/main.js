@@ -187,6 +187,12 @@ render(html`
     </style>
     <h1>Edit captions</h1>
 
+    ${window.onerror ? html`
+      <h2>
+        <font color="red">Internal: recording activity and errors</font>
+      </h2>
+    ` : []}
+
     <div id="file-menubar">
     </div>
 
