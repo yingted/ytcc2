@@ -387,6 +387,24 @@ async function askForVideo() {
   });
 }
 
+function getLanguages() {
+  let langs = [];
+  let langSet = new Set();
+  let add = function add(lang) {
+    if (langSet.has(lang)) return;
+    langSet.add(lang);
+    langs.push(lang);
+    if (/-/.test(lang)) {
+      add(lang.replace(/-.*/, ''));
+    }
+  };
+  add(navigator.language);
+  for (let lang in navigator.languages) {
+    add(lang);
+  }
+  return langs;
+}
+
 /**
  * Ask the user for the YouTube captions. Can be cancelled.
  *
@@ -409,7 +427,7 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
 
     let askForMoreTracks = function askForMoreTracks() {
       return new Promise(resolve => {
-        let langs = window.navigator.languages.filter(lang => {
+        let langs = getLanguages().filter(lang => {
           return asrLanguages.indexOf(lang) !== -1;
         });
         let checkButton;
@@ -504,7 +522,7 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
 
               <div>
                 <label>
-                  <input type="checkbox" required>
+                  <input type="checkbox" required checked>
                   I'm not a robot.
                 </label>
               </div>
