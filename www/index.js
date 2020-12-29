@@ -100,34 +100,38 @@ app.get('/', (req, res) => {
           </h2>
           <script>
             window.onerror = function(message, source, lineno, colno, error) {
-              fetch('/log_debug_error', {
-                method: 'POST',
-                referrer: 'no-referrer',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  message, source, lineno, colno,
-                  stack: error.stack,
-                }),
-              });
+              try {
+                fetch('/log_debug_error', {
+                  method: 'POST',
+                  referrer: 'no-referrer',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    message, source, lineno, colno,
+                    stack: error.stack,
+                  }),
+                });
+              } catch (e) {}
             };
             window.onunhandledrejection = function(event) {
               var e = (event || {}).reason || {message: event + ''};
-              fetch('/log_debug_error', {
-                method: 'POST',
-                referrer: 'no-referrer',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  message: (e.name || 'Error') + ': ' + (e.message || ''),
-                  source: e.fileName,
-                  lineno: e.lineNumber,
-                  colno: e.columnNumber,
-                  stack: e.stack,
-                }),
-              });
+              try {
+                fetch('/log_debug_error', {
+                  method: 'POST',
+                  referrer: 'no-referrer',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    message: (e.name || 'Error') + ': ' + (e.message || ''),
+                    source: e.fileName,
+                    lineno: e.lineNumber,
+                    colno: e.columnNumber,
+                    stack: e.stack,
+                  }),
+                }).catch(function() {});
+              } catch (e) {}
             };
           </script>
         `}
