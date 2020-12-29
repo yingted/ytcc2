@@ -134,7 +134,11 @@ function base64ToUint8Array(data) {
 }
 
 function safeDecodeUtf8(bytes) {
-  return new TextDecoder('utf-8', {fatal: true, ignoreBOM: true}).decode(bytes);
+  let text = new TextDecoder('utf-8', {fatal: true, ignoreBOM: true}).decode(bytes);
+  if (text.charCodeAt(0) === 65279) {
+    text = text.substring(1);
+  }
+  return text;
 }
 /**
  * Safely encode UTF-8.
