@@ -21,7 +21,7 @@ import {ifDefined} from 'lit-html/directives/if-defined.js';
 import {YouTubeVideo} from './youtube.js';
 import {CaptionsEditor, captionsToText, captionsFromText} from './editor.js';
 import {listTracks, getDefaultTrack} from './youtube_captions.js';
-import {decodeJson3FromJson, empty} from 'ytcc2-captions';
+import {decodeJson3FromJson, decodeSrv3, stripRaw, empty} from 'ytcc2-captions';
 import {onRender, render0, AsyncRef, Signal} from './util.js';
 import dialogPolyfill from 'dialog-polyfill';
 import {youtubeLanguages} from './gen/youtube_languages.js';
@@ -33,6 +33,8 @@ import {ChangeSet, tagExtension} from '@codemirror/next/state';
 import {unfoldAll, foldAll} from '@codemirror/next/fold';
 import {Html5Video, DummyVideo} from './video.js';
 import * as permissions from './permissions.js';
+import {generateAsync} from './pow.js';
+import {asrLanguages} from './youtube_languages.js';
 
 // Browser workarounds:
 // Remove noscript:
@@ -403,6 +405,128 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
     picker.setTracks(tracks);
     picker.selectTrack(defaultTrack);
 
+    let proxyStatus;
+
+    let askForMoreTracks = function askForMoreTracks() {
+      return new Promise(resolve => {
+        let langs = window.navigator.languages.filter(lang => {
+          return asrLanguages.indexOf(lang) !== -1;
+        });
+        let checkButton;
+        let dialog = render0(html`
+          <dialog
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="youtube-proxy-dialog-heading"
+              @render=${registerDialog}
+              @cancel=${function(e) {
+                resolve(null);
+              }}
+              @close=${function(e) {
+                document.body.removeChild(dialog);
+              }}>
+            <style>
+              .youtube-proxy-form button {
+                min-height: var(--touch-target-size);
+              }
+              .youtube-proxy-form a[href],
+              .youtube-proxy-form label:not(.readonly) {
+                display: inline-block;
+                padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
+              }
+            </style>
+            <h2 id="youtube-proxy-dialog-heading">Check for new automatic captions</h2>
+
+            YouTube's new auto captions don't support hotlinking.<br>
+            This website can check for captions on your behalf.
+
+            <form method="dialog" class="youtube-proxy-form"
+                @submit=${async function(e) {
+                  if (checkButton.disabled) return;
+                  checkButton.disabled = true;
+                  e.preventDefault();
+
+                  try {
+                    // This part is slow, so show progress to the user:
+
+                    // Solve the PoW:
+                    render(`Removing robots...`, proxyStatus);
+                    let nonce = await newNonce();
+                    let pow = await generateAsync(nonce, /*iters=*/1000, /*length=*/8192);
+
+                    render(`Checking captions...`, proxyStatus);
+                    let res;
+                    try {
+                      res = await fetch('/ytasr_proxy/' + encodeURIComponent(videoId), {
+                        method: 'POST',
+                        referrer: 'no-referrer',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          nonce,
+                          pow,
+                          langs,
+                        }),
+                      });
+                    } catch (e) {
+                      render(`Error: ${e.message}`, proxyStatus);
+                      return;
+                    }
+
+                    if (!res.ok) {
+                      render(`Error: ${res.statusText}`, proxyStatus);
+                      return;
+                    }
+
+                    let {tracks} = await res.json();
+                    tracks = tracks.map(({lang, srv3}) => new AsrProxyTrack(videoId, lang, srv3));
+
+                    dialog.close();
+                    resolve(tracks);
+                  } finally {
+                    checkButton.disabled = false;
+                  }
+                }}>
+              <div>
+                <label class="readonly">
+                  YouTube video URL:<br>
+                  <input type="text" value="youtu.be/${videoId}" readonly>
+                </label>
+              </div>
+
+              <div>
+                <label class="readonly">
+                  Languages:<br>
+                  <input type="text" value=${langs.join(',')} readonly required>
+                </label>
+              </div>
+
+              <div>
+                <label>
+                  <input type="checkbox" required>
+                  I'm not a robot.
+                </label>
+              </div>
+
+              ${checkButton = render0(html`<button><b>Check</b></button>`)}
+              <button type="button" @click=${function(e) {
+                dialog.close();
+                resolve(null);
+              }}>
+                <span class="cancel-icon"></span>Cancel
+              </button>
+            </form>
+
+            ${proxyStatus = render0(html`<div role="alert" aria-live="polite"></div>`)}
+          </dialog>
+        `);
+        document.body.appendChild(dialog);
+        dialog.showModal();
+      });
+    };
+
+    let pickerContainer;
     let dialog = render0(html`
       <dialog
           role="dialog"
@@ -453,20 +577,27 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
             .youtube-track-picker-form button {
               min-height: var(--touch-target-size);
             }
-            .youtube-track-picker-form a[href] {
+            .youtube-track-picker-form a[href],
+            .youtube-track-picker-form label:not(.readonly) {
               display: inline-block;
               padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
             }
           </style>
-          <div>
-            ${picker.renderOnce()}
-          </div>
+          ${pickerContainer = render0(html`
+            <div>
+              ${picker.renderOnce()}
+            </div>
+          `)}
 
-          <p>
-            <!-- TODO -->
-            Not all captions appear here yet.
-            I'm working on it.
-          </p>
+          Can't find the captions? <a href="javascript:" @click=${async function(e) {
+            let moreTracks = await askForMoreTracks();
+            if (moreTracks === null) return;
+
+            let allTracks = moreTracks.concat(tracks);
+            picker.setTracks(allTracks);
+            picker.selectTrack(getDefaultTrack(allTracks));
+            render(picker.renderOnce(), pickerContainer);
+          }}>Check for more</a><br>
 
           <button><b>Open</b></button>
           <button type="button" @click=${function(e) {
@@ -892,6 +1023,53 @@ function permissionsToUrl(perms) {
     return new URL(location.origin + '/');
   }
   throw new TypeError('invalid perms');
+}
+
+class AsrProxyTrack {
+  /**
+   * Make a new captions
+   * @param {string} videoId
+   * @param {string} lang language ISO code
+   * @param {string} srv3 the srv3 XML
+   */
+  constructor(videoId, lang, srv3) {
+    this._videoId = videoId;
+    this._languageIsoCode = lang;
+    this._srv3 = srv3;
+  }
+
+  _friendlyLanguage() {
+    let isoCode = this._languageIsoCode;
+    for (let {id, name} of youtubeLanguages) {
+      if (id === isoCode) return name;
+    }
+    return `(${isoCode})`;
+  }
+
+  /**
+   * @returns {string}
+   */
+  get name() {
+    return `YouTube automatic ${this._friendlyLanguage()}`;
+  }
+
+  /**
+   * @returns {string}
+   */
+  get id() {
+    return 'ytasr-' + this._languageIsoCode;
+  }
+
+  get languageIsoCode() {
+    return this._languageIsoCode;
+  }
+
+  /**
+   * Get the captions
+   */
+  getCaptions() {
+    return stripRaw(decodeSrv3(this._srv3));
+  }
 }
 
 /**

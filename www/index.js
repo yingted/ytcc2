@@ -27,8 +27,15 @@ const upload = multer();
 const nacl = require('tweetnacl');
 const base52 = require('./base52.js');
 const {WriterPublic, hashUtf8} = require('./permissions.js');
+const {verifyAsync} = require('./pow.js');
+const {asrLanguages} = require('./youtube_languages.js');
+const tmp = require('tmp-promise');
+const {spawn} = require('child_process');
+const fs = require('fs').promises;
+const path = require('path');
 require('jsdom-global')();
 global.DOMParser = window.DOMParser;
+tmp.setGracefulCleanup();
 
 if (['production', 'development', undefined].indexOf(process.env.NODE_ENV) === -1) {
   throw new Error('Expected NODE_ENV=production or NODE_ENV=development (default), got ' + process.env.NODE_ENV);
@@ -209,6 +216,107 @@ app.get('/captions/:captionsId', asyncHandler(async (req, res) => {
     return;
   }
   res.json(tracks[0]);
+}));
+
+app.post('/ytasr_proxy/:videoId', asyncHandler(async (req, res) => {
+  // Validate this request:
+  let {videoId} = req.params;
+  let {
+    nonce,
+    pow,
+    langs,
+  } = req.body;
+
+  // First, check nonce:
+  let cur = await db.query(`
+    DELETE FROM nonces AS t
+    WHERE t.nonce=$1
+      AND t.delete_at > now()
+  `, [nonce]);
+  if (cur.rowCount !== 1) {
+    res.sendStatus(404);
+    return;
+  }
+
+  // Check videoId:
+  if (!/^[0-9A-Za-z_-]{10}[048AEIMQUYcgkosw]$/.test(videoId)) {
+    res.sendStatus(400);
+    return;
+  }
+
+  // Verify the proof of work:
+  try {
+    await verifyAsync(nonce, /*iters=*/1000, /*length=*/8192, pow);
+  } catch (e) {
+    if (e.message === 'PoW is invalid') {
+      res.sendStatus(400);
+      return;
+    }
+    throw e;
+  }
+
+  langs = langs.filter(lang => asrLanguages.indexOf(lang) !== -1);
+
+  await tmp.withDir(async o => {
+    let args = [
+      'https://www.youtube.com/watch?v=' + encodeURIComponent(videoId),
+      '--write-auto-sub',
+      '--sub-lang=' + encodeURIComponent(langs.join(',')),
+      '--skip-download',
+      '--sub-format=srv3',
+      '-o', path.join(o.path, 'captions'),
+    ];
+    if (!production) {
+      console.log('running:', ['youtube-dl'].concat(args));
+    }
+    let ytdl = spawn('youtube-dl', args, {stdio: production ? 'ignore' : 'inherit'});
+
+    let timeout = setTimeout(function() {
+      ytdl.kill();
+      timeout = setTimeout(function() {
+        timeout = null;
+        ytdl.kill(9);
+      }, 1000);
+    }, 10 * 1000);
+
+    let code = await new Promise(resolve => {
+      ytdl.on('exit', (code, signal) => {
+        if (timeout !== null) {
+          clearTimeout(timeout);
+        }
+
+        resolve(code);
+      });
+    });
+
+    if (code !== 0) {
+      res.sendStatus(500);
+      return;
+    }
+
+    let files = [];
+    for await (const file of await fs.opendir(o.path)) {
+      let m = file.name.match(/^captions\.(.*)\.srv3$/);
+      if (!m) continue;
+
+      let lang = m[1];
+      if (langs.indexOf(lang) === -1) continue;
+
+      files.push({
+        lang,
+        path: path.join(o.path, file.name),
+      });
+    }
+
+    let tracks = await Promise.all(
+      files.map(async ({lang, path}) => {
+        // Assume UTF-8 so we can return a JSON string:
+        // Avoid filetype sniffing security issues this way.
+        let srv3 = await fs.readFile(path, {encoding: 'utf-8'});
+        return {lang, srv3};
+      }));
+    res.json({tracks});
+  }, {unsafeCleanup: true});
 }));
 
 // Delete a specific captions:

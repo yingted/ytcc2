@@ -21,6 +21,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import {babel} from '@rollup/plugin-babel';
 import copy from 'rollup-plugin-copy';
 import execute from 'rollup-plugin-execute';
+import ignore from 'rollup-plugin-ignore';
 let {listLanguages} = require('./youtube_trusted.js');
 let fs = require('fs').promises;
 
@@ -71,6 +72,10 @@ export default [{
   },
   plugins: [
     generateLanguages(),
+    ignore([
+      '@peculiar/webcrypto',
+      'fastestsmallesttextencoderdecoder',
+    ]),
     resolve({
       browser: true,
     }),

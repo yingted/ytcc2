@@ -272,7 +272,7 @@ class TrackPicker {
 
 export async function fetchCaptions(track) {
   if (track === null) return null;
-  if (track instanceof UnofficialTrack) {
+  if (track.getCaptions) {
     return track.getCaptions();
   } else {
     return stripRaw(decodeJson3FromJson(await track.fetchJson3()));

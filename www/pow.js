@@ -1,6 +1,6 @@
-const {Crypto} = require('@peculiar/webcrypto');
-const crypto = new Crypto();
-const {TextEncoder} = require('fastestsmallesttextencoderdecoder');
+const isNode = require('detect-node');
+const crypto = isNode ? new (require('@peculiar/webcrypto').Crypto)() : window.crypto;
+const TextEncoder = isNode ? require('fastestsmallesttextencoderdecoder').TextEncoder : window.TextEncoder;
 
 function encodeUtf8(s) {
   return new TextEncoder().encode(s);

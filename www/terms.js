@@ -95,7 +95,7 @@ function renderTerms({html}) {
               They can download a copy and keep it forever, even if you stop sharing.
             </li>
             <li>
-              Your captions are end-to-end encrypted, meaning that the website can't access the caption contents, or the YouTube video URL.
+              Your captions are end-to-end encrypted, meaning that the website can't access the caption contents.
               The website can see the size of the uploaded captions.
               The website can see when and how often each captions was opened, but it doesn't record this.
             </li>
