@@ -26,6 +26,7 @@ let seq_parser: int Parser.t = Parser.(first (pair text_int any_newline))
 let rem: float -> float -> float =
   [%raw {| function rem(a, b) { return a % b; } |}]
 let round: float -> float = [%raw {| Math.round |}]
+let floor: float -> float = [%raw {| Math.floor |}]
 let divmod a b: int * float =
   let rem = rem a b in
   (int_of_float (round ((a -. rem) /. b)), rem)
@@ -46,8 +47,8 @@ let time_parser: Track.seconds Parser.t =
       | (secs, tail) -> Ok (secs, tail)
       | exception Scanf.Scan_failure err -> Error (Invalid_time err))
     ~encode:(fun (ss, tail) ->
-      let (ss, mmm) = divmod ss 1. in
-      let mmm = int_of_float (round (mmm *. 1000.)) in
+      let (ss, mmm) = divmod (ss +. 0.0005) 1. in
+      let mmm = int_of_float (floor (mmm *. 1000.)) in
       let (mm, ss) = idivmod ss 60 in
       let (hh, mm) = idivmod mm 60 in
       Printf.sprintf "%02d:%02d:%02d,%03d" hh mm ss mmm ^ tail)
@@ -73,8 +74,8 @@ let short_time_parser: Track.seconds Parser.t =
       | (secs, tail) -> Ok (secs, tail)
       | exception Scanf.Scan_failure err -> Error (Invalid_time err))
     ~encode:(fun (ss, tail) ->
-      let (ss, mmm) = divmod ss 1. in
-      let mmm = int_of_float (round (mmm *. 100.)) in
+      let (ss, mmm) = divmod (ss +. 0.005) 1. in
+      let mmm = int_of_float (floor (mmm *. 100.)) in
       let (mm, ss) = idivmod ss 60 in
       let (hh, mm) = idivmod mm 60 in
       if hh = 0
