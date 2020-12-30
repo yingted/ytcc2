@@ -36,6 +36,7 @@ import {oneDark} from '@codemirror/next/theme-one-dark';
 import {newUnsavedChanges} from './unsaved_changes.js';
 import {DummyVideo} from './video.js';
 import {Signal} from './util.js';
+import {insertNewline} from "@codemirror/next/commands";
 
 function assert(cond) {
   console.assert(cond);
@@ -393,12 +394,17 @@ export class CaptionsEditor {
     // Widgets:
     this.video = video || new DummyVideo();
     this.docChanged = new Signal();
+    let addCue = (function addCue(view) {
+      this.addCue(this.video.getCurrentTime(), '');
+      return true;
+    }).bind(this);
     this.view = new EditorView({
       state: EditorState.create({
         doc: '',
         extensions: [
           history(),
           keymap([
+            {key: "Enter", run: addCue, shift: insertNewline},
             ...homeEndKeymap,
             ...historyKeymap,
             ...searchKeymap,

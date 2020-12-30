@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import {EditorState, EditorSelection, Transaction} from "@codemirror/next/state";
-import {getIndentation} from "@codemirror/next/language";
-import {insertNewline} from "@codemirror/next/commands";
+import {EditorState, EditorSelection, Transaction} from '@codemirror/next/state';
+import {getIndentation} from '@codemirror/next/language';
+import {insertNewline} from '@codemirror/next/commands';
 
 /**
  * Get the new cursor position for a Home/End command.
@@ -63,7 +63,7 @@ function mapRanges(selection, f) {
  * @returns {Transaction}
  */
 function selectionUpdate(state, selection) {
-  return state.update({selection, scrollIntoView: true, annotations: Transaction.userEvent.of("keyboardselection")});
+  return state.update({selection, scrollIntoView: true, annotations: Transaction.userEvent.of('keyboardselection')});
 }
 
 /**
@@ -105,7 +105,7 @@ export const selectLineBoundaryForward = view => extendRanges(view, range => mov
 export const selectLineBoundaryBackward = view => extendRanges(view, range => moveByLineBoundary(view, range, false));
 
 export const homeEndKeymap = [
-  {key: "Home", run: cursorLineBoundaryBackward, shift: selectLineBoundaryBackward},
-  {key: "End", run: cursorLineBoundaryForward, shift: selectLineBoundaryForward},
-  {key: "Enter", run: insertNewline},
+  {key: 'Home', run: cursorLineBoundaryBackward, shift: selectLineBoundaryBackward},
+  {key: 'End', run: cursorLineBoundaryForward, shift: selectLineBoundaryForward},
+  {key: 'Enter', run: insertNewline},
 ];
