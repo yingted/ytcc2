@@ -70,6 +70,8 @@ type seg = {
   utf8 : string option;
   tOffsetMs : int_ms option;
   pPenId : int option;
+  (* uint8 *)
+  acAsrConf : int option;
 }
 (* A window or text: *)
 type event = {
@@ -429,6 +431,7 @@ let codec' : (track, raw Track.t) Codec.t =
                     utf8 = Some s;
                     tOffsetMs;
                     pPenId;
+                    acAsrConf = None;
                   } in
                   let _ = Js.Array.push seg segs in
                   ()
