@@ -43,9 +43,14 @@ if (['production', 'development', undefined].indexOf(process.env.NODE_ENV) === -
 }
 const production = process.env.NODE_ENV === 'production';
 
+if (!config.email) {
+  throw new Error('Expected config.json to have an email address.');
+}
+
 const app = express();
 app.use(express.text());
 app.use(express.json());
+app.use(express.urlencoded());
 app.use(expressStaticGzip('static', {
   enableBrotli: true,
   index: false,
@@ -78,6 +83,7 @@ if (!production) {
     let {message, source, lineno, colno, stack} = req.body;
     let where = source ? ` at ${source}:${lineno}:${colno}` : '';
     console.error(`Frontend error${where}: ${message}\n${stack}`);
+    res.sendStatus(200);
   });
 }
 
@@ -94,6 +100,11 @@ app.get('/', (req, res) => {
       </head>
       <body style="margin: 0 auto; max-width: 640px;">
         <noscript>You need JavaScript to view this page.</noscript>
+        <script>
+          var params = ${JSON.stringify({
+            emailCharCodes: config.email.split('').map(c => c.charCodeAt(0)),
+          })};
+        </script>
         ${production ? [] : html`
           <h2>
             <font color="red">Internal: recording activity and errors</font>
@@ -255,14 +266,15 @@ app.get('/captions/:captionsId', asyncHandler(async (req, res) => {
   let {captionsId} = req.params;
   // Get the captions tracks:
   let tracks = (await db.query(`
-    SELECT t.pubkeys AS pubkeys, t.encrypted_data AS encrypted_data
+    SELECT t.pubkeys AS pubkeys, t.encrypted_data AS encrypted_data, t.popups>0 AS has_popups
     FROM captions AS t
     WHERE (t.write_fingerprint=$1 OR t.read_fingerprint=$1)
       AND t.delete_at > now()
     LIMIT 2
-  `, [captionsId])).rows.map(({pubkeys, encrypted_data}) => ({
+  `, [captionsId])).rows.map(({pubkeys, encrypted_data, has_popups}) => ({
     pubkeys: JSON.parse(pubkeys),
     encryptedData: encrypted_data,
+    hasPopups: has_popups,
   }));
 
   if (tracks.length === 0) {
@@ -275,6 +287,18 @@ app.get('/captions/:captionsId', asyncHandler(async (req, res) => {
   }
   res.json(tracks[0]);
 }));
+
+app.post('/add_popup', asyncHandler(async (req, res) => {
+  let cur = await db.query(`
+    UPDATE captions AS t
+    SET popups=popups+1
+    WHERE t.read_fingerprint=$1
+      AND t.delete_at > now()
+  `, [req.body.read_fingerprint]);
+
+  res.sendStatus(cur.rowCount === 1 ? 200 : 500);
+}));
+
 
 app.post('/ytasr_proxy/:videoId', asyncHandler(async (req, res) => {
   // Validate this request:

@@ -96,6 +96,10 @@ async function updateSchema() {
         delete_at timestamp NOT NULL,
         PRIMARY KEY(nonce));
     `);
+
+    await update(client, '2-add-popups', `
+      ALTER TABLE captions ADD COLUMN popups integer DEFAULT 0;
+    `);
   } finally {
     client.release();
   }

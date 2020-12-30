@@ -28,7 +28,6 @@ import {youtubeLanguages} from './gen/youtube_languages.js';
 import {box, sign, hash, randomBytes} from 'tweetnacl';
 import {ObjectUrl} from './object_url.js';
 import {fetchCaptions, makeFileInput, HomogeneousTrackPicker} from './track_picker.js';
-import {revertString} from 'codemirror-next-merge';
 import {ChangeSet, tagExtension} from '@codemirror/next/state';
 import {unfoldAll, foldAll} from '@codemirror/next/fold';
 import {Html5Video, DummyVideo} from './video.js';
@@ -206,6 +205,9 @@ render(html`
 
     <div id="share-pane">
     </div>
+
+    <div id="abuse-pane">
+    </div>
   </main>
 `, document.body);
 
@@ -275,7 +277,7 @@ async function askForYouTubeVideo() {
                 autofocus required spellcheck="false">
           </div>
 
-          <button><span class="accept-icon"></span><b>Open</b></button>
+          <button><b>Open</b></button>
           <button type="button" @click=${function(e) {
             dialog.close();
             resolve(null);
@@ -861,7 +863,7 @@ class BaseUploader {
   }
 
   /**
-   * Download captions
+   * Download captions.
    * @param {Writer|Reader} perms
    * @param {AbortSignal} signal
    * @returns {{value: Value, lastHash: string}}
@@ -877,7 +879,7 @@ class BaseUploader {
     if (!res.ok) {
       throw new Error('could not get captions');
     }
-    let {pubkeys, encryptedData} = await res.json();
+    let {pubkeys, encryptedData, hasPopups} = await res.json();
 
     // Verify everything:
     perms.setWriterPublic(permissions.WriterPublic.fromJSON(pubkeys));
@@ -885,6 +887,7 @@ class BaseUploader {
     return {
       value: this.deserialize(perms.decrypt(encryptedData)),
       lastHash: permissions.hashUtf8(encryptedData),
+      hasPopups,
     };
   }
 }
@@ -1164,7 +1167,7 @@ class Share {
    */
   static async loadWithEditor(perms) {
     let uploader = new JsonUploader();
-    let {value, lastHash} = await uploader.download(perms);
+    let {value, lastHash, hasPopups} = await uploader.download(perms);
 
     // Decode the state:
     if (value.version !== 1) {
@@ -1206,6 +1209,7 @@ class Share {
       return {
         editor,
         share: Share.readonly(perms),
+        hasPopups,
       };
     }
     throw new Error('invalid perms');
@@ -1338,6 +1342,126 @@ class Share {
   }
 }
 
+function warnCaptionsAreUnofficial(hasVideo) {
+  return new Promise(resolve => {
+    let dialog = render0(html`
+      <dialog
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="unofficial-warning-heading"
+          @render=${registerDialog}
+          @close=${function(e) {
+            document.body.removeChild(dialog);
+            resolve();
+          }}
+          style="width: calc(min(100%, 25em)); box-sizing: border-box;">
+        <h2 id="unofficial-warning-heading">Unofficial captions</h2>
+
+        <style>
+          .youtube-url-form input,
+          .youtube-url-form button {
+            height: var(--touch-target-size);
+            box-sizing: border-box;
+          }
+        </style>
+        <form class="youtube-url-form" method="dialog">
+          ${hasVideo ?
+            "The captions' author and the video's uploader are" :
+            "The video's uploader is"} <b>not affiliated</b> with this website.<br>
+          Anyone can create and share captions for any video for free.<br>
+
+          <button><b>I understand</b></button>
+        </form>
+      </dialog>
+    `);
+    document.body.appendChild(dialog);
+    dialog.showModal();
+  });
+}
+
+function renderEmail({html}, body) {
+  let email = String.fromCharCode.apply(String, params.emailCharCodes);
+  return html`<a href="mailto:${encodeURIComponent(email)}?body=${encodeURIComponent(body)}">${email}</a>`;
+}
+
+/**
+ * Render the report abuse and request takedown pane.
+ * @params {function} html
+ * @params {string|null} videoId
+ * @params {string} readFingerprint
+ */
+function renderReportAbuse({html}, {videoId, readFingerprint}) {
+  return html`
+    <details>
+      <summary>Report abuse</summary>
+
+      ${videoId ? html`
+        <details>
+          <summary>The video is ...</summary>
+          For issues with <a href="https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}">the YouTube video</a>, please contact YouTube.
+        </details>
+      ` : []}
+
+      <details>
+        <summary>My captions got uploaded without my permission</summary>
+        Email me this page's URL and proof that it's your captions: ${renderEmail({html},
+`Captions URL: ${location.href}
+Please take down my captions. Proof it's my captions: (please fill in)
+`)}.<br>
+      </details>
+
+      <details>
+        <summary>My video shows these captions I don't agree with</summary>
+        Add a pop-up reminder that these captions can be uploaded by anyone:<br>
+        <form action="/add_popup" method="post" class="add-popup-form">
+          <style>
+            .add-popup-form button {
+              min-height: var(--touch-target-size);
+            }
+          </style>
+          <div>
+            <label>
+              Captions ID:
+              <input readonly name="read_fingerprint" value=${readFingerprint}>
+            </label>
+          </div>
+          <button>Add pop-up</button>
+          <button type="button" @click=${function(e) {
+            warnCaptionsAreUnofficial(videoId !== null);
+          }}>Preview pop-up</button>
+        </form>
+      </details>
+
+      <details>
+        <summary>These captions are wrong</summary>
+        Consider asking the author of the captions, who provided the captions to this website.<br>
+        Or, you can <a href="/">create or share your own captions</a> for any video for free.
+        No account needed.
+      </details>
+
+      <details>
+        <summary>There is a bug in this website</summary>
+        Please <a href="https://github.com/yingted/ytcc2/issues/new">report an issue on GitHub</a>.
+      </details>
+
+      <details>
+        <summary>Other</summary>
+        Email me the problem at ${renderEmail({html},
+`Captions URL: ${location.href}
+
+For website issues:
+Preferred language: ${navigator.language}
+All languages: ${navigator.languages}
+Useragent: ${navigator.userAgent}
+
+For copyright issues:
+Copyrighted work: (please fill in)
+`)}.<br>
+      </details>
+    </details>
+  `;
+}
+
 /**
  * Render "empty" content into all the widgets.
  */
@@ -1429,12 +1553,13 @@ class FileMenu {
   let videoPane = document.querySelector('#video-pane');
   let editorPane = document.querySelector('#editor-pane');
   let sharePane = document.querySelector('#share-pane');
+  let abusePane = document.querySelector('#abuse-pane');
   renderDummyContent({fileMenubar, videoPane, editorPane, sharePane});
 
   // Parse the URL:
   let perms = urlToPermissions(window.location);
 
-  let video, editor, share;
+  let video, editor, share, hasPopups = false;
   if (perms === null) {
     // First load, get the video and editor:
 
@@ -1460,6 +1585,7 @@ class FileMenu {
     let shareEditor = await Share.loadWithEditor(perms);
     share = shareEditor.share;
     editor = shareEditor.editor;
+    hasPopups = shareEditor.hasPopups;
     video = editor.video;
 
     // Also render the video:
@@ -1478,103 +1604,17 @@ class FileMenu {
 
   if (editor.readOnly) {
     document.querySelector('h1').textContent = 'View captions';
+
+    render(renderReportAbuse(
+      {html},
+      {
+        videoId: video instanceof YouTubeVideo ? video.videoId : null,
+        readFingerprint: perms.fingerprint,
+      }),
+      abusePane);
+
+    if (hasPopups) {
+      await warnCaptionsAreUnofficial(video instanceof YouTubeVideo);
+    }
   }
 })();
-
-if (false) {
-  const editorPaneView = editorPane.map(function renderEditorAndToolbar({editor, language}) {
-    if (editor === null) {
-      return html`Loading captions...`;
-    }
-    return html`
-      <style>
-        .diff-icon::before {
-          content: "@";
-          color: white;
-          background-color: red;
-          text-decoration: line-through;
-        }
-        .diff-icon::after {
-          content: "#";
-          color: white;
-          background-color: green;
-        }
-      </style>
-
-      <ul class="toolbar" aria-label="Toolbar">
-        <li>
-          <button class="diff-button" @click=${function() {
-            let picker = document.querySelector('.diff-picker-container');
-            picker.classList.toggle('collapsed');
-          }}><span class="diff-icon"></span>Compare</button>
-        </li>
-      </ul>
-
-      <div class="diff-picker-container collapsed">
-        <style>
-          .diff-picker-container.collapsed {
-            display: none;
-          }
-          .diff-picker-container h2 {
-            font-size: 1.5em;
-            padding: 0;
-            margin: 0;
-            width: 100%;
-          }
-          .diff-picker-container select {
-            height: var(--touch-target-size);
-            flex-grow: 1;
-            min-width: 0;
-          }
-        </style>
-        <h2>
-          <label style="width: 100%; display: flex; align-items: center;">
-            <span style="white-space: pre;">Show changes: </span>
-            ${diffBasePicker.render()}
-          </label>
-        </h2>
-      </div>
-
-      ${editor.render()}
-    `;
-  });
-
-  // Main controller, binding everything together:
-
-  (async function main() {
-    // Diff plugin:
-    let diffTag = Symbol('diff');
-    editor.view.dispatch({
-      reconfigure: {
-        append: tagExtension(diffTag, []),
-      },
-    });
-
-    // Bind the diff base picker:
-    let setDiffBase = function setDiffBase({captions, language}) {
-      // Unfold unchanged sections:
-      unfoldAll(editor.view);
-
-      // Update the extension:
-      let extension = [];
-      if (captions !== null) {
-        extension = revertString(captionsToText(captions));
-      }
-      editor.view.dispatch({
-        reconfigure: {
-          [diffTag]: extension,
-        },
-      });
-
-      // Fold unchanged sections:
-      if (captions !== null) {
-        foldAll(editor.view);
-      }
-    };
-    diffBasePicker.captionsChange.addListener(setDiffBase);
-    setDiffBase({
-      language: diffBasePicker.getLanguage(),
-      captions: await diffBasePicker.fetchCaptions(),
-    });
-  })();
-}
