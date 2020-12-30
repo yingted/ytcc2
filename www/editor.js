@@ -394,17 +394,13 @@ export class CaptionsEditor {
     // Widgets:
     this.video = video || new DummyVideo();
     this.docChanged = new Signal();
-    let addCue = (function addCue(view) {
-      this.addCue(this.video.getCurrentTime(), '');
-      return true;
-    }).bind(this);
     this.view = new EditorView({
       state: EditorState.create({
         doc: '',
         extensions: [
           history(),
           keymap([
-            {key: "Enter", run: addCue, shift: insertNewline},
+            {key: "Enter", run: view => { this.splitCue(); return true; }, shift: insertNewline},
             ...homeEndKeymap,
             ...historyKeymap,
             ...searchKeymap,
@@ -594,6 +590,26 @@ export class CaptionsEditor {
       selection: EditorSelection.single(eolOffset),
       scrollIntoView: true,
     }));
+  }
+  splitCue() {
+    let time = this.video.getCurrentTime();
+    let text = '';
+
+    let offset = timeToCueOffset(this._getPrologue(), this._editableCaptions, time, true);
+    let length = this.view.state.doc.length;
+    let line = captionToText({time, text});
+
+    let insert;
+    if (length === 0) {
+      insert = line;
+    } else {
+      insert = '\n' + line;
+    }
+
+    this.view.dispatch(
+      this.view.state.update(
+        this.view.state.replaceSelection(insert),
+      {scrollIntoView: true}));
   }
   _getPrologue() {
     return getPrologue(this.view.state.doc, this._editableCaptions);
