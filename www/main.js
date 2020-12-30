@@ -761,32 +761,6 @@ function renderDummyVideo({html}) {
   `;
 }
 
-function renderEditorPane({html}, editor) {
-  return html`
-    <ul class="toolbar">
-      <li>
-        <style>
-          ul.toolbar button {
-            height: var(--touch-target-size);
-          }
-          .add-icon::before {
-            content: "➕";
-          }
-        </style>
-        <button
-            @click=${e => {
-              editor.addCue(editor.video.getCurrentTime(), '');
-              editor.view.focus();
-            }}
-            ?disabled=${editor.readOnly}>
-          <span class="add-icon"></span>Add cue
-        </button>
-      </li>
-    </ul>
-    ${editor.render()}
-  `;
-}
-
 /**
  * @params {AbortSignal|undefined} signal
  * @returns {string} the nonce
@@ -1373,10 +1347,7 @@ function renderDummyContent({fileMenubar, videoPane, editorPane, sharePane}) {
     srtUrl: 'javascript:',
   }), fileMenubar);
   render(renderDummyVideo({html}), videoPane);
-  render(renderEditorPane(
-      {html},
-      new CaptionsEditor(null, `0:00 [Music]`, {readOnly: true})),
-    editorPane);
+  render(new CaptionsEditor(null, `0:00 [Music]`, {readOnly: true}).render(), editorPane);
   render(Share.disabled().render(), sharePane);
 }
 
@@ -1502,7 +1473,7 @@ class FileMenu {
   let fileMenu = new FileMenu(video, editor);
   render(fileMenu.render(), fileMenubar);
   render(video.render(), videoPane);
-  render(renderEditorPane({html}, editor), editorPane);
+  render(editor.render(), editorPane);
   render(share.render(), sharePane);
 
   if (editor.readOnly) {
