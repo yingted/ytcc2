@@ -240,11 +240,17 @@ describe "encodes and decodes text" (fun () ->
     ]
     "abc";
 
-  test_encodes "html"
+  test_encodes "html with ambiguous entities"
     [
       Append "<&amp;>";
     ]
-    "&lt;&amp;amp;&gt;";
+    "&lt;&amp;amp;>";
+
+  test_encodes "html without unambiguous entities"
+    [
+      Append "\"\'>";
+    ]
+    "\"\'>";
 
   test_encodes "formatting"
     [

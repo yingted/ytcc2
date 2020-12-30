@@ -87,7 +87,12 @@ let entity_parser : string Parser.t =
       ("&gt;", ">");
     ]
   in
-  let rentities = entities |> List.map (fun (x, y) -> (y, x)) in
+  let rentities =
+    [
+      ("&", "&amp;");
+      ("<", "&lt;");
+    ]
+  in
   let entity_parser =
     Parser.postprocess
       (Parser.easy_re0 "&(amp|quot|#39|lt|gt);")
