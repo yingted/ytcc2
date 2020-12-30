@@ -293,13 +293,13 @@ async function askForYouTubeVideo() {
 /**
  * Ask the user for the video.
  *
- * Open video
+ * Preview video (optional)
  * [File]
  * [YouTube]
- * [No video]
+ * [Cancel]
  *
  * Video will have null captions.
- * @returns {DummyVideo|YouTubeVideo|Html5Video}
+ * @returns {YouTubeVideo|Html5Video|null}
  */
 async function askForVideo() {
   return new Promise(resolve => {
@@ -310,14 +310,14 @@ async function askForVideo() {
           aria-labelledby="video-dialog-heading"
           @render=${registerDialog}
           @cancel=${function(e) {
-            e.preventDefault();
+            resolve(null);
           }}
           @close=${function(e) {
             document.body.removeChild(dialog);
           }}>
-        <h2 id="video-dialog-heading">Open video</h2>
+        <h2 id="video-dialog-heading">Preview video (optional)</h2>
 
-        <form method="dialog">
+        <form method="dialog" class="video-picker-form">
           <style>
             ul.listview {
               padding: 0;
@@ -330,6 +330,9 @@ async function askForVideo() {
               text-align: left;
               width: 100%;
               margin: 4px 0;
+            }
+            .video-picker-form button {
+              min-height: var(--touch-target-size);
             }
             .file-icon::before {
               content: "📂";
@@ -375,16 +378,19 @@ async function askForVideo() {
                 resolve(video);
               }}>
             </li>
-
-            <!-- None -->
-            <li>
-              <button @click=${function(e) {
-                resolve(new DummyVideo());
-              }}>
-                <h3><span class="empty-icon"></span>Blank video</h3>
-              </button>
-            </li>
           </ul>
+
+          <button type="button" @click=${function(e) {
+            dialog.close();
+            resolve(null);
+          }}>
+            <style>
+              .cancel-icon::before {
+                content: "❌";
+              }
+            </style>
+            <span class="cancel-icon"></span>Cancel
+          </button>
         </form>
       </dialog>
     `);
@@ -639,14 +645,14 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
 }
 
 /**
- * Ask for file/YouTube/empty captions. Can be cancelled.
- * @returns {Srt.raw Track.t|null}
+ * Ask for file/YouTube/empty captions. Can't be cancelled.
+ * @returns {{captions: Srt.raw Track.t, videoId: null|string}}
  */
-function askForCaptions({videoId}) {
+function askForCaptions() {
   return new Promise(resolve => {
     let filePicker = makeFileInput(captions => {
       dialog.close();
-      resolve(captions);
+      resolve({captions, videoId: null});
     });
     filePicker.style.display = 'none';
     let dialog = render0(html`
@@ -656,7 +662,7 @@ function askForCaptions({videoId}) {
           aria-labelledby="captions-dialog-heading"
           @render=${registerDialog}
           @cancel=${function(e) {
-            resolve(null);
+            e.preventDefault();
           }}
           @close=${function(e) {
             document.body.removeChild(dialog);
@@ -689,28 +695,6 @@ function askForCaptions({videoId}) {
           </style>
 
           <ul class="listview">
-            <!-- YouTube -->
-            <li>
-              <button type="button" @click=${async function(e) {
-                this.disabled = true;
-                let tracks;
-                try {
-                  tracks = await listTracks(videoId);
-                } finally {
-                  this.disabled = false;
-                }
-
-                let captions = await askForYouTubeCaptions(
-                    videoId, tracks, getDefaultTrack(tracks));
-                if (captions == null) return;
-                dialog.close();
-                resolve(captions);
-              }} ?disabled=${videoId == null}>
-                <h3>${youtubeLogo}YouTube</h3>
-                YouTube official or automatic captions.
-              </button>
-            </li>
-
             <!-- File -->
             <li>
               <button type="button" @click=${function(e) {
@@ -722,28 +706,46 @@ function askForCaptions({videoId}) {
               ${filePicker}
             </li>
 
+            <!-- YouTube -->
+            <li>
+              <button type="button" @click=${async function(e) {
+                this.disabled = true;
+                let tracks, videoId;
+                try {
+                  let video = await askForYouTubeVideo();
+                  if (video === null) return;
+                  videoId = video.videoId;
+
+                  tracks = await listTracks(videoId);
+                } finally {
+                  this.disabled = false;
+                }
+
+                let captions = await askForYouTubeCaptions(
+                    videoId, tracks, getDefaultTrack(tracks));
+                if (captions == null) return;
+                dialog.close();
+                resolve({captions, videoId});
+              }}>
+                <h3>${youtubeLogo}YouTube</h3>
+                YouTube official or automatic captions.
+              </button>
+            </li>
+
             <!-- None -->
             <li>
               <button @click=${function(e) {
-                resolve(captionsFromText(
-                  '0:00 Hello\n' +
-                  '0:01 <i>Narrator: Hello</i>'));
+                resolve({
+                  captions: captionsFromText(
+                    '0:00 Hello\n' +
+                    '0:01 <i>Narrator: Hello</i>'),
+                  videoId: null,
+                });
               }}>
                 <h3><span class="new-icon"></span>Blank captions</h3>
               </button>
             </li>
           </ul>
-
-          <style>
-            .cancel-icon::before {
-              content: "❌";
-            }
-          </style>
-          <button @click=${function(e) {
-            resolve(null);
-          }} style="min-height: var(--touch-target-size);">
-            <span class="cancel-icon"></span>Change video
-          </button>
         </form>
       </dialog>
     `);
@@ -1363,33 +1365,6 @@ class Share {
 }
 
 /**
- * Ask the user for the video and captions.
- * After returning, the video pane is updated.
- * @returns {{video: object, captions: object}}
- */
-async function askForVideoAndCaptions(videoPane) {
-  for (;;) {
-    // Clear the video and captions selection:
-    render(renderDummyVideo({html}), videoPane);
-
-    // Get the video:
-    let video = await askForVideo();
-    // Show the video early as feedback:
-    window.video = video;
-    render(video.render(), videoPane);
-
-    // Get the captions:
-    let captions = await askForCaptions({
-      videoId: video instanceof YouTubeVideo ? video.videoId : undefined,
-    });
-    // Repeat until we have captions:
-    if (captions !== null) {
-      return {video, captions};
-    }
-  }
-}
-
-/**
  * Render "empty" content into all the widgets.
  */
 function renderDummyContent({fileMenubar, videoPane, editorPane, sharePane}) {
@@ -1492,9 +1467,20 @@ class FileMenu {
   if (perms === null) {
     // First load, get the video and editor:
 
-    let choice = await askForVideoAndCaptions(videoPane);
-    let captions = choice.captions;
-    video = choice.video;
+    let {captions, videoId} = await askForCaptions();
+
+    // Preview the editor:
+    editor = new CaptionsEditor(new DummyVideo(), captions);
+    render(editor.render(), editorPane);
+
+    if (videoId !== null) {
+      video = new YouTubeVideo(videoId);
+    } else {
+      video = await askForVideo();
+      if (video === null) {
+        video = new DummyVideo();
+      }
+    }
 
     editor = new CaptionsEditor(video, captions);
     share = Share.fromNewEditor(editor);
@@ -1515,6 +1501,7 @@ class FileMenu {
   // Render the real content:
   let fileMenu = new FileMenu(video, editor);
   render(fileMenu.render(), fileMenubar);
+  render(video.render(), videoPane);
   render(renderEditorPane({html}, editor), editorPane);
   render(share.render(), sharePane);
 
