@@ -1067,6 +1067,10 @@ class Share {
         <span class="cancel-icon"></span>Copy link
       </button>
     `);
+    this._iAgree = new DocumentFragment();
+    render(html`
+      By clicking "Copy link", I agree to the <a href="/terms">terms of service</a>.
+    `, this._iAgree);
 
     if (this._uploader) {
       this._run(initialShare);
@@ -1086,6 +1090,7 @@ class Share {
   static readonly(reader) {
     let share = new Share();
     share._updatePermalink(/*busy=*/true, /*link=*/permissionsToUrl(reader));
+    render([], share._iAgree);
     return share;
   }
   static _stateFromEditor(editor) {
@@ -1170,13 +1175,12 @@ class Share {
     throw new Error('invalid perms');
   }
   render() {
-    // TODO: don't show the ToS line on the view page
     return html`
       <form class="pure-form"
           @submit=${function(e) {
             e.preventDefault();
           }}>
-        By clicking "Copy link", I agree to the <a href="/terms">terms of service</a>.
+        ${this._iAgree}
         ${this._permalinkWidget}
         ${this._statusMessage}
       </form>
@@ -1519,7 +1523,7 @@ class FileMenu {
   let editorPane = document.querySelector('#editor-pane');
   let sharePane = document.querySelector('#share-pane');
   let abusePane = document.querySelector('#abuse-pane');
-  renderDummyContent({fileMenubar, videoPane, editorPane, sharePane});
+  let h1 = document.querySelector('h1');
 
   // Parse the URL:
   let perms = urlToPermissions(window.location);
@@ -1527,6 +1531,8 @@ class FileMenu {
   let video, editor, share, hasPopups = false;
   if (perms === null) {
     // First load, get the video and editor:
+
+    renderDummyContent({fileMenubar, videoPane, editorPane, sharePane});
 
     let {captions, videoId} = await askForCaptions();
 
@@ -1546,13 +1552,16 @@ class FileMenu {
     editor = new CaptionsEditor(video, captions);
     share = Share.fromNewEditor(editor);
   } else {
+    if (perms instanceof permissions.Reader) {
+      render('View captions', h1);
+    }
+
     // Restore the Share state:
     let shareEditor;
     try {
       shareEditor = await Share.loadWithEditor(perms);
     } catch (e) {
-      // Clear all the sections
-      render([], fileMenubar);
+      // Render error page:
       render(html`
         <h2>Captions not found</h2>
         <p>
@@ -1560,7 +1569,6 @@ class FileMenu {
           <a href="/">Create or upload new captions</a>
         </p>
       `, editorPane);
-      render([], sharePane);
       document.querySelector('#video-container').remove();
       return;
     }
@@ -1568,9 +1576,6 @@ class FileMenu {
     editor = shareEditor.editor;
     hasPopups = shareEditor.hasPopups;
     video = editor.video;
-
-    // Also render the video:
-    render(video.render(), videoPane);
   }
 
   window.editor = editor;
@@ -1584,8 +1589,6 @@ class FileMenu {
   render(share.render(), sharePane);
 
   if (editor.readOnly) {
-    document.querySelector('h1').textContent = 'View captions';
-
     render(renderReportAbuse(
       {html},
       {
