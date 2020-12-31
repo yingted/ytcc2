@@ -317,7 +317,7 @@ async function askForVideo() {
           @close=${function(e) {
             document.body.removeChild(dialog);
           }}>
-        <h2 id="video-dialog-heading">Preview video (optional)</h2>
+        <h2 id="video-dialog-heading">Choose video (optional)</h2>
 
         <form method="dialog" class="video-picker-form">
           <style>
@@ -347,6 +347,9 @@ async function askForVideo() {
             }
           </style>
 
+          Show your captions on a video.<br>
+          Shared links show YouTube videos but not video files.<br>
+
           <ul class="listview">
             <!-- YouTube -->
             <li>
@@ -371,7 +374,7 @@ async function askForVideo() {
                 e.preventDefault();
               }}>
                 <h3><span class="file-icon"></span>Choose video file</h3>
-                Your video file won't be uploaded.
+                Your video file won't be shared.
               </button>
               <input type="file" accept="video/*" style="display: none;" @change=${function(e) {
                 if (e.target.files.length === 0) return;
@@ -658,7 +661,7 @@ function askForCaptions() {
           @close=${function(e) {
             document.body.removeChild(dialog);
           }}>
-        <h2 id="captions-dialog-heading">Open captions</h2>
+        <h2 id="captions-dialog-heading">Choose captions</h2>
 
         <form method="dialog">
           <style>
@@ -685,14 +688,17 @@ function askForCaptions() {
             }
           </style>
 
+          Upload your captions, or edit someone else's.<br>
+          Then, make a private link that lasts 30 days.<br>
+
           <ul class="listview">
             <!-- File -->
             <li>
               <button type="button" @click=${function(e) {
                 filePicker.click();
               }}>
-                <h3><span class="file-icon"></span>Choose captions file</h3>
-                Open YouTube srv3 or SRT files.
+                <h3><span class="file-icon"></span>Upload captions</h3>
+                YouTube (srv3) and SRT files are supported.
               </button>
               ${filePicker}
             </li>
@@ -718,8 +724,8 @@ function askForCaptions() {
                 dialog.close();
                 resolve({captions, videoId});
               }}>
-                <h3>${youtubeLogo}YouTube</h3>
-                YouTube official or automatic captions.
+                <h3>${youtubeLogo}Edit YouTube captions</h3>
+                Start with the official or automatic captions.
               </button>
             </li>
 
