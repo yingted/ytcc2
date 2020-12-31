@@ -35,7 +35,7 @@ import {asrLanguages} from './youtube_languages.js';
 
 import './node_modules/dialog-polyfill/dist/dialog-polyfill.css';
 import 'purecss/build/base.css';
-import 'purecss/build/forms.css';
+import 'purecss/build/forms-nr.css';
 import 'purecss/build/buttons.css';
 import './purecss_a11y.css';
 
@@ -245,14 +245,7 @@ async function askForYouTubeVideo() {
           style="width: calc(min(100%, 25em)); box-sizing: border-box;">
         <h2 id="youtube-url-heading"><label for="youtube-url">YouTube video URL</label></h2>
 
-        <style>
-          .youtube-url-form input,
-          .youtube-url-form button {
-            height: var(--touch-target-size);
-            box-sizing: border-box;
-          }
-        </style>
-        <form class="youtube-url-form" method="dialog" @submit=${onSubmit}>
+        <form class="pure-form" method="dialog" @submit=${onSubmit}>
           <div style="display: flex;">
             <input id="youtube-url" name="v"
                 placeholder="https://www.youtube.com/watch?v=gKqypLvwd70"
@@ -445,7 +438,7 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
             YouTube's new auto captions don't support hotlinking.<br>
             This website can check for captions on your behalf.
 
-            <form method="dialog" class="youtube-proxy-form"
+            <form method="dialog" class="pure-form youtube-proxy-form"
                 @submit=${async function(e) {
                   if (checkButton.disabled) return;
                   checkButton.disabled = true;
@@ -1061,7 +1054,7 @@ class Share {
       </div>
     `);
     this._shareButton = render0(html`
-      <button class="pure-button" type="submit">
+      <button class="pure-button pure-button-primary" type="submit">
         <style>
           .link-icon::before {
             content: "🔗";
@@ -1184,22 +1177,7 @@ class Share {
   }
   render() {
     return html`
-      <style>
-        .permalink-form button,
-        .permalink-form input[type=url] {
-          height: var(--touch-target-size);
-          box-sizing: border-box;
-        }
-        .permalink-form label,
-        .permalink-form a[href] {
-          display: inline-block;
-          padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
-        }
-        .permalink-form a[href] {
-          margin: calc(0.5em - var(--touch-target-size) / 2) 0;
-        }
-      </style>
-      <form class="permalink-form"
+      <form class="pure-form"
           @submit=${function(e) {
             e.preventDefault();
           }}>
@@ -1297,7 +1275,7 @@ class Share {
       () => this._uploader.delete(writer, undefined, lastHash),
       5, 2);
     this._updatePermalink(/*busy=*/false, /*link=*/'');
-    render('Sharing stopped.', thiz._statusMessage);
+    render('Link deleted.', thiz._statusMessage);
   }
   async _run(initialShare) {
     try {
@@ -1346,14 +1324,7 @@ function warnCaptionsAreUnofficial(hasVideo) {
           style="width: calc(min(100%, 25em)); box-sizing: border-box;">
         <h2 id="unofficial-warning-heading">Unofficial captions</h2>
 
-        <style>
-          .youtube-url-form input,
-          .youtube-url-form button {
-            height: var(--touch-target-size);
-            box-sizing: border-box;
-          }
-        </style>
-        <form class="youtube-url-form" method="dialog">
+        <form method="dialog">
           ${hasVideo ?
             "The captions' author and the video's uploader are" :
             "The video's uploader is"} <b>not affiliated</b> with this website.<br>
@@ -1402,7 +1373,7 @@ Please take down my captions. Proof it's my captions: (please fill in)
       <details>
         <summary>My video shows these captions I don't agree with</summary>
         Add a pop-up reminder that these captions can be uploaded by anyone:<br>
-        <form action="/add_popup" method="post" class="add-popup-form">
+        <form class="pure-form" action="/add_popup" method="post" class="add-popup-form">
           <div>
             <label>
               Captions ID:
@@ -1410,7 +1381,7 @@ Please take down my captions. Proof it's my captions: (please fill in)
             </label>
           </div>
           <button class="pure-button pure-button-primary">Add pop-up</button>
-          <button type="button" @click=${function(e) {
+          <button class="pure-button" type="button" @click=${function(e) {
             warnCaptionsAreUnofficial(videoId !== null);
           }}>Preview pop-up</button>
         </form>
@@ -1566,8 +1537,9 @@ class FileMenu {
     share = Share.fromNewEditor(editor);
   } else {
     // Restore the Share state:
+    let shareEditor;
     try {
-      let shareEditor = await Share.loadWithEditor(perms);
+      shareEditor = await Share.loadWithEditor(perms);
     } catch (e) {
       // Clear all the sections
       render([], fileMenubar);

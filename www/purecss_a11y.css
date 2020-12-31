@@ -4,6 +4,7 @@
 :root {
   --touch-target-size: 48px;
 }
+
 .pure-button {
   min-height: var(--touch-target-size);
 }
@@ -11,3 +12,9 @@
 /*   color: white; */
 /*   background: rgb(202, 60, 60); */
 /* } */
+
+.pure-form input[type=text],
+.pure-form input:not([type]),
+.pure-form input[type=url] {
+  min-height: var(--touch-target-size);
+}
