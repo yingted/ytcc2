@@ -34,3 +34,8 @@ body .pure-form input:not([type]):focus {
   outline: 2px solid black;
   outline-offset: 2px;
 }
+
+body .pure-form input[readonly],
+body .pure-form select[readonly] {
+  color: #555;
+}
