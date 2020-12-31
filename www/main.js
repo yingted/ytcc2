@@ -561,11 +561,7 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
               resolve(captions);
             }}>
           <style>
-            #youtube-track-picker {
-              height: var(--touch-target-size);
-            }
-            .youtube-track-picker-form a[href],
-            .youtube-track-picker-form label:not(.readonly) {
+            .youtube-track-picker-form a[href] {
               display: inline-block;
               padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
             }
@@ -653,7 +649,7 @@ function askForCaptions() {
           Upload your captions, or edit someone else's.<br>
           Then, make a private link that lasts 30 days.<br>
 
-          <ul class="listview">
+          <ul class="listview" role="group" aria-label="Choose captions">
             <!-- File -->
             <li>
               <button class="pure-button pure-button-primary" type="button" @click=${function(e) {
@@ -1064,7 +1060,7 @@ class Share {
       </button>
     `);
     this._unshareButton = render0(html`
-      <button class="pure-button pure-button-active" type="reset">
+      <button class="pure-button pure-button-active" type="reset" aria-label="Delete link">
         <style>
           .cancel-icon::before {
             content: "❌";
@@ -1206,7 +1202,12 @@ class Share {
         return await f();
       } catch (e) {
         render(html`
-          <details>
+          <details class="sync-error">
+            <style>
+              details.sync-error > summary {
+                padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
+              }
+            </style>
             <summary>Error, retrying in ${delay} second${delay === 1 ? '' : 's'}.</summary>
             ${e.toString()}
           </details>
@@ -1299,7 +1300,12 @@ class Share {
       }
     } catch (e) {
       render(html`
-        <details>
+        <details class="sync-error">
+          <style>
+            details.sync-error > summary {
+              padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
+            }
+          </style>
           <summary>Error, please save your data and reload the page.</summary>
           ${e.toString()}
         </details>
@@ -1352,7 +1358,12 @@ function renderEmail({html}, body) {
  */
 function renderReportAbuse({html}, {videoId, readFingerprint}) {
   return html`
-    <details>
+    <details class="report-abuse">
+      <style>
+        details.report-abuse summary {
+          padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
+        }
+      </style>
       <summary>Report abuse</summary>
 
       ${videoId ? html`

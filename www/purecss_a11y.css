@@ -14,7 +14,8 @@
 /* } */
 
 .pure-form input[type=text],
-.pure-form input:not([type]),
-.pure-form input[type=url] {
+.pure-form input[type=url],
+.pure-form select,
+.pure-form input:not([type]) {
   min-height: var(--touch-target-size);
 }
