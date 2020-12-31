@@ -19,9 +19,9 @@ import {terser} from 'rollup-plugin-terser';
 import livereload from 'rollup-plugin-livereload';
 import commonjs from '@rollup/plugin-commonjs';
 import {babel} from '@rollup/plugin-babel';
-import copy from 'rollup-plugin-copy';
 import execute from 'rollup-plugin-execute';
 import ignore from 'rollup-plugin-ignore';
+import css from 'rollup-plugin-css-porter';
 let {listLanguages} = require('./youtube_trusted.js');
 let fs = require('fs').promises;
 
@@ -94,13 +94,12 @@ export default [{
         '@babel/plugin-proposal-class-properties',
       ],
     }),
-    copy({
-      targets: [
-        { src: './node_modules/dialog-polyfill/dist/dialog-polyfill.css', dest: 'static/dialog-polyfill/' },
-      ],
+    css({
+      raw: 'static/main.bundle.css',
+      minified: 'static/main.bundle.min.css',
     }),
     production && terser(),
-    production ? execute('precompress static/main.bundle.js') : execute('rm -f static/main.bundle.js.{br,gz}'),
+    production ? execute('sleep 0.1; precompress static/main.bundle.*') : execute('rm -f static/*.{br,gz}'),
     !production && livereload({
       watch: 'static/main.bundle.js',
     }),

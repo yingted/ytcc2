@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-// This needs dialog-polyfill.css.
-
 import {html, render} from 'lit-html';
 import {ifDefined} from 'lit-html/directives/if-defined.js';
 import {YouTubeVideo} from './youtube.js';
@@ -34,6 +32,12 @@ import {Html5Video, DummyVideo} from './video.js';
 import * as permissions from './permissions.js';
 import {generateAsync} from './pow.js';
 import {asrLanguages} from './youtube_languages.js';
+
+import './node_modules/dialog-polyfill/dist/dialog-polyfill.css';
+import 'purecss/build/base.css';
+import 'purecss/build/forms.css';
+import 'purecss/build/buttons.css';
+import 'purecss/build/menus.css';
 
 // Browser workarounds:
 // Remove noscript:
