@@ -95,8 +95,7 @@ function getVideoIdOrNull(value) {
   return null;
 }
 
-function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSrv3, updateSrt}) {
-  // TODO: enhance this for the view page
+function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSrv3, updateSrt, highlightDownload}) {
   return html`
     <style>
       details.file-menubar ul {
@@ -111,6 +110,7 @@ function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSr
       <summary role="menuitem" aria-haspopup="true" aria-label="Download">
         <a href=${srv3Url}
             role="menuitem"
+            class=${highlightDownload ? 'pure-button pure-button-primary' : ''}
             download="${ifDefined(baseName)}.srv3.xml"
             @mousedown=${ifDefined(updateSrv3)}
             @touchstart=${ifDefined(updateSrv3)}
@@ -1041,10 +1041,6 @@ class Share {
         <span class="cancel-icon"></span>Copy link
       </button>
     `);
-    this._iAgree = new DocumentFragment();
-    render(html`
-      By clicking "Copy link", I agree to the <a href="/terms">terms of service</a>.
-    `, this._iAgree);
 
     if (this._uploader) {
       this._run(initialShare);
@@ -1056,15 +1052,6 @@ class Share {
   static disabled() {
     let share = new Share();
     share._updatePermalink(/*busy=*/true, /*link=*/'');
-    return share;
-  }
-  /**
-   * A read-only permalink.
-   */
-  static readonly(reader) {
-    let share = new Share();
-    share._updatePermalink(/*busy=*/true, /*link=*/permissionsToUrl(reader));
-    render([], share._iAgree);
     return share;
   }
   static _stateFromEditor(editor) {
@@ -1096,8 +1083,9 @@ class Share {
   }
   /**
    * Load an editor from the server. editor.video will be set as well.
+   * If it's readonly, no Share will be returned.
    * @param {Writer|Reader} perms
-   * @returns {{editor: CaptionsEditor, share: Share}}
+   * @returns {{editor: CaptionsEditor, share: Share|null, hasPopups: boolean}}
    */
   static async loadWithEditor(perms) {
     let uploader = new JsonUploader();
@@ -1142,7 +1130,7 @@ class Share {
       editor.setSaved();
       return {
         editor,
-        share: Share.readonly(perms),
+        share: null,
         hasPopups,
       };
     }
@@ -1154,7 +1142,7 @@ class Share {
           @submit=${function(e) {
             e.preventDefault();
           }}>
-        ${this._iAgree}
+        By clicking "Copy link", I agree to the <a href="/terms">terms of service</a>.
         ${this._permalinkWidget}
         ${this._statusMessage}
       </form>
@@ -1419,10 +1407,10 @@ function renderDummyContent({fileMenubar, videoPane, editorPane, sharePane}) {
 }
 
 class FileMenu {
-  constructor(video, editor) {
+  constructor(video, editor, highlightDownload) {
     this._container = new DocumentFragment();
     this._isAborted = false;
-    this._done = this._run(video, editor);
+    this._done = this._run(video, editor, highlightDownload);
   }
   render() {
     return this._container;
@@ -1431,7 +1419,7 @@ class FileMenu {
     return this._done;
   }
   static EMPTY_CAPTIONS = {};
-  async _run(video, editor) {
+  async _run(video, editor, highlightDownload) {
     // Get a debounced view of the doc:
     let doc = new AsyncRef(editor.view.state.doc);
     let docChanged = async function docChanged(newDoc) {
@@ -1476,6 +1464,7 @@ class FileMenu {
               updateSrt();
               resolve();
             },
+            highlightDownload,
           }), this._container);
         });
         // Update eventually on doc changed:
@@ -1546,6 +1535,7 @@ class FileMenu {
       document.querySelector('#video-container').remove();
       return;
     }
+    // Might be null:
     share = shareEditor.share;
     editor = shareEditor.editor;
     hasPopups = shareEditor.hasPopups;
@@ -1556,11 +1546,13 @@ class FileMenu {
   window.share = share;
 
   // Render the real content:
-  let fileMenu = new FileMenu(video, editor);
+  let fileMenu = new FileMenu(video, editor, /*highlightDownload=*/editor.readOnly);
   render(fileMenu.render(), fileMenubar);
   render(video.render(), videoPane);
   render(editor.render(), editorPane);
-  render(share.render(), sharePane);
+  if (share !== null) {
+    render(share.render(), sharePane);
+  }
 
   if (editor.readOnly) {
     render(renderReportAbuse(
