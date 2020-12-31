@@ -1246,6 +1246,23 @@ class Share {
           style="flex-grow: 1; min-width: 0;">
     `, this._permalinkWidget);
   }
+  async _retryWithBackoff(f, base, exp) {
+    let delay = base;
+    for (;;) {
+      try {
+        return await f();
+      } catch (e) {
+        render(html`
+          <details>
+            <summary>Error, retrying in ${delay} second${delay === 1 ? '' : 's'}.</summary>
+            ${e.toString()}
+          </details>
+        `, this._statusMessage);
+        await new Promise(resolve => setTimeout(resolve, delay * 1000));
+        base += exp;
+      }
+    }
+  }
   async _waitForShare() {
     let thiz = this;
     let writer;
@@ -1271,7 +1288,9 @@ class Share {
 
     // Wait for share response:
     let value = this._ref.value;
-    let lastHash = await this._uploader.upload(writer, value);
+    let lastHash = await this._retryWithBackoff(
+      () => this._uploader.upload(writer, value),
+      5, 2);
     this._updatePermalink(/*busy=*/false, /*link=*/permissionsToUrl(writer.reader));
     // TTL is hard-coded in index.js:
     render('Link copied. Expires in 30 days.', this._statusMessage);
@@ -1299,7 +1318,9 @@ class Share {
     await sync.join();
 
     // Wait for unshare response:
-    await this._uploader.delete(writer, undefined, lastHash);
+    await this._retryWithBackoff(
+      () => this._uploader.delete(writer, undefined, lastHash),
+      5, 2);
     this._updatePermalink(/*busy=*/false, /*link=*/'');
     render('Sharing stopped.', thiz._statusMessage);
   }
