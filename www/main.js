@@ -96,6 +96,7 @@ function getVideoIdOrNull(value) {
 }
 
 function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSrv3, updateSrt}) {
+  // TODO: enhance this for the view page
   return html`
     <style>
       ul.toolbar {
@@ -312,9 +313,6 @@ async function askForVideo() {
             }
             .file-icon::before {
               content: "📂";
-            }
-            .empty-icon::before {
-              content: "⬜";
             }
             .cookie-icon::before {
               content: "🍪";
@@ -1172,6 +1170,7 @@ class Share {
     throw new Error('invalid perms');
   }
   render() {
+    // TODO: don't show the ToS line on the view page
     return html`
       <form class="pure-form"
           @submit=${function(e) {

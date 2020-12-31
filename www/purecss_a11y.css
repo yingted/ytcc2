@@ -1,6 +1,8 @@
 /**
  * WCAG compliance for purecss
  */
+
+/* Enlarge touch targets: */
 :root {
   --touch-target-size: 48px;
 }
@@ -18,4 +20,17 @@
 .pure-form select,
 .pure-form input:not([type]) {
   min-height: var(--touch-target-size);
+}
+
+/* Restore the focus rings: */
+body .pure-button:focus {
+  outline: 2px solid black;
+  outline-offset: 2px;
+}
+body .pure-form input[type=text]:focus,
+body .pure-form input[type=url]:focus,
+body .pure-form select:focus,
+body .pure-form input:not([type]):focus {
+  outline: 2px solid black;
+  outline-offset: 2px;
 }
