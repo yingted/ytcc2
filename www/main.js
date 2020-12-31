@@ -109,7 +109,9 @@ function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSr
     </style>
     <details class="file-menubar" role="menubar">
       <summary role="menuitem" aria-haspopup="true" aria-label="Download">
-        <a href=${srv3Url} download="${ifDefined(baseName)}.srv3.xml"
+        <a href=${srv3Url}
+            role="menuitem"
+            download="${ifDefined(baseName)}.srv3.xml"
             @mousedown=${ifDefined(updateSrv3)}
             @touchstart=${ifDefined(updateSrv3)}
             @click=${ifDefined(updateSrv3)}
@@ -119,8 +121,10 @@ function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSr
             >Download captions (srv3)</a>
       </summary>
       <ul role="menu" aria-label="More">
-        <li role="menuitem">
-          <a href=${srtUrl} download="${ifDefined(baseName)}.srt"
+        <li role="none">
+          <a href=${srtUrl}
+              role="menuitem"
+              download="${ifDefined(baseName)}.srt"
               @mousedown=${ifDefined(updateSrt)}
               @touchstart=${ifDefined(updateSrt)}
               @click=${ifDefined(updateSrt)}
@@ -131,8 +135,9 @@ function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSr
         </li>
 
         ${videoId == null ? [] : html`
-          <li role="menuitem">
-            <a href="https://studio.youtube.com/video/${videoId}/translations">${youtubeLogo}YouTube Studio</a>
+          <li role="none">
+            <a href="https://studio.youtube.com/video/${videoId}/translations"
+               role="menuitem">${youtubeLogo}YouTube Studio</a>
           </li>
         `}
       </ul>
