@@ -99,31 +99,16 @@ function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSr
   // TODO: enhance this for the view page
   return html`
     <style>
-      ul.toolbar {
-        width: 100%;
-        min-width: 0;
-        list-style-type: none;
-        padding: 0;
+      details.file-menubar ul {
         margin: 0;
-        white-space: nowrap;
-        overflow-x: auto;
       }
-      ul.toolbar > * {
-        white-space: normal;
-      }
-      ul.toolbar > li {
+      details.file-menubar a[href] {
         display: inline-block;
-      }
-      ul.toolbar a[href] {
-        display: inline-block;
-        padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
-      }
-      ul.toolbar > li > details > summary {
         padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
       }
     </style>
-    <ul class="toolbar" role="menubar">
-      <li role="menuitem">
+    <details class="file-menubar" role="menubar">
+      <summary role="menuitem" aria-haspopup="true" aria-label="Download">
         <a href=${srv3Url} download="${ifDefined(baseName)}.srv3.xml"
             @mousedown=${ifDefined(updateSrv3)}
             @touchstart=${ifDefined(updateSrv3)}
@@ -132,42 +117,26 @@ function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSr
             @mouseover=${ifDefined(updateSrv3)}
             @contextmenu=${ifDefined(updateSrv3)}
             >Download captions (srv3)</a>
-      </li>
-      <li style="float: right;">
-        <details @toggle=${function() {
-          document.querySelector('.more-menu').classList.toggle('open', this.open);
-        }}>
-          <summary role="menuitem" aria-haspopup="true">More</summary>
-        </details>
-      </li>
-    </ul>
-    <style>
-      .more-menu:not(.open) {
-        display: none;
-      }
-      .more-menu a[href] {
-        display: inline-block;
-        padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
-      }
-    </style>
-    <ul class="more-menu" role="menu" aria-label="More">
-      <li role="menuitem">
-        <a href=${srtUrl} download="${ifDefined(baseName)}.srt"
-            @mousedown=${ifDefined(updateSrt)}
-            @touchstart=${ifDefined(updateSrt)}
-            @click=${ifDefined(updateSrt)}
-            @focus=${ifDefined(updateSrt)}
-            @mouseover=${ifDefined(updateSrt)}
-            @contextmenu=${ifDefined(updateSrt)}
-            >Download captions (SRT)</a>
-      </li>
-
-      ${videoId == null ? [] : html`
+      </summary>
+      <ul role="menu" aria-label="More">
         <li role="menuitem">
-          <a href="https://studio.youtube.com/video/${videoId}/translations">${youtubeLogo}YouTube Studio</a>
+          <a href=${srtUrl} download="${ifDefined(baseName)}.srt"
+              @mousedown=${ifDefined(updateSrt)}
+              @touchstart=${ifDefined(updateSrt)}
+              @click=${ifDefined(updateSrt)}
+              @focus=${ifDefined(updateSrt)}
+              @mouseover=${ifDefined(updateSrt)}
+              @contextmenu=${ifDefined(updateSrt)}
+              >Download captions (SRT)</a>
         </li>
-      `}
-    </ul>
+
+        ${videoId == null ? [] : html`
+          <li role="menuitem">
+            <a href="https://studio.youtube.com/video/${videoId}/translations">${youtubeLogo}YouTube Studio</a>
+          </li>
+        `}
+      </ul>
+    </details>
   `;
 }
 
