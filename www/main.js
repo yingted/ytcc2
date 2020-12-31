@@ -195,7 +195,7 @@ render(html`
     <div id="file-menubar">
     </div>
 
-    <div style="width: 100%; padding-bottom: calc(56.25% + 30px); position: relative;">
+    <div id="video-container" style="width: 100%; padding-bottom: calc(56.25% + 30px); position: relative;">
       <div id="video-pane" style="width: 100%; height: 100%; position: absolute;">
       </div>
     </div>
@@ -1596,7 +1596,22 @@ class FileMenu {
     share = Share.fromNewEditor(editor);
   } else {
     // Restore the Share state:
-    let shareEditor = await Share.loadWithEditor(perms);
+    try {
+      let shareEditor = await Share.loadWithEditor(perms);
+    } catch (e) {
+      // Clear all the sections
+      render([], fileMenubar);
+      render(html`
+        <h2>Captions not found</h2>
+        <p>
+          The captions you requested can't be found.<br>
+          <a href="/">Create or upload new captions</a>
+        </p>
+      `, editorPane);
+      render([], sharePane);
+      document.querySelector('#video-container').remove();
+      return;
+    }
     share = shareEditor.share;
     editor = shareEditor.editor;
     hasPopups = shareEditor.hasPopups;
