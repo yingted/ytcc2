@@ -13,6 +13,7 @@
 # limitations under the License.
 
 FROM node:12
+RUN apt-get update && apt-get install -y python3 python3-pip
 
 # Install everything:
 WORKDIR /usr/src/app
@@ -24,6 +25,7 @@ RUN npm run build
 RUN npm prune --production
 WORKDIR /usr/src/app/www
 RUN rm -rf node_modules
+RUN python3 -m pip install --user -r ./requirements.txt
 RUN npm ci
 RUN npm run build
 RUN npm prune --production
