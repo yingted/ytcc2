@@ -35,7 +35,7 @@ import {RangeSet} from '@codemirror/next/rangeset';
 import {oneDark} from '@codemirror/next/theme-one-dark';
 import {newUnsavedChanges} from './unsaved_changes.js';
 import {DummyVideo} from './video.js';
-import {Signal} from './util.js';
+import {render0, Signal, randomUuid} from './util.js';
 import {insertNewline} from "@codemirror/next/commands";
 
 function assert(cond) {
@@ -148,10 +148,7 @@ class TemplateWidget extends WidgetType {
     this._template = template;
   }
   toDOM(view) {
-    let div = document.createElement('DIV');
-    render(this._template, div);
-    assert(div.firstElementChild === div.lastElementChild);
-    return div.firstElementChild;
+    return render0(this._template);
   }
 }
 
@@ -328,11 +325,19 @@ class CaptionsHighlighter /*extends PluginValue*/ {
 
         // Indent each continuation:
         for (let offset of continuationOffsets) {
+          let uuid = randomUuid();
           ranges.push({
             from: baseFrom + offset,
             to: baseFrom + offset,
             value: Decoration.widget({
-              widget: new TemplateWidget(html`<span class="cue-continuation-indent">${new Array(indent + 1).join(' ')}</span>`),
+              // Work around gboard crash on backspace:
+              widget: new TemplateWidget(html`
+                <span class="cue-continuation-indent cue-continuation-indent-${uuid}"><style>
+                  .cue-continuation-indent-${uuid}::before {
+                    content: "${new Array(indent + 1).join(' ')}"
+                  }
+                </style></span>
+              `),
               side: -1,
               block: false,
             }),
