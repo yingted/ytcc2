@@ -159,13 +159,13 @@ export class YouTubeVideo {
               Playing YouTube videos uses cookies.<br>
               <br>
               <div>
-                <button @click=${function() {
+                <button class="pure-button pure-button-primary" @click=${function() {
                   for (let iframe of this.closest('.player-container').querySelectorAll('iframe[tabindex="-1"]')) {
                     iframe.removeAttribute('tabindex');
                   }
                   this.closest('.player-privacy-backdrop').remove();
                 }}><span class="cookie-icon"></span>Video with cookies</button>
-                <button><span class="cancel-icon"></span>Captions only</button>
+                <button class="pure-button button-cancel">Captions only</button>
               </div>
             </form>
           </dialog>

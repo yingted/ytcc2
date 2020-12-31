@@ -37,7 +37,7 @@ import './node_modules/dialog-polyfill/dist/dialog-polyfill.css';
 import 'purecss/build/base.css';
 import 'purecss/build/forms.css';
 import 'purecss/build/buttons.css';
-import 'purecss/build/menus.css';
+import './purecss_a11y.css';
 
 // Browser workarounds:
 // Remove noscript:
@@ -144,9 +144,6 @@ function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSr
       .more-menu:not(.open) {
         display: none;
       }
-      .more-menu button {
-        min-height: var(--touch-target-size);
-      }
       .more-menu a[href] {
         display: inline-block;
         padding: calc(var(--touch-target-size) / 2 - 0.5em) 0;
@@ -174,20 +171,7 @@ function renderFileMenubar({html}, {videoId, baseName, srv3Url, srtUrl, updateSr
 }
 
 render(html`
-  <style>
-    :root {
-      --touch-target-size: 48px;
-    }
-  </style>
-
   <main>
-    <style>
-      h1 {
-        font-size: 1.5em;
-        padding: 0;
-        margin: 0;
-      }
-    </style>
     <h1>Edit captions</h1>
 
     ${window.onerror ? html`
@@ -267,9 +251,6 @@ async function askForYouTubeVideo() {
             height: var(--touch-target-size);
             box-sizing: border-box;
           }
-          .cancel-icon::before {
-            content: "❌";
-          }
         </style>
         <form class="youtube-url-form" method="dialog" @submit=${onSubmit}>
           <div style="display: flex;">
@@ -281,12 +262,12 @@ async function askForYouTubeVideo() {
                 autofocus required spellcheck="false">
           </div>
 
-          <button><b>Open</b></button>
-          <button type="button" @click=${function(e) {
+          <button class="pure-button pure-button-primary">Open</button>
+          <button class="pure-button button-cancel" type="button" @click=${function(e) {
             dialog.close();
             resolve(null);
           }}>
-            <span class="cancel-icon"></span>Cancel
+            Cancel
           </button>
         </form>
       </dialog>
@@ -332,13 +313,9 @@ async function askForVideo() {
               display: block;
             }
             ul.listview > li > button {
-              min-height: var(--touch-target-size);
               text-align: left;
               width: 100%;
               margin: 4px 0;
-            }
-            .video-picker-form button {
-              min-height: var(--touch-target-size);
             }
             .file-icon::before {
               content: "📂";
@@ -354,10 +331,10 @@ async function askForVideo() {
           Show your captions on a video.<br>
           Shared links show YouTube videos but not video files.<br>
 
-          <ul class="listview">
+          <ul class="listview" role="group" aria-label="Preview videos">
             <!-- YouTube -->
             <li>
-              <button @click=${async function(e) {
+              <button class="pure-button pure-button-primary" @click=${async function(e) {
                 e.preventDefault();
                 let video = await askForYouTubeVideo();
                 if (video === null) return;
@@ -371,7 +348,7 @@ async function askForVideo() {
 
             <!-- File -->
             <li>
-              <button type="button" @click=${function(e) {
+              <button class="pure-button" type="button" @click=${function(e) {
                 let file = this.closest('li').querySelector('input[type=file]');
                 file.value = '';
                 file.click();
@@ -389,16 +366,11 @@ async function askForVideo() {
             </li>
           </ul>
 
-          <button type="button" @click=${function(e) {
+          <button class="pure-button button-cancel" type="button" @click=${function(e) {
             dialog.close();
             resolve(null);
           }}>
-            <style>
-              .cancel-icon::before {
-                content: "❌";
-              }
-            </style>
-            <span class="cancel-icon"></span>Cancel
+            Cancel
           </button>
         </form>
       </dialog>
@@ -462,9 +434,6 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
                 document.body.removeChild(dialog);
               }}>
             <style>
-              .youtube-proxy-form button {
-                min-height: var(--touch-target-size);
-              }
               .youtube-proxy-form a[href],
               .youtube-proxy-form label:not(.readonly) {
                 display: inline-block;
@@ -537,12 +506,12 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
                 </label>
               </div>
 
-              ${checkButton = render0(html`<button><b>Check</b></button>`)}
-              <button type="button" @click=${function(e) {
+              ${checkButton = render0(html`<button class="pure-button pure-button-primary">Check</button>`)}
+              <button class="pure-button button-cancel" type="button" @click=${function(e) {
                 dialog.close();
                 resolve(null);
               }}>
-                <span class="cancel-icon"></span>Cancel
+                Cancel
               </button>
             </form>
 
@@ -602,9 +571,6 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
             #youtube-track-picker {
               height: var(--touch-target-size);
             }
-            .youtube-track-picker-form button {
-              min-height: var(--touch-target-size);
-            }
             .youtube-track-picker-form a[href],
             .youtube-track-picker-form label:not(.readonly) {
               display: inline-block;
@@ -627,12 +593,12 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
             render(picker.renderOnce(), pickerContainer);
           }}>Check for more</a><br>
 
-          <button><b>Open</b></button>
-          <button type="button" @click=${function(e) {
+          <button class="pure-button pure-button-primary">Open</button>
+          <button class="pure-button button-cancel" type="button" @click=${function(e) {
             dialog.close();
             resolve(null);
           }}>
-            <span class="cancel-icon"></span>Cancel
+            Cancel
           </button>
         </form>
       </dialog>
@@ -676,7 +642,6 @@ function askForCaptions() {
               display: block;
             }
             ul.listview > li > button {
-              min-height: var(--touch-target-size);
               text-align: left;
               width: 100%;
               margin: 4px 0;
@@ -698,7 +663,7 @@ function askForCaptions() {
           <ul class="listview">
             <!-- File -->
             <li>
-              <button type="button" @click=${function(e) {
+              <button class="pure-button pure-button-primary" type="button" @click=${function(e) {
                 filePicker.click();
               }}>
                 <h3><span class="file-icon"></span>Upload captions</h3>
@@ -709,7 +674,7 @@ function askForCaptions() {
 
             <!-- YouTube -->
             <li>
-              <button type="button" @click=${async function(e) {
+              <button class="pure-button" type="button" @click=${async function(e) {
                 this.disabled = true;
                 let tracks, videoId;
                 try {
@@ -735,7 +700,7 @@ function askForCaptions() {
 
             <!-- None -->
             <li>
-              <button @click=${function(e) {
+              <button class="pure-button" @click=${function(e) {
                 resolve({
                   captions: captionsFromText(
                     '0:00 Hello\n' +
@@ -1096,23 +1061,23 @@ class Share {
       </div>
     `);
     this._shareButton = render0(html`
-      <button type="submit">
+      <button class="pure-button" type="submit">
         <style>
           .link-icon::before {
             content: "🔗";
           }
         </style>
-        <span class="link-icon"></span>Share
+        <span class="link-icon"></span>Copy link
       </button>
     `);
     this._unshareButton = render0(html`
-      <button type="reset">
+      <button class="pure-button pure-button-active" type="reset">
         <style>
           .cancel-icon::before {
             content: "❌";
           }
         </style>
-        <span class="cancel-icon"></span>Stop sharing
+        <span class="cancel-icon"></span>Copy link
       </button>
     `);
 
@@ -1238,7 +1203,7 @@ class Share {
           @submit=${function(e) {
             e.preventDefault();
           }}>
-        By clicking "Share", I agree to the <a href="/terms">terms of service</a>.
+        By clicking "Copy link", I agree to the <a href="/terms">terms of service</a>.
         ${this._permalinkWidget}
         ${this._statusMessage}
       </form>
@@ -1394,7 +1359,7 @@ function warnCaptionsAreUnofficial(hasVideo) {
             "The video's uploader is"} <b>not affiliated</b> with this website.<br>
           Anyone can create and share captions for any video for free.<br>
 
-          <button><b>I understand</b></button>
+          <button class="pure-button pure-button-primary">I understand</button>
         </form>
       </dialog>
     `);
@@ -1438,18 +1403,13 @@ Please take down my captions. Proof it's my captions: (please fill in)
         <summary>My video shows these captions I don't agree with</summary>
         Add a pop-up reminder that these captions can be uploaded by anyone:<br>
         <form action="/add_popup" method="post" class="add-popup-form">
-          <style>
-            .add-popup-form button {
-              min-height: var(--touch-target-size);
-            }
-          </style>
           <div>
             <label>
               Captions ID:
               <input readonly name="read_fingerprint" value=${readFingerprint}>
             </label>
           </div>
-          <button>Add pop-up</button>
+          <button class="pure-button pure-button-primary">Add pop-up</button>
           <button type="button" @click=${function(e) {
             warnCaptionsAreUnofficial(videoId !== null);
           }}>Preview pop-up</button>

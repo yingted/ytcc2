@@ -10,16 +10,6 @@ function renderTerms({html}, isDebug) {
       </head>
       <body style="margin: 0 auto; max-width: 640px;">
         <header>
-          <style>
-            h1 {
-              font-size: 1.5em;
-              padding: 0;
-              margin: 0;
-            }
-            header {
-              margin-block-end: 0.5em;
-            }
-          </style>
           <h1>Terms of service</h1>
           Thanks for coming to read the terms of service.<br>
           If anything is wrong, or if you have suggestions, please <a href="https://github.com/yingted/ytcc2/issues/new">report an issue</a>.

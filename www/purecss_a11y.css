@@ -1,0 +1,13 @@
+/**
+ * WCAG compliance for purecss
+ */
+:root {
+  --touch-target-size: 48px;
+}
+.pure-button {
+  min-height: var(--touch-target-size);
+}
+/* button.button-cancel { */
+/*   color: white; */
+/*   background: rgb(202, 60, 60); */
+/* } */
