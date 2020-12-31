@@ -274,6 +274,8 @@ export async function fetchCaptions(track) {
   if (track === null) return null;
   if (track.getCaptions) {
     return track.getCaptions();
+  } else if (track.fetchCaptions) {
+    return /*await */track.fetchCaptions();
   } else {
     return stripRaw(decodeJson3FromJson(await track.fetchJson3()));
   }

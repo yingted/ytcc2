@@ -441,9 +441,6 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
 
     let askForMoreTracks = function askForMoreTracks() {
       return new Promise(resolve => {
-        let langs = getLanguages().filter(lang => {
-          return asrLanguages.indexOf(lang) !== -1;
-        });
         let checkButton;
         let dialog = render0(html`
           <dialog
@@ -498,7 +495,6 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
                         body: JSON.stringify({
                           nonce,
                           pow,
-                          langs,
                         }),
                       });
                     } catch (e) {
@@ -512,7 +508,7 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
                     }
 
                     let {tracks} = await res.json();
-                    tracks = tracks.map(({lang, srv3}) => new AsrProxyTrack(videoId, lang, srv3));
+                    tracks = tracks.map(({lang, srv3Url}) => new AsrProxyTrack(videoId, lang, srv3Url));
 
                     dialog.close();
                     resolve(tracks);
@@ -524,13 +520,6 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
                 <label class="readonly">
                   YouTube video URL:<br>
                   <input type="text" value="youtu.be/${videoId}" readonly>
-                </label>
-              </div>
-
-              <div>
-                <label class="readonly">
-                  Languages:<br>
-                  <input type="text" value=${langs.join(',')} readonly required>
                 </label>
               </div>
 
@@ -1033,12 +1022,12 @@ class AsrProxyTrack {
    * Make a new captions
    * @param {string} videoId
    * @param {string} lang language ISO code
-   * @param {string} srv3 the srv3 XML
+   * @param {string} srv3Url the srv3 XML URL
    */
-  constructor(videoId, lang, srv3) {
+  constructor(videoId, lang, srv3Url) {
     this._videoId = videoId;
     this._languageIsoCode = lang;
-    this._srv3 = srv3;
+    this._srv3Url = srv3Url;
   }
 
   _friendlyLanguage() {
@@ -1070,8 +1059,12 @@ class AsrProxyTrack {
   /**
    * Get the captions
    */
-  getCaptions() {
-    return stripRaw(decodeSrv3(this._srv3));
+  async fetchCaptions() {
+    let res = await fetch(this._srv3Url);
+    if (!res.ok) {
+      throw new Error('Failed to fetch captions: ' + res.statusText);
+    }
+    return stripRaw(decodeSrv3(await res.text()));
   }
 }
 

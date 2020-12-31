@@ -32,7 +32,6 @@ const {asrLanguages} = require('./youtube_languages.js');
 const tmp = require('tmp-promise');
 const {spawn} = require('child_process');
 const fs = require('fs').promises;
-const path = require('path');
 const morgan = require('morgan');
 require('jsdom-global')();
 global.DOMParser = window.DOMParser;
@@ -50,7 +49,7 @@ if (!config.email) {
 const app = express();
 app.use(express.text());
 app.use(express.json());
-app.use(express.urlencoded());
+app.use(express.urlencoded({extended: false}));
 app.use(expressStaticGzip('static', {
   enableBrotli: true,
   index: false,
@@ -306,7 +305,6 @@ app.post('/ytasr_proxy/:videoId', asyncHandler(async (req, res) => {
   let {
     nonce,
     pow,
-    langs,
   } = req.body;
 
   // First, check nonce:
@@ -337,21 +335,16 @@ app.post('/ytasr_proxy/:videoId', asyncHandler(async (req, res) => {
     throw e;
   }
 
-  langs = langs.filter(lang => asrLanguages.indexOf(lang) !== -1);
-
-  await tmp.withDir(async o => {
-    let args = [
+  await tmp.withFile(async o => {
+    let cmd = [
+      './youtube_captions.py',
       'https://www.youtube.com/watch?v=' + encodeURIComponent(videoId),
-      '--write-auto-sub',
-      '--sub-lang=' + encodeURIComponent(langs.join(',')),
-      '--skip-download',
-      '--sub-format=srv3',
-      '-o', path.join(o.path, 'captions'),
+      o.path,
     ];
     if (!production) {
-      console.log('running:', ['youtube-dl'].concat(args));
+      console.log('running:', cmd);
     }
-    let ytdl = spawn('youtube-dl', args, {stdio: production ? 'ignore' : 'inherit'});
+    let ytdl = spawn(cmd[0], cmd.slice(1), {stdio: production ? 'ignore' : 'inherit'});
 
     let timeout = setTimeout(function() {
       ytdl.kill();
@@ -376,29 +369,10 @@ app.post('/ytasr_proxy/:videoId', asyncHandler(async (req, res) => {
       return;
     }
 
-    let files = [];
-    for await (const file of await fs.opendir(o.path)) {
-      let m = file.name.match(/^captions\.(.*)\.srv3$/);
-      if (!m) continue;
-
-      let lang = m[1];
-      if (langs.indexOf(lang) === -1) continue;
-
-      files.push({
-        lang,
-        path: path.join(o.path, file.name),
-      });
-    }
-
-    let tracks = await Promise.all(
-      files.map(async ({lang, path}) => {
-        // Assume UTF-8 so we can return a JSON string:
-        // Avoid filetype sniffing security issues this way.
-        let srv3 = await fs.readFile(path, {encoding: 'utf-8'});
-        return {lang, srv3};
-      }));
+    let tracks = JSON.parse(await fs.readFile(o.path, {encoding: 'utf-8'}));
+    tracks = tracks.map(({lang, url}) => ({lang, srv3Url: url}));
     res.json({tracks});
-  }, {unsafeCleanup: true});
+  });
 }));
 
 // Delete a specific captions:
