@@ -297,7 +297,7 @@ async function askForVideo() {
           }}>
         <h2 id="video-dialog-heading">Choose video (optional)</h2>
 
-        <form method="dialog" class="video-picker-form">
+        <form method="dialog" class="pure-form video-picker-form">
           <style>
             ul.listview {
               padding: 0;
@@ -531,7 +531,7 @@ async function askForYouTubeCaptions(videoId, tracks, defaultTrack) {
           }}>
         <h2 id="youtube-captions-dialog-heading"><label for="youtube-track-picker">Open YouTube captions</label></h2>
 
-        <form method="dialog" class="youtube-track-picker-form"
+        <form method="dialog" class="pure-form youtube-track-picker-form"
             @submit=${async function(e) {
               let track = picker.model.value.selectedTrack;
               if (track === null) {
@@ -626,7 +626,7 @@ function askForCaptions() {
           }}>
         <h2 id="captions-dialog-heading">Choose captions</h2>
 
-        <form method="dialog">
+        <form class="pure-form" method="dialog">
           <style>
             ul.listview {
               padding: 0;

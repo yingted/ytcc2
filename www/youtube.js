@@ -159,7 +159,7 @@ export class YouTubeVideo {
               Playing YouTube videos uses cookies.<br>
               <br>
               <div>
-                <button class="pure-button pure-button-primary" @click=${function() {
+                <button class="pure-button" @click=${function() {
                   for (let iframe of this.closest('.player-container').querySelectorAll('iframe[tabindex="-1"]')) {
                     iframe.removeAttribute('tabindex');
                   }
