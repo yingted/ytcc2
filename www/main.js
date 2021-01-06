@@ -296,7 +296,7 @@ async function askForVideo() {
           Show your captions on a video.<br>
           Shared links show YouTube videos but not video files.<br>
 
-          <ul class="listview" role="group" aria-label="Preview videos">
+          <ul class="listview" aria-label="Preview videos">
             <!-- YouTube -->
             <li>
               <button class="pure-button pure-button-primary" @click=${async function(e) {
@@ -621,7 +621,7 @@ function askForCaptions() {
           Upload your captions, or edit someone else's.<br>
           Then, make a private link that lasts 30 days.<br>
 
-          <ul class="listview" role="group" aria-label="Choose captions">
+          <ul class="listview" aria-label="Choose captions">
             <!-- File -->
             <li>
               <button class="pure-button pure-button-primary" type="button" @click=${function(e) {
