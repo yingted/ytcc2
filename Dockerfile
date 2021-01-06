@@ -18,18 +18,24 @@ RUN apt-get update && apt-get install -y python3 python3-pip
 # Install everything:
 WORKDIR /usr/src/app
 COPY . .
+
 WORKDIR /usr/src/app/captions
 RUN rm -rf node_modules
 RUN npm ci
 RUN npm run build
-RUN npm prune --production
 WORKDIR /usr/src/app/www
 RUN rm -rf node_modules
 RUN python3 -m pip install --user -r ./requirements.txt
 RUN npm ci
 RUN npm run build
+
+WORKDIR /usr/src/app/captions
+RUN npm prune --production
+# Remove the compiler:
+RUN ["bash", "-c", "rm -rf node_modules/bs-platform/{darwin,win32,linux,vendor,lib/4.06.1}"]
+WORKDIR /usr/src/app/www
 RUN npm prune --production
 
 # Run the web service on container startup.
 EXPOSE 8080
-CMD [ "node", "index.js" ]
+CMD ["node", "index.js"]
