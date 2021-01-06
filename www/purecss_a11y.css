@@ -55,3 +55,10 @@ body .pure-form input[readonly],
 body .pure-form select[readonly] {
   color: #555;
 }
+
+body .pure-button-primary,
+body .pure-button-selected,
+body a.pure-button-primary,
+body a.pure-button-selected {
+  background-color: #06e;
+}
